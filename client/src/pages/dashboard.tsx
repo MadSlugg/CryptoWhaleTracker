@@ -5,7 +5,8 @@ import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
-import { WhaleAnalytics } from "@/components/whale-analytics";
+import { OrderFlow } from "@/components/order-flow";
+import { PriceClusters } from "@/components/price-clusters";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { EntrySignals } from "@/components/entry-signals";
@@ -207,7 +208,7 @@ export default function Dashboard() {
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
 
-          {/* Two-column grid: Order Book Imbalance and Entry Signals */}
+          {/* Two-column grid: Order Book Imbalance and Order Flow */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
             {/* Order Book Imbalance - Supply/Demand pressure */}
             <OrderBookImbalance 
@@ -215,18 +216,25 @@ export default function Dashboard() {
               currentPrice={currentBtcPrice}
             />
 
+            {/* Order Flow - Buying vs selling pressure */}
+            <OrderFlow 
+              orders={filteredOrders} 
+            />
+          </div>
+
+          {/* Two-column grid: Entry Signals and Price Clusters */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
             {/* Price Entry Signals - Good entry points based on whale positioning */}
             <EntrySignals 
               orders={filteredOrders} 
               currentPrice={currentBtcPrice}
             />
-          </div>
 
-          {/* Whale Analytics - Pattern detection, accumulation, and order flow */}
-          <WhaleAnalytics 
-            orders={filteredOrders} 
-            currentPrice={currentBtcPrice}
-          />
+            {/* Price Clusters - Pattern detection and accumulation zones */}
+            <PriceClusters 
+              orders={filteredOrders} 
+            />
+          </div>
 
           {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
