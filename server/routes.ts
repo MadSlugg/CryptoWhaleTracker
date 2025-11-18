@@ -59,17 +59,17 @@ class OrderGenerator {
     
     const type = Math.random() > 0.5 ? 'long' : 'short';
     
-    // Size distribution: mostly small, few whales
+    // Size distribution: more whales and larger transactions
     const sizeRandom = Math.random();
     let size: number;
-    if (sizeRandom < 0.5) {
-      size = 1 + Math.random() * 5; // 1-6 BTC
+    if (sizeRandom < 0.2) {
+      size = 1 + Math.random() * 9; // 1-10 BTC (small)
+    } else if (sizeRandom < 0.5) {
+      size = 10 + Math.random() * 20; // 10-30 BTC (medium)
     } else if (sizeRandom < 0.8) {
-      size = 5 + Math.random() * 15; // 5-20 BTC
-    } else if (sizeRandom < 0.95) {
-      size = 20 + Math.random() * 30; // 20-50 BTC
+      size = 30 + Math.random() * 45; // 30-75 BTC (large)
     } else {
-      size = 50 + Math.random() * 50; // 50-100 BTC (whales)
+      size = 75 + Math.random() * 125; // 75-200 BTC (massive whales)
     }
 
     // Leverage distribution: mostly conservative, some degenerates

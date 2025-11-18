@@ -9,6 +9,10 @@ export const bitcoinOrderSchema = z.object({
   timestamp: z.string(),
   liquidationPrice: z.number().positive().optional(),
   walletAddress: z.string(),
+  status: z.enum(['open', 'closed']),
+  closedAt: z.string().optional(),
+  closePrice: z.number().positive().optional(),
+  profitLoss: z.number().optional(),
 });
 
 export const insertBitcoinOrderSchema = bitcoinOrderSchema.omit({ id: true });
@@ -19,6 +23,7 @@ export type InsertBitcoinOrder = z.infer<typeof insertBitcoinOrderSchema>;
 export type OrderType = 'long' | 'short' | 'all';
 export type TimeRange = '1h' | '4h' | '24h' | '7d';
 export type LeverageRiskLevel = 'minimal' | 'moderate' | 'high' | 'extreme';
+export type PositionStatus = 'open' | 'closed' | 'all';
 
 export function getLeverageRiskLevel(leverage: number): LeverageRiskLevel {
   if (leverage < 5) return 'minimal';
@@ -57,4 +62,21 @@ export function calculateLiquidationPrice(
   
   // Ensure liquidation price is never negative
   return Math.max(0, liquidationPrice);
+}
+
+export function calculateProfitLoss(
+  entryPrice: number,
+  exitPrice: number,
+  leverage: number,
+  type: 'long' | 'short'
+): number {
+  const priceChange = ((exitPrice - entryPrice) / entryPrice) * 100;
+  
+  if (type === 'long') {
+    // For longs, profit when price goes up
+    return priceChange * leverage;
+  } else {
+    // For shorts, profit when price goes down
+    return -priceChange * leverage;
+  }
 }

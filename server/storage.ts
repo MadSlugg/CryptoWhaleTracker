@@ -6,12 +6,16 @@ export interface OrderFilters {
   minLeverage?: number;
   orderType?: 'long' | 'short' | 'all';
   timeRange?: '1h' | '4h' | '24h' | '7d';
+  status?: 'open' | 'closed' | 'all';
 }
 
 export interface IStorage {
   getOrders(): Promise<BitcoinOrder[]>;
   getFilteredOrders(filters: OrderFilters): Promise<BitcoinOrder[]>;
   createOrder(order: InsertBitcoinOrder): Promise<BitcoinOrder>;
+  getOrder(id: string): Promise<BitcoinOrder | undefined>;
+  closeOrder(id: string, closePrice: number, profitLoss: number): Promise<BitcoinOrder | undefined>;
+  getOpenOrders(): Promise<BitcoinOrder[]>;
   clearOldOrders(hoursAgo: number): Promise<void>;
 }
 
@@ -42,6 +46,10 @@ export class MemStorage implements IStorage {
     
     if (filters.orderType && filters.orderType !== 'all') {
       orders = orders.filter(order => order.type === filters.orderType);
+    }
+    
+    if (filters.status && filters.status !== 'all') {
+      orders = orders.filter(order => order.status === filters.status);
     }
     
     if (filters.timeRange) {
@@ -81,6 +89,33 @@ export class MemStorage implements IStorage {
     
     this.orders.set(id, order);
     return order;
+  }
+
+  async getOrder(id: string): Promise<BitcoinOrder | undefined> {
+    return this.orders.get(id);
+  }
+
+  async closeOrder(id: string, closePrice: number, profitLoss: number): Promise<BitcoinOrder | undefined> {
+    const order = this.orders.get(id);
+    if (!order || order.status === 'closed') {
+      return undefined;
+    }
+
+    const closedOrder: BitcoinOrder = {
+      ...order,
+      status: 'closed',
+      closePrice,
+      closedAt: new Date().toISOString(),
+      profitLoss,
+    };
+
+    this.orders.set(id, closedOrder);
+    return closedOrder;
+  }
+
+  async getOpenOrders(): Promise<BitcoinOrder[]> {
+    const allOrders = await this.getOrders();
+    return allOrders.filter(order => order.status === 'open');
   }
 
   async clearOldOrders(hoursAgo: number): Promise<void> {
