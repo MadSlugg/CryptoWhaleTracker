@@ -85,6 +85,7 @@ export class MemStorage implements IStorage {
       ...insertOrder,
       id,
       liquidationPrice,
+      status: insertOrder.status || 'open',
     };
     
     this.orders.set(id, order);
@@ -97,6 +98,7 @@ export class MemStorage implements IStorage {
 
   async closeOrder(id: string, closePrice: number, profitLoss: number): Promise<BitcoinOrder | undefined> {
     const order = this.orders.get(id);
+    // Treat undefined status as open (for legacy records)
     if (!order || order.status === 'closed') {
       return undefined;
     }
