@@ -29,7 +29,9 @@ Preferred communication style: Simple, everyday language.
 
 **Key Features**:
 - Real-time order feed with WebSocket updates
-- Filterable dashboard (by size, leverage, order type, time range)
+- Complete position lifecycle tracking (open and closed positions)
+- Profit/loss calculation for closed positions with color-coded indicators
+- Filterable dashboard (by size, leverage, order type, time range, and status)
 - Summary statistics (24h volume, active longs/shorts, average leverage)
 - High-risk alerts for positions with 25x+ leverage
 - Risk level categorization (minimal, moderate, high, extreme)
@@ -51,6 +53,8 @@ Preferred communication style: Simple, everyday language.
 - Automatic liquidation price calculation
 - Batch initial data generation (15 orders) on startup
 - Continuous generation every 3-8 seconds
+- Automatic position closing mechanism that randomly closes open positions every 5-15 seconds
+- Profit/loss calculation based on entry/exit price and leverage
 - Wallet address tracking using native SegWit (bc1...) format for identifying whale movements
 
 **API Endpoints**:
