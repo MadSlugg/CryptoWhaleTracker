@@ -58,13 +58,25 @@ Preferred communication style: Simple, everyday language.
     - Groups orders within $1000 price ranges
     - Shows top 5 clusters (3+ orders or 50+ BTC threshold)
     - Displays long/short breakdown with counts and BTC amounts
-    - Badge indicates dominant type (LONG/SHORT/Balanced)
+    - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
+    - Dominance threshold: >20% more volume than average
   - **Accumulation Zones**: Price levels with repeated whale activity
     - Description: "Price levels with repeated whale activity. Shows where large traders are building or defending positions."
     - Detects repeated orders at $500 price ranges
     - Shows top 5 zones (2+ orders required)
     - Displays long/short breakdown with counts and BTC amounts
-    - Badge indicates dominant type (LONG/SHORT/Balanced)
+    - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
+    - Dominance threshold: >20% more volume than average
+- **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
+  - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
+  - Groups orders into $2,000 price buckets
+  - Color intensity based on total BTC volume (5 intensity levels: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%)
+  - Green for long-dominant levels, red for short-dominant levels
+  - Highlights current Bitcoin price level
+  - Shows long/short breakdown per level (order counts and BTC amounts)
+  - Intensity bar at bottom of each level
+  - Scrollable with max height for performance
+  - Summary stats: total orders, total volume, number of price levels
 
 **Routing**: Wouter for client-side routing
 
