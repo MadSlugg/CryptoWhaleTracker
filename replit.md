@@ -34,6 +34,11 @@ Preferred communication style: Simple, everyday language.
 - Summary statistics (24h volume, active longs/shorts)
 - Real Bitcoin prices updated every 5 seconds
 - Exchange badges on each order showing source exchange
+- **Major Whale Alerts**: Real-time toast notifications for large orders:
+  - 1000+ BTC orders: "MEGA WHALE ALERT" (red/destructive variant, 10s duration)
+  - 100+ BTC orders: "Large Whale Alert" (default variant, 7s duration)
+  - Alerts trigger both when orders are placed (NEW ORDER) and when they execute (FILLED)
+  - Shows order size, type (LONG/SHORT), price, and exchange
 
 **Routing**: Wouter for client-side routing
 
@@ -60,6 +65,10 @@ Preferred communication style: Simple, everyday language.
 - Only displays orders that can be verified from exchanges' public order books
 - No simulated data - all displayed positions are real market orders
 - Exchange filter allows users to view orders from specific exchanges or all combined
+- Filled order detection: Orders automatically transition from "active" to "filled" status when market price crosses order limit price
+  - Long orders filled when market price ≤ limit price
+  - Short orders filled when market price ≥ limit price
+  - Sweep runs every 10 seconds to detect filled orders
 
 **API Endpoints**:
 - `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status
