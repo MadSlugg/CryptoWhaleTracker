@@ -61,7 +61,7 @@ export function OrderCard({ order }: OrderCardProps) {
                   {order.exchange}
                 </Badge>
                 <Badge 
-                  variant={isFilled ? "secondary" : isDisappeared ? "destructive" : "outline"}
+                  variant={isFilled ? "secondary" : "outline"}
                   className="text-xs"
                   data-testid={`badge-status-${order.id}`}
                 >

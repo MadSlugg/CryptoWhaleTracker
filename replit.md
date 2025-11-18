@@ -108,11 +108,12 @@ Preferred communication style: Simple, everyday language.
 **Routing**: Wouter for client-side routing
 
 **Order Display**:
-- Active Orders and Filled Orders sections at bottom of dashboard
+- Active Orders, Filled Orders, and Disappeared Orders sections at bottom of dashboard
 - Each section limited to 5 most recent orders for compact display
 - Shows "Showing X of Y" counter to indicate total available orders
 - Scrollable containers with 500px max height
 - Order cards display position type, exchange, status, BTC amount, price, and timestamp
+- Order statuses: Active (outlined), Filled (grey), Disappeared (grey)
 
 ### Backend Architecture
 
@@ -137,13 +138,18 @@ Preferred communication style: Simple, everyday language.
 - Only displays orders that can be verified from exchanges' public order books
 - No simulated data - all displayed positions are real market orders
 - Exchange filter allows users to view orders from specific exchanges or all combined
-- Filled order detection: Orders automatically transition from "active" to "filled" status when market price crosses order limit price
-  - Long orders filled when market price ≤ limit price
-  - Short orders filled when market price ≥ limit price
-  - Sweep runs every 10 seconds to detect filled orders
+- **Order Status Transitions**:
+  - **Active → Filled**: Orders automatically transition when market price crosses order limit price
+    - Long orders filled when market price ≤ limit price
+    - Short orders filled when market price ≥ limit price
+    - Sweep runs every 10 seconds to detect filled orders
+  - **Active → Disappeared**: Orders transition when they vanish from exchange order books
+    - Verified during each exchange polling cycle (every 10-16 seconds)
+    - Could indicate cancellation by whale trader or fill that occurred between polling windows
+    - Real-time verification against live order book data from each exchange
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status (active/filled/disappeared/all)
 - `GET /api/whale-movements` - Retrieve whale movement data
 - `GET /api/long-short-ratios` - Retrieve long/short ratio history
 - `GET /api/long-short-ratio/latest` - Get latest long/short ratio
