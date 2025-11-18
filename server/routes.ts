@@ -148,20 +148,50 @@ class OrderGenerator {
     this.okxIntervalId = null;
   }
 
-  private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx', freshOrderBook: OrderBookEntry[]) {
+  private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx') {
     try {
       // Get only active orders for this specific exchange (efficient - no full scan or sort)
       const activeOrdersForExchange = await storage.getActiveOrdersByExchange(exchange);
 
-      // Check each active order to see if it still exists in the fresh order book
+      // Fetch FULL order book (not filtered) to verify if orders still exist
+      let fullOrderBook: { bids: [string, string][]; asks: [string, string][] } | null = null;
+      
+      try {
+        switch (exchange) {
+          case 'binance':
+            fullOrderBook = await binanceService.getOrderBook(100);
+            break;
+          case 'kraken':
+            const krakenData = await krakenService.getOrderBook();
+            fullOrderBook = { bids: krakenData.bids, asks: krakenData.asks };
+            break;
+          case 'coinbase':
+            const coinbaseData = await coinbaseService.getOrderBook();
+            fullOrderBook = { bids: coinbaseData.bids, asks: coinbaseData.asks };
+            break;
+          case 'okx':
+            const okxData = await okxService.getOrderBook();
+            fullOrderBook = { bids: okxData.bids, asks: okxData.asks };
+            break;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch full order book from ${exchange}:`, error);
+        return; // Skip verification if we can't fetch order book
+      }
+
+      if (!fullOrderBook) return;
+
+      // Check each active order to see if it still exists in the FULL order book
       for (const existingOrder of activeOrdersForExchange) {
-        const stillExists = freshOrderBook.some(freshOrder => {
-          const type = freshOrder.type === 'bid' ? 'long' : 'short';
-          const roundedSize = Math.round(freshOrder.quantity * 100) / 100;
-          const roundedPrice = Math.round(freshOrder.price * 100) / 100;
+        const orderBookSide = existingOrder.type === 'long' ? fullOrderBook.bids : fullOrderBook.asks;
+        
+        const stillExists = orderBookSide.some(([priceStr, quantityStr]) => {
+          const price = parseFloat(priceStr);
+          const quantity = parseFloat(quantityStr);
+          const roundedSize = Math.round(quantity * 100) / 100;
+          const roundedPrice = Math.round(price * 100) / 100;
           
           return (
-            type === existingOrder.type &&
             Math.abs(roundedPrice - existingOrder.price) < 0.01 && // Price within 1 cent
             Math.abs(roundedSize - existingOrder.size) < 0.01 // Size within 0.01 BTC
           );
@@ -233,8 +263,9 @@ class OrderGenerator {
           break;
       }
       
-      // Verify existing active orders from this exchange still exist in the fresh order book
-      await this.verifyActiveOrders(exchange, whaleOrders);
+      // Verify existing active orders from this exchange still exist in the FULL order book
+      // Note: This is separate from whaleOrders filtering - we check the complete order book
+      await this.verifyActiveOrders(exchange);
       
       for (const whaleOrder of whaleOrders) {
         // Convert order book entry to our format

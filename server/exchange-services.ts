@@ -34,6 +34,30 @@ export class KrakenService {
   private readonly API_BASE = 'https://api.kraken.com';
   private readonly SYMBOL = 'XXBTZUSD'; // BTC/USD pair
 
+  async getOrderBook(): Promise<{ bids: [string, string, string][]; asks: [string, string, string][] }> {
+    try {
+      const response = await fetch(
+        `${this.API_BASE}/0/public/Depth?pair=${this.SYMBOL}&count=100`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Kraken API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error && data.error.length > 0) {
+        throw new Error(`Kraken API error: ${data.error.join(', ')}`);
+      }
+
+      const result = data.result[this.SYMBOL];
+      return { bids: result.bids, asks: result.asks };
+    } catch (error) {
+      console.error('Error fetching Kraken order book:', error);
+      throw error;
+    }
+  }
+
   async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const response = await fetch(
@@ -96,6 +120,24 @@ export class CoinbaseService {
   private readonly API_BASE = 'https://api.exchange.coinbase.com';
   private readonly SYMBOL = 'BTC-USD';
 
+  async getOrderBook(): Promise<{ bids: [string, string][]; asks: [string, string][] }> {
+    try {
+      const response = await fetch(
+        `${this.API_BASE}/products/${this.SYMBOL}/book?level=2`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Coinbase API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return { bids: data.bids, asks: data.asks };
+    } catch (error) {
+      console.error('Error fetching Coinbase order book:', error);
+      throw error;
+    }
+  }
+
   async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const response = await fetch(
@@ -152,6 +194,30 @@ export class CoinbaseService {
 export class OKXService {
   private readonly API_BASE = 'https://www.okx.com';
   private readonly SYMBOL = 'BTC-USDT'; // Note: USDT is close to USD (~1:1), no conversion needed
+
+  async getOrderBook(): Promise<{ bids: [string, string][]; asks: [string, string][] }> {
+    try {
+      const response = await fetch(
+        `${this.API_BASE}/api/v5/market/books?instId=${this.SYMBOL}&sz=100`
+      );
+
+      if (!response.ok) {
+        throw new Error(`OKX API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.code !== '0') {
+        throw new Error(`OKX API error: ${result.msg}`);
+      }
+
+      const data = result.data[0];
+      return { bids: data.bids, asks: data.asks };
+    } catch (error) {
+      console.error('Error fetching OKX order book:', error);
+      throw error;
+    }
+  }
 
   async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {

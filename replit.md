@@ -144,11 +144,17 @@ Preferred communication style: Simple, everyday language.
     - Short orders filled when market price ≥ limit price
     - Sweep runs every 10 seconds to detect filled orders
   - **Active → Deleted**: Orders deleted when they vanish from exchange order books
-    - During each exchange polling cycle (every 10-16 seconds), active orders are verified against fresh order book
+    - During each exchange polling cycle (every 10-16 seconds), active orders are verified against FULL unfiltered order book
+    - CRITICAL: Verification uses complete order book data, NOT filtered whale orders
+    - This prevents false deletions of orders that fall outside discovery filters (e.g., price >20% from current market or size <$450k)
     - Orders that no longer exist in the order book are immediately deleted
     - Could indicate cancellation by whale trader or fill that occurred between polling windows
     - WebSocket broadcasts deletion event to frontend for real-time cache invalidation
 - **Order Retention**: Orders are kept for 7 days before automatic cleanup
+- **Verification vs Discovery**:
+  - Discovery (new orders): Filtered by $450k+ notional and price within ±20% of current market
+  - Verification (existing orders): Checks against FULL order book regardless of filters
+  - This separation ensures we only delete orders that truly vanished, not orders outside our tracking criteria
 
 **API Endpoints**:
 - `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status (active/filled/all)
