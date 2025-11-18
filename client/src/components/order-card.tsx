@@ -10,13 +10,13 @@ interface OrderCardProps {
 
 export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
-  const isClosed = order.status === 'closed';
+  const isFilled = order.status === 'filled';
   
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
   });
 
-  const formattedCloseTime = order.closedAt ? formatDistanceToNow(new Date(order.closedAt), {
+  const formattedFillTime = order.filledAt ? formatDistanceToNow(new Date(order.filledAt), {
     addSuffix: true,
   }) : null;
 
@@ -56,11 +56,11 @@ export function OrderCard({ order }: OrderCardProps) {
                   {order.exchange}
                 </Badge>
                 <Badge 
-                  variant={isClosed ? "secondary" : "outline"}
+                  variant={isFilled ? "secondary" : "outline"}
                   className="text-xs"
                   data-testid={`badge-status-${order.id}`}
                 >
-                  {isClosed ? 'CLOSED' : 'OPEN'}
+                  {isFilled ? 'FILLED' : 'ACTIVE'}
                 </Badge>
                 <span 
                   className="text-lg font-mono font-semibold"
@@ -75,11 +75,11 @@ export function OrderCard({ order }: OrderCardProps) {
                   <span className="font-mono" data-testid={`text-price-${order.id}`}>
                     ${order.price.toLocaleString()}
                   </span>
-                  {isClosed && order.closePrice && (
+                  {isFilled && order.fillPrice && (
                     <>
                       <ArrowRight className="h-3 w-3" />
-                      <span className="font-mono" data-testid={`text-close-price-${order.id}`}>
-                        ${order.closePrice.toLocaleString()}
+                      <span className="font-mono" data-testid={`text-fill-price-${order.id}`}>
+                        ${order.fillPrice.toLocaleString()}
                       </span>
                     </>
                   )}
@@ -87,18 +87,8 @@ export function OrderCard({ order }: OrderCardProps) {
                 
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span data-testid={`text-time-${order.id}`}>{isClosed && formattedCloseTime ? `Closed ${formattedCloseTime}` : `Opened ${formattedTime}`}</span>
+                  <span data-testid={`text-time-${order.id}`}>{isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : `Opened ${formattedTime}`}</span>
                 </div>
-
-                {isClosed && order.profitLoss !== undefined && (
-                  <Badge 
-                    variant={order.profitLoss >= 0 ? "default" : "destructive"}
-                    className="font-mono text-xs"
-                    data-testid={`badge-profit-loss-${order.id}`}
-                  >
-                    {order.profitLoss >= 0 ? '+' : ''}{order.profitLoss.toFixed(2)}%
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
