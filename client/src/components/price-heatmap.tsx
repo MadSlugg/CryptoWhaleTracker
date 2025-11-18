@@ -21,7 +21,10 @@ interface HeatmapLevel {
 }
 
 export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
-  if (orders.length === 0) {
+  // Filter for 50+ BTC orders only
+  const whaleOrders = orders.filter(order => order.size >= 50);
+
+  if (whaleOrders.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -46,7 +49,7 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
   const bucketSize = 2000;
   const levelMap = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
 
-  orders.forEach(order => {
+  whaleOrders.forEach(order => {
     const bucketPrice = Math.floor(order.price / bucketSize) * bucketSize;
     
     if (!levelMap.has(bucketPrice)) {
@@ -206,13 +209,13 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
           {/* Summary */}
           <div className="pt-2 mt-2 border-t text-xs text-muted-foreground">
             <div className="flex items-center justify-between">
-              <span>Total Orders:</span>
-              <span className="font-mono font-semibold">{orders.length}</span>
+              <span>Total Orders (50+ BTC):</span>
+              <span className="font-mono font-semibold">{whaleOrders.length}</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Total Volume:</span>
               <span className="font-mono font-semibold">
-                {orders.reduce((sum, o) => sum + o.size, 0).toFixed(1)} BTC
+                {whaleOrders.reduce((sum, o) => sum + o.size, 0).toFixed(1)} BTC
               </span>
             </div>
             <div className="flex items-center justify-between">

@@ -3,7 +3,6 @@ import {
   type InsertBitcoinOrder, 
   type WhaleMovement,
   type LongShortRatio,
-  type Liquidation,
   type WhaleCorrelation
 } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -37,10 +36,6 @@ export interface IStorage {
   getLongShortRatios(period?: string, limit?: number): Promise<LongShortRatio[]>;
   getLatestLongShortRatio(isTopTrader?: boolean): Promise<LongShortRatio | undefined>;
   
-  // Liquidations
-  addLiquidation(liquidation: Omit<Liquidation, 'id'>): Promise<Liquidation>;
-  getLiquidations(hoursAgo?: number): Promise<Liquidation[]>;
-  
   // Whale correlations
   addWhaleCorrelation(correlation: Omit<WhaleCorrelation, 'id'>): Promise<WhaleCorrelation>;
   getWhaleCorrelations(hoursAgo?: number): Promise<WhaleCorrelation[]>;
@@ -50,14 +45,12 @@ export class MemStorage implements IStorage {
   private orders: Map<string, BitcoinOrder>;
   private whaleMovements: Map<string, WhaleMovement>;
   private longShortRatios: Map<string, LongShortRatio>;
-  private liquidations: Map<string, Liquidation>;
   private whaleCorrelations: Map<string, WhaleCorrelation>;
 
   constructor() {
     this.orders = new Map();
     this.whaleMovements = new Map();
     this.longShortRatios = new Map();
-    this.liquidations = new Map();
     this.whaleCorrelations = new Map();
   }
 
@@ -215,21 +208,6 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     return ratios[0];
-  }
-
-  // Liquidation methods
-  async addLiquidation(liquidation: Omit<Liquidation, 'id'>): Promise<Liquidation> {
-    const id = randomUUID();
-    const liq: Liquidation = { ...liquidation, id };
-    this.liquidations.set(id, liq);
-    return liq;
-  }
-
-  async getLiquidations(hoursAgo: number = 24): Promise<Liquidation[]> {
-    const cutoffTime = Date.now() - hoursAgo * 60 * 60 * 1000;
-    return Array.from(this.liquidations.values())
-      .filter(l => new Date(l.timestamp).getTime() >= cutoffTime)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }
 
   // Whale correlation methods

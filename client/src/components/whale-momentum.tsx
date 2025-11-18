@@ -149,19 +149,11 @@ export function WhaleMomentum({ orders, currentPrice = 0 }: WhaleMomentumProps) 
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Progress 
-                value={(window.count / maxCount) * 100} 
-                className="h-2 flex-1" 
-                data-testid={`progress-${window.label.replace(' ', '-')}`}
-              />
-              <span 
-                className="text-xs text-muted-foreground font-mono min-w-[4rem] text-right"
-                data-testid={`text-rate-${window.label.replace(' ', '-')}`}
-              >
-                {window.rate.toFixed(2)}/min
-              </span>
-            </div>
+            <Progress 
+              value={(window.count / maxCount) * 100} 
+              className="h-2" 
+              data-testid={`progress-${window.label.replace(' ', '-')}`}
+            />
           </div>
         ))}
         

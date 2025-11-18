@@ -65,7 +65,7 @@ Preferred communication style: Simple, everyday language.
   - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
   - **10+ BTC Filter**: Only tracks orders with size >= 10 BTC (not all orders)
   - Monitors 3 time windows: 5 minutes, 10 minutes, and 30 minutes
-  - Displays order count, total BTC, and orders per minute for each window
+  - Displays order count and total BTC for each window
   - Shows momentum level badge (LOW/MODERATE/HIGH based on 5-min window rate)
   - Progress bars visualize relative activity across time windows
   - **Active Price Areas**: Shows where 10+ BTC whales are placing orders (last 5 minutes)
@@ -75,17 +75,9 @@ Preferred communication style: Simple, everyday language.
     - Highlights price area containing current Bitcoin price with "Current" badge
     - Scrollable with 200px max height
   - Auto-updates with real-time order data
-- **Liquidation Tracker**: Real-time liquidation monitoring from Binance futures
-  - Description: "Real-time liquidation events from Binance ($100k+ positions). High liquidations indicate forced position closures."
-  - Tracks $100k+ liquidations from Binance liquidation stream
-  - Shows summary statistics: total liquidated BTC and USD value
-  - Displays individual liquidation events with side (LONG/SHORT), quantity, price, and value
-  - Auto-refreshes every 10 seconds
-  - Scrollable feed with 400px max height showing up to 10 most recent events
-  - Time range: last 1 hour
-- **Price Level Heatmap**: Visual map of whale concentration across price levels
+- **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
-  - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
+  - **Internal 50+ BTC Filter**: Only shows orders >= 50 BTC, works in combination with user's selected filters
   - Groups orders into $2,000 price buckets
   - Color intensity based on total BTC volume (5 intensity levels: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%)
   - Green for long-dominant levels, red for short-dominant levels
@@ -111,6 +103,9 @@ Preferred communication style: Simple, everyday language.
 **Data Storage**: In-memory storage (MemStorage class) - no persistent database currently implemented, though Drizzle ORM is configured for potential PostgreSQL integration
 
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
+
+**Removed Features**:
+- Liquidation tracking and monitoring has been retired from the application
 
 **Multi-Exchange Integration**: Real-time Bitcoin whale tracking from multiple exchanges:
 - **Binance**: Real Bitcoin prices fetched from ticker API every 5 seconds, order book polling every ~10 seconds

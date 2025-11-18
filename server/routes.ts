@@ -6,7 +6,6 @@ import type { InsertBitcoinOrder, BitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 import { krakenService, coinbaseService, okxService } from "./exchange-services";
-import { liquidationService } from "./liquidation-service";
 import { whaleCorrelationService } from "./whale-correlation-service";
 
 // Real whale order tracker from multiple exchanges
@@ -382,18 +381,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API endpoint for liquidations
-  app.get("/api/liquidations", async (req, res) => {
-    try {
-      const hoursAgo = req.query.hours ? parseInt(req.query.hours as string) : 24;
-      const liquidations = await storage.getLiquidations(hoursAgo);
-      res.json(liquidations);
-    } catch (error) {
-      console.error('Error fetching liquidations:', error);
-      res.status(500).json({ error: 'Failed to fetch liquidations' });
-    }
-  });
-
   // API endpoint for whale correlations
   app.get("/api/whale-correlations", async (req, res) => {
     try {
@@ -437,9 +424,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Start order generator
   orderGenerator.start(wss);
-
-  // Start liquidation monitoring service
-  liquidationService.start();
   
   // Start whale correlation tracking service
   whaleCorrelationService.start();
