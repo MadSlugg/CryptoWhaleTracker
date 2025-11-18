@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { TrendingUp, AlertTriangle } from 'lucide-react';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -33,7 +32,7 @@ export function useWebSocket() {
               // Alert for 1000+ BTC orders
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "🐋 MEGA WHALE ALERT",
+                  title: "MEGA WHALE ALERT",
                   description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   variant: "destructive",
                   duration: 10000,
@@ -42,7 +41,7 @@ export function useWebSocket() {
               // Alert for 100+ BTC orders
               else if (orderSizeBTC >= 100) {
                 toast({
-                  title: "🐳 Large Whale Alert",
+                  title: "Large Whale Alert",
                   description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   duration: 7000,
                 });
