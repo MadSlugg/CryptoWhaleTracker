@@ -52,13 +52,14 @@ Preferred communication style: Simple, everyday language.
     - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
     - Shows long/short percentages, volumes, and pressure level (balanced/moderate/strong)
     - Handles neutral state when long and short volumes are equal
-  - **Price Clusters**: Multiple large orders concentrated at similar price levels
+  - **Price Clusters**: Multiple large orders concentrated at similar price levels (order book visualization)
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
+    - **Order Book Style Design**: Price on left, green circles for longs (right), red circles for shorts (far right)
+    - Circle sizes proportional to BTC volume (10-50px diameter based on relative volume)
+    - Shows BTC amount and order count next to each circle
     - Groups orders within $1000 price ranges
     - Shows top 10 clusters (3+ orders or 50+ BTC threshold)
-    - Displays long/short breakdown with counts and BTC amounts
-    - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
-    - Dominance threshold: >20% more volume than average
+    - Hover tooltips display full cluster details
     - Scrollable container with 500px max height
 - **Whale Momentum Indicator**: Tracks rate of new 10+ BTC whale orders and their price areas
   - Description: "Rate of new 10+ BTC whale orders entering the market and their price areas. High momentum indicates increased whale activity."

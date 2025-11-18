@@ -173,7 +173,7 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
         </CardContent>
       </Card>
 
-      {/* Whale Pattern Detection */}
+      {/* Whale Pattern Detection - Order Book Style */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -190,47 +190,81 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
               No significant clusters detected
             </p>
           ) : (
-            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto">
               {patterns.map((pattern, idx) => {
-                const priceRange = 1000; // Same as detection logic
+                const priceRange = 1000;
                 const minPrice = pattern.price - priceRange / 2;
                 const maxPrice = pattern.price + priceRange / 2;
                 
+                // Calculate circle sizes based on BTC volume (max 50px diameter)
+                const maxSize = Math.max(...patterns.map(p => p.totalSize));
+                const longCircleSize = (pattern.longSize / maxSize) * 40 + 10;
+                const shortCircleSize = (pattern.shortSize / maxSize) * 40 + 10;
+                
                 return (
-                  <div key={idx} className="flex flex-col gap-2 p-2 rounded-md border bg-muted/30" data-testid={`pattern-${idx}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-mono text-sm font-semibold">
-                          ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          Center: ${pattern.price.toLocaleString()}
-                        </span>
+                  <div 
+                    key={idx} 
+                    className="flex items-center gap-3 p-2 rounded-md hover-elevate border border-border/50" 
+                    data-testid={`pattern-${idx}`}
+                  >
+                    {/* Price Level */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono text-sm font-semibold truncate">
+                        ${pattern.price.toLocaleString()}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-semibold">
-                          {pattern.totalSize.toFixed(1)} BTC
-                        </span>
-                        <Badge 
-                          variant={pattern.type === 'long' ? 'default' : pattern.type === 'short' ? 'destructive' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {pattern.type === 'mixed' ? 'Balanced' : pattern.type.toUpperCase()}
-                        </Badge>
+                      <div className="text-xs text-muted-foreground">
+                        {pattern.totalSize.toFixed(1)} BTC
                       </div>
                     </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-600 dark:text-green-400">
-                        {pattern.longCount} longs ({pattern.longSize.toFixed(1)} BTC)
-                      </span>
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-red-600 dark:text-red-400">
-                        {pattern.shortCount} shorts ({pattern.shortSize.toFixed(1)} BTC)
-                      </span>
+                    
+                    {/* Long Side - Order Book Style */}
+                    <div className="flex items-center justify-end gap-2 w-24">
+                      {pattern.longSize > 0 && (
+                        <>
+                          <div className="text-right">
+                            <div className="text-xs font-mono font-semibold text-green-600 dark:text-green-400">
+                              {pattern.longSize.toFixed(1)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {pattern.longCount}x
+                            </div>
+                          </div>
+                          <div 
+                            className="rounded-full bg-green-500/20 border-2 border-green-500 flex-shrink-0"
+                            style={{ 
+                              width: `${longCircleSize}px`, 
+                              height: `${longCircleSize}px` 
+                            }}
+                            title={`${pattern.longCount} long orders, ${pattern.longSize.toFixed(1)} BTC`}
+                          />
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Short Side - Order Book Style */}
+                    <div className="flex items-center gap-2 w-24">
+                      {pattern.shortSize > 0 && (
+                        <>
+                          <div 
+                            className="rounded-full bg-red-500/20 border-2 border-red-500 flex-shrink-0"
+                            style={{ 
+                              width: `${shortCircleSize}px`, 
+                              height: `${shortCircleSize}px` 
+                            }}
+                            title={`${pattern.shortCount} short orders, ${pattern.shortSize.toFixed(1)} BTC`}
+                          />
+                          <div className="text-left">
+                            <div className="text-xs font-mono font-semibold text-red-600 dark:text-red-400">
+                              {pattern.shortSize.toFixed(1)}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {pattern.shortCount}x
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                </div>
                 );
               })}
             </div>
