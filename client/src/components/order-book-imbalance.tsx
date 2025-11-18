@@ -34,31 +34,36 @@ export function OrderBookImbalance({ orders, currentPrice }: OrderBookImbalanceP
     }
 
     // Determine pressure level
+    // Imbalance thresholds:
+    // ±50% = 75/25 split or more extreme (STRONG)
+    // ±30% = 65/35 split (MODERATE)
+    // ±15% = 57.5/42.5 split (SLIGHT)
+    // <±15% = relatively balanced
     let pressureLevel: string;
     let pressureColor: string;
     let pressureDescription: string;
 
-    if (imbalanceRatio >= 30) {
+    if (imbalanceRatio >= 50) {
       pressureLevel = 'STRONG BUY';
       pressureColor = 'bg-green-600 text-white';
       pressureDescription = 'Heavy buying pressure from whales';
-    } else if (imbalanceRatio >= 15) {
+    } else if (imbalanceRatio >= 30) {
       pressureLevel = 'MODERATE BUY';
       pressureColor = 'bg-green-500 text-white';
       pressureDescription = 'More buyers than sellers';
-    } else if (imbalanceRatio >= 5) {
+    } else if (imbalanceRatio >= 15) {
       pressureLevel = 'SLIGHT BUY';
       pressureColor = 'bg-green-400 text-black';
       pressureDescription = 'Slightly more buying interest';
-    } else if (imbalanceRatio > -5) {
+    } else if (imbalanceRatio > -15) {
       pressureLevel = 'BALANCED';
       pressureColor = 'bg-muted';
       pressureDescription = 'Equal buying and selling pressure';
-    } else if (imbalanceRatio > -15) {
+    } else if (imbalanceRatio > -30) {
       pressureLevel = 'SLIGHT SELL';
       pressureColor = 'bg-red-400 text-black';
       pressureDescription = 'Slightly more selling interest';
-    } else if (imbalanceRatio > -30) {
+    } else if (imbalanceRatio > -50) {
       pressureLevel = 'MODERATE SELL';
       pressureColor = 'bg-red-500 text-white';
       pressureDescription = 'More sellers than buyers';
