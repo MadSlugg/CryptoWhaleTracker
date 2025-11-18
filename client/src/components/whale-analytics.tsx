@@ -188,6 +188,9 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
             <Activity className="h-4 w-4 text-primary" data-testid="icon-flow" />
             Order Flow
           </CardTitle>
+          <p className="text-xs text-muted-foreground mt-2">
+            Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -239,6 +242,9 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
             <Target className="h-4 w-4 text-primary" data-testid="icon-patterns" />
             Price Clusters
           </CardTitle>
+          <p className="text-xs text-muted-foreground mt-2">
+            Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones.
+          </p>
         </CardHeader>
         <CardContent>
           {patterns.length === 0 ? (
@@ -290,6 +296,9 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
             <Layers className="h-4 w-4 text-primary" data-testid="icon-accumulation" />
             Accumulation Zones
           </CardTitle>
+          <p className="text-xs text-muted-foreground mt-2">
+            Price levels with repeated whale activity. Shows where large traders are building or defending positions.
+          </p>
         </CardHeader>
         <CardContent>
           {accumulation.length === 0 ? (

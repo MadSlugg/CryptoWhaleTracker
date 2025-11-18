@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 **Key Features**:
 - Real-time whale order feed with WebSocket updates
 - Multi-exchange whale order tracking from Binance, Kraken, Coinbase, and OKX ($450k+ positions)
-- Filterable dashboard (by size, order type, exchange, time range, and status)
+- Filterable dashboard (by size, order type, exchange, time range, status, and price range)
 - Summary statistics (24h volume, active longs/shorts)
 - Real Bitcoin prices updated every 5 seconds
 - Exchange badges on each order showing source exchange
@@ -47,6 +47,24 @@ Preferred communication style: Simple, everyday language.
   - 100+ BTC orders: "Large Whale Alert" (default variant, 7s duration)
   - Alerts trigger both when orders are placed (NEW ORDER) and when they execute (FILLED)
   - Shows order size, type (LONG/SHORT), price, and exchange
+- **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
+  - **Price Range Filter**: Search orders by specific Bitcoin price ranges (min/max price inputs)
+  - **Order Flow Indicator**: Real-time buying vs selling pressure from whale orders with progress bars
+    - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
+    - Shows long/short percentages, volumes, and pressure level (balanced/moderate/strong)
+    - Handles neutral state when long and short volumes are equal
+  - **Price Clusters**: Multiple large orders concentrated at similar price levels
+    - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
+    - Groups orders within $1000 price ranges
+    - Shows top 5 clusters (3+ orders or 50+ BTC threshold)
+    - Displays long/short breakdown with counts and BTC amounts
+    - Badge indicates dominant type (LONG/SHORT/Balanced)
+  - **Accumulation Zones**: Price levels with repeated whale activity
+    - Description: "Price levels with repeated whale activity. Shows where large traders are building or defending positions."
+    - Detects repeated orders at $500 price ranges
+    - Shows top 5 zones (2+ orders required)
+    - Displays long/short breakdown with counts and BTC amounts
+    - Badge indicates dominant type (LONG/SHORT/Balanced)
 
 **Routing**: Wouter for client-side routing
 
@@ -79,7 +97,7 @@ Preferred communication style: Simple, everyday language.
   - Sweep runs every 10 seconds to detect filled orders
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, status, minPrice, and maxPrice
 - `GET /api/whale-movements` - Retrieve whale movement data
 - `GET /api/long-short-ratios` - Retrieve long/short ratio history
 - `GET /api/long-short-ratio/latest` - Get latest long/short ratio
