@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { BitcoinOrder, OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
-import { SummaryStats } from "@/components/summary-stats";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
@@ -101,9 +100,6 @@ export default function Dashboard() {
   // Orders are already filtered by the backend
   const filteredOrders = orders;
 
-  const longOrders = filteredOrders.filter(order => order.type === 'long');
-  const shortOrders = filteredOrders.filter(order => order.type === 'short');
-
   // Calculate current BTC price from time-range-only orders
   // Sort by timestamp to get newest order
   const sortedTimeRangeOrders = [...timeRangeOrders].sort(
@@ -186,10 +182,18 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="space-y-6">
-          {/* Summary Statistics */}
-          <SummaryStats
-            longCount={longOrders.length}
-            shortCount={shortOrders.length}
+          {/* Filters - Control what data you see */}
+          <FilterControls
+            minSize={minSize}
+            setMinSize={setMinSize}
+            orderType={orderType}
+            setOrderType={setOrderType}
+            exchange={exchange}
+            setExchange={setExchange}
+            timeRange={timeRange}
+            setTimeRange={setTimeRange}
+            status={status}
+            setStatus={setStatus}
           />
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
@@ -209,20 +213,6 @@ export default function Dashboard() {
               currentPrice={currentBtcPrice}
             />
           </div>
-
-          {/* Filters */}
-          <FilterControls
-            minSize={minSize}
-            setMinSize={setMinSize}
-            orderType={orderType}
-            setOrderType={setOrderType}
-            exchange={exchange}
-            setExchange={setExchange}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            status={status}
-            setStatus={setStatus}
-          />
 
           {/* Whale Analytics - Pattern detection, accumulation, and order flow */}
           <WhaleAnalytics 
