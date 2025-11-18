@@ -31,9 +31,17 @@ Preferred communication style: Simple, everyday language.
 - Real-time whale order feed with WebSocket updates
 - Multi-exchange whale order tracking from Binance, Kraken, Coinbase, and OKX ($450k+ positions)
 - Filterable dashboard (by size, order type, exchange, time range, and status)
-- Summary statistics (24h volume, active longs/shorts)
 - Real Bitcoin prices updated every 5 seconds
 - Exchange badges on each order showing source exchange
+- **Dashboard Layout**: Optimized information hierarchy with filters at top
+  - Header: BTC price, long/short counts, refresh controls
+  - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
+  - Major Whales Box: Top 10 largest orders (100+ BTC)
+  - Analytics: Order Book Imbalance, Entry Signals, Order Flow, Price Clusters
+  - Liquidation Tracker: Leveraged position liquidation zones
+  - Price Level Heatmap: Visual concentration map (50+ BTC orders)
+  - Depth Chart: Real-time order book visualization
+  - Active/Filled Orders: Real-time feeds (5 most recent each)
 - **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)
   - Independent data query - NOT affected by user's filter selections
   - Always shows authoritative view of 100+ BTC orders (both active and filled)
