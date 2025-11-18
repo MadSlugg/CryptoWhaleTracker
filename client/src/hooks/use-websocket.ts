@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { TrendingUp, AlertTriangle } from 'lucide-react';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const { toast } = useToast();
 
   useEffect(() => {
     const connect = () => {
@@ -21,6 +24,30 @@ export function useWebSocket() {
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            
+            // Handle large order alerts
+            if (data.type === 'new_order' && data.order) {
+              const order = data.order;
+              const orderSizeBTC = order.size;
+              
+              // Alert for 1000+ BTC orders
+              if (orderSizeBTC >= 1000) {
+                toast({
+                  title: "🐋 MEGA WHALE ALERT",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  variant: "destructive",
+                  duration: 10000,
+                });
+              }
+              // Alert for 100+ BTC orders
+              else if (orderSizeBTC >= 100) {
+                toast({
+                  title: "🐳 Large Whale Alert",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  duration: 7000,
+                });
+              }
+            }
             
             if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled') {
               // Invalidate all /api/orders queries regardless of filter parameters
