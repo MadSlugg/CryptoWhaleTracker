@@ -34,6 +34,14 @@ Preferred communication style: Simple, everyday language.
 - Summary statistics (24h volume, active longs/shorts)
 - Real Bitcoin prices updated every 5 seconds
 - Exchange badges on each order showing source exchange
+- **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)
+  - Independent data query - NOT affected by user's filter selections
+  - Always shows authoritative view of 100+ BTC orders (both active and filled)
+  - Displays both LONG and SHORT positions from all exchanges
+  - Only respects time range selection (24h, 7d, 30d, all)
+  - MEGA WHALE badge for 1000+ BTC orders
+  - Shows order size, type, price, exchange, and status
+  - Auto-updates every 10 seconds with real-time data
 - **Major Whale Alerts**: Real-time toast notifications for large orders:
   - 1000+ BTC orders: "MEGA WHALE ALERT" (red/destructive variant, 10s duration)
   - 100+ BTC orders: "Large Whale Alert" (default variant, 7s duration)
