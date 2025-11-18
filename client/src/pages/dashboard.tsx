@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { BitcoinOrder, OrderType, TimeRange } from "@shared/schema";
+import type { BitcoinOrder, OrderType, TimeRange, PositionStatus } from "@shared/schema";
 import { SummaryStats } from "@/components/summary-stats";
 import { HighRiskAlert } from "@/components/high-risk-alert";
 import { OrderFeed } from "@/components/order-feed";
@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [minLeverage, setMinLeverage] = useState<number>(1);
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
+  const [status, setStatus] = useState<PositionStatus>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Connect to WebSocket for real-time updates
@@ -24,12 +25,13 @@ export default function Dashboard() {
 
   // Fetch orders filtered by user's selections
   const { data: orders = [], isLoading, refetch } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', { minSize, minLeverage, orderType, timeRange }],
+    queryKey: ['/api/orders', { minSize, minLeverage, orderType, timeRange, status }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (minSize > 1) params.append('minSize', minSize.toString());
       if (minLeverage > 1) params.append('minLeverage', minLeverage.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
+      if (status !== 'all') params.append('status', status);
       params.append('timeRange', timeRange);
       
       const response = await fetch(`/api/orders?${params.toString()}`);
@@ -210,6 +212,8 @@ export default function Dashboard() {
             setOrderType={setOrderType}
             timeRange={timeRange}
             setTimeRange={setTimeRange}
+            status={status}
+            setStatus={setStatus}
           />
 
           {/* Order Feed */}

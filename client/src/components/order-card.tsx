@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LeverageIndicator } from "./leverage-indicator";
-import { TrendingUp, TrendingDown, Clock, DollarSign, Wallet, Copy, Check } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, DollarSign, Wallet, Copy, Check, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ interface OrderCardProps {
 
 export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
+  const isClosed = order.status === 'closed';
   const riskLevel = getLeverageRiskLevel(order.leverage);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
@@ -22,6 +23,10 @@ export function OrderCard({ order }: OrderCardProps) {
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
   });
+
+  const formattedCloseTime = order.closedAt ? formatDistanceToNow(new Date(order.closedAt), {
+    addSuffix: true,
+  }) : null;
 
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 8)}...${address.slice(-6)}`;
@@ -73,6 +78,13 @@ export function OrderCard({ order }: OrderCardProps) {
                 >
                   {isLong ? 'LONG' : 'SHORT'}
                 </Badge>
+                <Badge 
+                  variant={isClosed ? "secondary" : "outline"}
+                  className="text-xs"
+                  data-testid={`badge-status-${order.id}`}
+                >
+                  {isClosed ? 'CLOSED' : 'OPEN'}
+                </Badge>
                 <span 
                   className="text-lg font-mono font-semibold"
                   data-testid={`text-size-${order.id}`}
@@ -87,12 +99,30 @@ export function OrderCard({ order }: OrderCardProps) {
                   <span className="font-mono" data-testid={`text-price-${order.id}`}>
                     ${order.price.toLocaleString()}
                   </span>
+                  {isClosed && order.closePrice && (
+                    <>
+                      <ArrowRight className="h-3 w-3" />
+                      <span className="font-mono" data-testid={`text-close-price-${order.id}`}>
+                        ${order.closePrice.toLocaleString()}
+                      </span>
+                    </>
+                  )}
                 </div>
                 
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span data-testid={`text-time-${order.id}`}>{formattedTime}</span>
+                  <span data-testid={`text-time-${order.id}`}>{isClosed && formattedCloseTime ? `Closed ${formattedCloseTime}` : `Opened ${formattedTime}`}</span>
                 </div>
+
+                {isClosed && order.profitLoss !== undefined && (
+                  <Badge 
+                    variant={order.profitLoss >= 0 ? "default" : "destructive"}
+                    className="font-mono text-xs"
+                    data-testid={`badge-profit-loss-${order.id}`}
+                  >
+                    {order.profitLoss >= 0 ? '+' : ''}{order.profitLoss.toFixed(2)}%
+                  </Badge>
+                )}
               </div>
               
               <div className="flex items-center gap-1 mt-1">

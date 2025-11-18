@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import type { OrderType, TimeRange } from "@shared/schema";
+import type { OrderType, TimeRange, PositionStatus } from "@shared/schema";
 
 interface FilterControlsProps {
   minSize: number;
@@ -12,6 +12,8 @@ interface FilterControlsProps {
   setOrderType: (value: OrderType) => void;
   timeRange: TimeRange;
   setTimeRange: (value: TimeRange) => void;
+  status: PositionStatus;
+  setStatus: (value: PositionStatus) => void;
 }
 
 export function FilterControls({
@@ -23,6 +25,8 @@ export function FilterControls({
   setOrderType,
   timeRange,
   setTimeRange,
+  status,
+  setStatus,
 }: FilterControlsProps) {
   return (
     <Card data-testid="card-filters">
@@ -30,7 +34,7 @@ export function FilterControls({
         <CardTitle className="text-lg font-semibold">Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-2">
             <Label htmlFor="min-size" className="text-sm font-medium">
               Minimum Size
@@ -108,6 +112,25 @@ export function FilterControls({
                 <SelectItem value="4h">Last 4 Hours</SelectItem>
                 <SelectItem value="24h">Last 24 Hours</SelectItem>
                 <SelectItem value="7d">Last 7 Days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status" className="text-sm font-medium">
+              Status
+            </Label>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as PositionStatus)}
+            >
+              <SelectTrigger id="status" data-testid="select-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Positions</SelectItem>
+                <SelectItem value="open">Open Only</SelectItem>
+                <SelectItem value="closed">Closed Only</SelectItem>
               </SelectContent>
             </Select>
           </div>
