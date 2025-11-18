@@ -62,8 +62,6 @@ export default function Dashboard() {
 
   const longOrders = filteredOrders.filter(order => order.type === 'long');
   const shortOrders = filteredOrders.filter(order => order.type === 'short');
-  
-  const totalVolume = filteredOrders.reduce((sum, order) => sum + order.size, 0);
 
   // Calculate current BTC price from time-range-only orders
   // Sort by timestamp to get newest order
@@ -149,7 +147,6 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Summary Statistics */}
           <SummaryStats
-            totalVolume={totalVolume}
             longCount={longOrders.length}
             shortCount={shortOrders.length}
           />
