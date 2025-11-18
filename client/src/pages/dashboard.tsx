@@ -8,6 +8,8 @@ import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { WhaleAnalytics } from "@/components/whale-analytics";
 import { PriceHeatmap } from "@/components/price-heatmap";
+import { WhaleMomentum } from "@/components/whale-momentum";
+import { LiquidationTracker } from "@/components/liquidation-tracker";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -211,6 +213,12 @@ export default function Dashboard() {
             orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
+
+          {/* Whale Momentum & Liquidations - Two-column layout */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            <WhaleMomentum orders={timeRangeOrders} />
+            <LiquidationTracker />
+          </div>
 
           {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 

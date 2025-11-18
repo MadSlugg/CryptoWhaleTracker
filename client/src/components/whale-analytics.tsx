@@ -77,7 +77,7 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
       }
     });
     
-    return significantClusters.sort((a, b) => b.totalSize - a.totalSize).slice(0, 5);
+    return significantClusters.sort((a, b) => b.totalSize - a.totalSize).slice(0, 10);
   };
   
   // 2. Order Flow Indicator - Buying vs selling pressure
@@ -190,7 +190,7 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
               No significant clusters detected
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {patterns.map((pattern, idx) => {
                 const priceRange = 1000; // Same as detection logic
                 const minPrice = pattern.price - priceRange / 2;

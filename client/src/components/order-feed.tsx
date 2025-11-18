@@ -48,17 +48,20 @@ export function OrderFeed({ orders, isLoading, title = "Recent Orders" }: OrderF
     );
   }
 
+  // Limit to first 5 orders to keep page compact
+  const displayOrders = orders.slice(0, 5);
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        <span className="text-sm text-muted-foreground" data-testid="text-order-count">
-          {orders.length} order{orders.length !== 1 ? 's' : ''}
+        <h2 className="text-base font-semibold">{title}</h2>
+        <span className="text-xs text-muted-foreground" data-testid="text-order-count">
+          Showing {displayOrders.length} of {orders.length}
         </span>
       </div>
       
-      <div className="space-y-3">
-        {orders.map((order) => (
+      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+        {displayOrders.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}
       </div>
