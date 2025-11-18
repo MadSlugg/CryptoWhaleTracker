@@ -10,6 +10,7 @@ import { WhaleAnalytics } from "@/components/whale-analytics";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { EntrySignals } from "@/components/entry-signals";
+import { LiquidationTracker } from "@/components/liquidation-tracker";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -225,6 +226,12 @@ export default function Dashboard() {
 
           {/* Whale Analytics - Pattern detection, accumulation, and order flow */}
           <WhaleAnalytics 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
+          />
+
+          {/* Liquidation Tracker - Shows where leveraged positions will be liquidated */}
+          <LiquidationTracker 
             orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />

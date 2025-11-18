@@ -91,6 +91,13 @@ Preferred communication style: Simple, everyday language.
   - Intensity bar at bottom of each level
   - Scrollable with max height for performance
   - Summary stats: total orders, total volume, number of price levels
+- **Liquidation Tracker**: Shows where leveraged positions will be forcefully closed
+  - Description: "Shows where leveraged positions will be forcefully closed. When price reaches these levels, liquidations trigger automatic buying or selling that can accelerate price movement."
+  - Analyzes whale orders to estimate liquidation levels (assuming 10x leverage)
+  - Shows up to 8 most relevant clusters within ±30% of current price
+  - Color-coded impact explanations for each cluster
+  - Cascade risk indicators (HIGH/MEDIUM/LOW)
+  - Educational guidance on using liquidation data
 
 **Routing**: Wouter for client-side routing
 
@@ -109,8 +116,25 @@ Preferred communication style: Simple, everyday language.
 
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
 
-**Removed Features**:
-- Liquidation tracking and monitoring has been retired from the application
+**Liquidation Tracker**: Displays liquidation clusters where leveraged positions will be forcefully closed
+- Simulates liquidation levels based on whale orders (estimates 10x leverage liquidation points)
+- Long liquidation clusters: ~10% below whale long positions (triggers selling pressure when price drops)
+- Short liquidation clusters: ~10% above whale short positions (triggers buying pressure when price rises)
+- Shows up to 8 most relevant clusters within ±30% of current price
+- Each cluster displays:
+  - Price level and distance from current price
+  - Liquidation type (LONG LIQ or SHORT LIQ)
+  - Cascade risk (HIGH/MEDIUM/LOW) based on volume
+  - Impact explanation: what happens if price reaches this level
+  - BTC volume, position count, and USD notional value
+- Color-coded by impact:
+  - Red background: Long liquidations (selling pressure if price drops)
+  - Green background: Short liquidations (buying pressure if price rises)
+- Educational footer explaining how to use liquidation clusters:
+  - Avoid getting liquidated
+  - Anticipate cascade events
+  - Trade bounces after large liquidations
+  - Follow smart money hunting liquidations
 
 **Multi-Exchange Integration**: Real-time Bitcoin whale tracking from multiple exchanges:
 - **Binance**: Real Bitcoin prices fetched from ticker API every 5 seconds, order book polling every ~10 seconds
