@@ -8,6 +8,7 @@ export const bitcoinOrderSchema = z.object({
   leverage: z.number().min(1).max(100),
   timestamp: z.string(),
   liquidationPrice: z.number().positive().optional(),
+  walletAddress: z.string(),
 });
 
 export const insertBitcoinOrderSchema = bitcoinOrderSchema.omit({ id: true });
