@@ -55,7 +55,7 @@ class OrderGenerator {
   }
 
   private async generateOrder(broadcast = true) {
-    const btcPrice = 43000 + Math.random() * 2000; // Base price around $43k-$45k
+    const btcPrice = 91000 + Math.random() * 5000; // Base price around $91k-$96k (current realistic range)
     
     const type = Math.random() > 0.5 ? 'long' : 'short';
     
@@ -87,8 +87,8 @@ class OrderGenerator {
       leverage = 50 + Math.random() * 50; // 50-100x (extremely risky)
     }
 
-    // Add some price variation
-    const priceVariation = (Math.random() - 0.5) * 200;
+    // Add some price variation (proportional to current BTC price)
+    const priceVariation = (Math.random() - 0.5) * 500;
     const price = btcPrice + priceVariation;
 
     const order: InsertBitcoinOrder = {

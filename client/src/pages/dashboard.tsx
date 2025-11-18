@@ -6,9 +6,11 @@ import { HighRiskAlert } from "@/components/high-risk-alert";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SiBitcoin } from "react-icons/si";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const [minSize, setMinSize] = useState<number>(1);
@@ -20,6 +22,7 @@ export default function Dashboard() {
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
+  // Fetch orders filtered by user's selections
   const { data: orders = [], isLoading, refetch } = useQuery<BitcoinOrder[]>({
     queryKey: ['/api/orders', { minSize, minLeverage, orderType, timeRange }],
     queryFn: async () => {
@@ -28,6 +31,22 @@ export default function Dashboard() {
       if (minLeverage > 1) params.append('minLeverage', minLeverage.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       params.append('timeRange', timeRange);
+      
+      const response = await fetch(`/api/orders?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      return response.json();
+    },
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
+
+  // Fetch time-range-only orders for accurate price calculation (separate cache key)
+  const { data: timeRangeOrders = [] } = useQuery<BitcoinOrder[]>({
+    queryKey: ['price-calculation-orders', timeRange],
+    queryFn: async () => {
+      // Fetch with ONLY timeRange filter (no size/leverage/type filters)
+      const params = new URLSearchParams();
+      params.append('timeRange', timeRange);
+      // Don't send minSize/minLeverage/orderType - backend defaults will not filter these
       
       const response = await fetch(`/api/orders?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
@@ -48,9 +67,36 @@ export default function Dashboard() {
     ? filteredOrders.reduce((sum, order) => sum + order.leverage, 0) / filteredOrders.length
     : 0;
 
+  // Calculate current BTC price and price change from time-range-only orders
+  // Sort by timestamp to get newest and oldest orders
+  const sortedTimeRangeOrders = [...timeRangeOrders].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  
+  // Current price: most recent order in the time range
+  const newestOrder = sortedTimeRangeOrders[0];
+  const currentBtcPrice = newestOrder ? newestOrder.price : 93000;
+
+  // Price change: compare most recent to oldest in time range
+  const oldestOrder = sortedTimeRangeOrders[sortedTimeRangeOrders.length - 1];
+  const priceChange = newestOrder && oldestOrder && sortedTimeRangeOrders.length >= 2
+    ? ((newestOrder.price - oldestOrder.price) / oldestOrder.price) * 100
+    : 0;
+  
+  // Get time range label for display
+  const timeRangeLabels: Record<TimeRange, string> = {
+    '1h': '1h',
+    '4h': '4h',
+    '24h': '24h',
+    '7d': '7d'
+  };
+
   const handleRefresh = async () => {
     await refetch();
   };
+
+  // Format current date
+  const currentDate = format(new Date(), 'EEEE, MMMM d, yyyy');
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,16 +104,58 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
-                Bitcoin Whale Tracker
-              </h1>
-              <div className="flex items-center gap-2">
-                <div 
-                  className="h-2 w-2 rounded-full bg-primary animate-pulse" 
-                  data-testid="indicator-live-status"
-                />
-                <span className="text-sm text-muted-foreground">Live</span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
+                  Bitcoin Whale Tracker
+                </h1>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="h-2 w-2 rounded-full bg-primary animate-pulse" 
+                    data-testid="indicator-live-status"
+                  />
+                  <span className="text-sm text-muted-foreground">Live</span>
+                </div>
+              </div>
+              
+              {/* Date Display */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border">
+                <Calendar className="h-4 w-4 text-muted-foreground" data-testid="icon-calendar" />
+                <span className="text-sm font-medium" data-testid="text-current-date">
+                  {currentDate}
+                </span>
+              </div>
+              
+              {/* BTC Price Display */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border">
+                <SiBitcoin className="h-5 w-5 text-orange-500" data-testid="icon-bitcoin" />
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-mono font-bold" data-testid="text-btc-price">
+                    ${currentBtcPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  {priceChange !== 0 && (
+                    <Badge 
+                      variant={priceChange > 0 ? "outline" : "destructive"}
+                      className={`text-xs font-mono ${
+                        priceChange > 0 
+                          ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' 
+                          : ''
+                      }`}
+                      data-testid="badge-price-change"
+                    >
+                      <div className="flex items-center gap-1">
+                        {priceChange > 0 ? (
+                          <TrendingUp className="h-3 w-3" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3" />
+                        )}
+                        <span>
+                          {priceChange > 0 ? '+' : ''}{priceChange.toFixed(2)}% {timeRangeLabels[timeRange]}
+                        </span>
+                      </div>
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
             
