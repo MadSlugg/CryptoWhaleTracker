@@ -6,7 +6,7 @@ import type { InsertBitcoinOrder, BitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 import { krakenService, coinbaseService, okxService } from "./exchange-services";
-import { whaleCorrelationService } from "./whale-correlation-service";
+// import { whaleCorrelationService } from "./whale-correlation-service";
 
 // Real whale order tracker from multiple exchanges
 class OrderGenerator {
@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   orderGenerator.start(wss);
   
   // Start whale correlation tracking service
-  whaleCorrelationService.start();
+  // whaleCorrelationService.start();
 
   return httpServer;
 }

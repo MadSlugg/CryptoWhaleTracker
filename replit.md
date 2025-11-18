@@ -36,9 +36,10 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard Layout**: Optimized information hierarchy with filters at top
   - Header: BTC price, long/short counts, refresh controls
   - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
+  - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - Major Whales Box: Top 10 largest orders (100+ BTC)
-  - Analytics: Order Book Imbalance, Entry Signals, Order Flow, Price Clusters
-  - Price Level Heatmap: Visual concentration map (50+ BTC orders)
+  - Analytics: Order Book Imbalance, Entry Signals, Order Flow, Price Clusters (all volume-weighted)
+  - Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
 - **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)
@@ -54,10 +55,15 @@ Preferred communication style: Simple, everyday language.
   - 100+ BTC orders: "Large Whale Alert - ACTIVE" or "Large Whale - FILLED" (default variant, 7s duration)
   - Alerts trigger both when orders are placed (ACTIVE status) and when they execute (FILLED status)
   - Shows order size, type (LONG/SHORT), price, exchange, and status (ACTIVE/FILLED)
+- **Summary Statistics**: Volume-weighted long vs short analysis
+  - Shows long/short percentages weighted by actual BTC volume (not order count)
+  - Displays total BTC volume for each side
+  - Philosophy: "Not every trade is equal" - bigger trades have proper weight
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
   - **Order Flow Indicator**: Real-time buying vs selling pressure from whale orders with progress bars
     - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
-    - Shows long/short percentages, volumes, and pressure level (balanced/moderate/strong)
+    - Shows long/short percentages weighted by BTC volume
+    - Displays volumes and pressure level (balanced/moderate/strong)
     - Handles neutral state when long and short volumes are equal
   - **Price Clusters**: Multiple large orders concentrated at similar price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
