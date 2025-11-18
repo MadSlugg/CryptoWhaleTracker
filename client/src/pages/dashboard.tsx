@@ -5,6 +5,7 @@ import { SummaryStats } from "@/components/summary-stats";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
+import { MajorWhales } from "@/components/major-whales";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,24 @@ export default function Dashboard() {
       
       const response = await fetch(`/api/orders?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
+      return response.json();
+    },
+    refetchInterval: autoRefresh ? 10000 : false,
+  });
+
+  // Fetch major whale orders (100+ BTC) - independent of user filters
+  const { data: majorWhaleOrders = [] } = useQuery<BitcoinOrder[]>({
+    queryKey: ['major-whales', timeRange],
+    queryFn: async () => {
+      // Always fetch 100+ BTC orders regardless of user's filter settings
+      const params = new URLSearchParams();
+      params.append('minSize', '100');
+      params.append('timeRange', timeRange);
+      params.append('status', 'all'); // Show both active AND filled major whales
+      // No orderType or exchange filters - show ALL major whales
+      
+      const response = await fetch(`/api/orders?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch major whale orders');
       return response.json();
     },
     refetchInterval: autoRefresh ? 10000 : false,
@@ -151,6 +170,9 @@ export default function Dashboard() {
             longCount={longOrders.length}
             shortCount={shortOrders.length}
           />
+
+          {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
+          <MajorWhales orders={majorWhaleOrders} />
 
           {/* Filters */}
           <FilterControls
