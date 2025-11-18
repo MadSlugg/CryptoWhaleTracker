@@ -57,12 +57,11 @@ Preferred communication style: Simple, everyday language.
 - Real whale orders from Binance order book (large buy/sell orders)
 - Simulated orders generated every ~12.5 seconds for additional activity
 - Size distribution favoring smaller orders with occasional whale trades
-- Leverage between 1x-50x
+- Leverage between 1x-50x (simulated, as order book doesn't expose leverage)
 - Automatic liquidation price calculation
 - Batch initial data generation (15 orders) on startup
 - Automatic position closing mechanism that randomly closes open positions every 5-15 seconds
 - Profit/loss calculation based on entry/exit price and leverage
-- Wallet address tracking using native SegWit (bc1...) format for identifying whale movements
 
 **API Endpoints**:
 - `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, minLeverage, orderType, and timeRange
