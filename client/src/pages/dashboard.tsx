@@ -7,6 +7,7 @@ import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { WhaleAnalytics } from "@/components/whale-analytics";
+import { PriceHeatmap } from "@/components/price-heatmap";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -216,6 +217,12 @@ export default function Dashboard() {
 
           {/* Whale Analytics - Pattern detection, accumulation, and order flow */}
           <WhaleAnalytics 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
+          />
+
+          {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
+          <PriceHeatmap 
             orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
