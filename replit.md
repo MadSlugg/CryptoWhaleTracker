@@ -2,7 +2,7 @@
 
 ## Overview
 
-A real-time Bitcoin trading dashboard that monitors and displays large cryptocurrency orders with leverage analysis. The application simulates whale trading activity, tracking long and short positions with detailed risk assessment based on leverage levels. Built as a data-dense, utility-focused dashboard inspired by professional trading platforms like Binance and TradingView.
+A real-time Bitcoin trading dashboard that monitors and displays large cryptocurrency orders from Binance. The application tracks real whale trading activity (large buy/sell orders from Binance order book) and displays long and short positions. Built as a data-dense, utility-focused dashboard inspired by professional trading platforms like Binance and TradingView.
 
 ## User Preferences
 
@@ -18,7 +18,7 @@ Preferred communication style: Simple, everyday language.
 
 **Design Philosophy**: 
 - Utility-focused trading dashboard with emphasis on information density and real-time data clarity
-- High-contrast risk indicators for instant visual recognition
+- High-contrast position type indicators (long/short) for instant visual recognition
 - Minimal animations to maintain focus on critical trading data
 - Typography uses Inter for general text and JetBrains Mono for numerical data (prices, amounts, timestamps)
 
@@ -31,10 +31,8 @@ Preferred communication style: Simple, everyday language.
 - Real-time order feed with WebSocket updates
 - Complete position lifecycle tracking (open and closed positions)
 - Profit/loss calculation for closed positions with color-coded indicators
-- Filterable dashboard (by size, leverage, order type, time range, and status)
-- Summary statistics (24h volume, active longs/shorts, average leverage)
-- High-risk alerts for positions with 25x+ leverage
-- Risk level categorization (minimal, moderate, high, extreme)
+- Filterable dashboard (by size, order type, time range, and status)
+- Summary statistics (24h volume, active longs/shorts)
 
 **Routing**: Wouter for client-side routing
 
@@ -57,14 +55,17 @@ Preferred communication style: Simple, everyday language.
 - Real whale orders from Binance order book (large buy/sell orders)
 - Simulated orders generated every ~12.5 seconds for additional activity
 - Size distribution favoring smaller orders with occasional whale trades
-- Leverage between 1x-50x (simulated, as order book doesn't expose leverage)
-- Automatic liquidation price calculation
 - Batch initial data generation (15 orders) on startup
 - Automatic position closing mechanism that randomly closes open positions every 5-15 seconds
-- Profit/loss calculation based on entry/exit price and leverage
+- Profit/loss calculation based on entry/exit price percentage change
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, minLeverage, orderType, and timeRange
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, timeRange, and status
+- `GET /api/whale-movements` - Retrieve whale movement data
+- `GET /api/long-short-ratios` - Retrieve long/short ratio history
+- `GET /api/long-short-ratio/latest` - Get latest long/short ratio
+- `GET /api/liquidations` - Retrieve liquidation events
+- `GET /api/whale-correlations` - Retrieve whale correlation analysis
 
 **Data Cleanup**: Automated hourly cleanup removing orders older than 24 hours
 
