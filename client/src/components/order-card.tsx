@@ -11,17 +11,12 @@ interface OrderCardProps {
 export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
   const isFilled = order.status === 'filled';
-  const isDisappeared = order.status === 'disappeared';
   
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
   });
 
   const formattedFillTime = order.filledAt ? formatDistanceToNow(new Date(order.filledAt), {
-    addSuffix: true,
-  }) : null;
-
-  const formattedDisappearedTime = order.disappearedAt ? formatDistanceToNow(new Date(order.disappearedAt), {
     addSuffix: true,
   }) : null;
 
@@ -65,7 +60,7 @@ export function OrderCard({ order }: OrderCardProps) {
                   className="text-xs"
                   data-testid={`badge-status-${order.id}`}
                 >
-                  {isFilled ? 'FILLED' : isDisappeared ? 'DISAPPEARED' : 'ACTIVE'}
+                  {isFilled ? 'FILLED' : 'ACTIVE'}
                 </Badge>
                 <span 
                   className="text-lg font-mono font-semibold"
@@ -93,9 +88,7 @@ export function OrderCard({ order }: OrderCardProps) {
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span data-testid={`text-time-${order.id}`}>
-                    {isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : 
-                     isDisappeared && formattedDisappearedTime ? `Disappeared ${formattedDisappearedTime}` : 
-                     `Opened ${formattedTime}`}
+                    {isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : `Opened ${formattedTime}`}
                   </span>
                 </div>
               </div>
