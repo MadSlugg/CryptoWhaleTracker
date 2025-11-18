@@ -81,11 +81,26 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // Crypto trading specific colors
+        long: {
+          DEFAULT: "hsl(142 76% 36%)",
+          light: "hsl(142 50% 50%)",
+          foreground: "hsl(0 0% 98%)",
+        },
+        short: {
+          DEFAULT: "hsl(0 84% 45%)",
+          light: "hsl(0 72% 55%)",
+          foreground: "hsl(0 0% 98%)",
+        },
+        "leverage-minimal": "hsl(142 50% 50%)",
+        "leverage-moderate": "hsl(43 96% 56%)",
+        "leverage-high": "hsl(27 96% 61%)",
+        "leverage-extreme": "hsl(0 84% 60%)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ["var(--font-serif)"],
-        mono: ["var(--font-mono)"],
+        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
       },
       keyframes: {
         "accordion-down": {
@@ -96,10 +111,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },
