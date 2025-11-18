@@ -12,7 +12,7 @@ export interface OrderFilters {
   orderType?: 'long' | 'short' | 'all';
   exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
   timeRange?: '1h' | '4h' | '24h' | '7d';
-  status?: 'active' | 'filled' | 'disappeared' | 'all';
+  status?: 'active' | 'filled' | 'all';
   minPrice?: number;
   maxPrice?: number;
 }
@@ -23,7 +23,7 @@ export interface IStorage {
   getFilteredOrders(filters: OrderFilters): Promise<BitcoinOrder[]>;
   createOrder(order: InsertBitcoinOrder): Promise<BitcoinOrder>;
   getOrder(id: string): Promise<BitcoinOrder | undefined>;
-  updateOrderStatus(id: string, status: 'active' | 'filled' | 'disappeared', fillPrice?: number): Promise<BitcoinOrder | undefined>;
+  updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined>;
   getOpenOrders(): Promise<BitcoinOrder[]>;
   clearOldOrders(hoursAgo: number): Promise<string[]>;
   
@@ -130,7 +130,7 @@ export class MemStorage implements IStorage {
     return this.orders.get(id);
   }
 
-  async updateOrderStatus(id: string, status: 'active' | 'filled' | 'disappeared', fillPrice?: number): Promise<BitcoinOrder | undefined> {
+  async updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined> {
     const order = this.orders.get(id);
     if (!order) {
       return undefined;
@@ -142,9 +142,6 @@ export class MemStorage implements IStorage {
       ...(status === 'filled' && {
         filledAt: new Date().toISOString(),
         fillPrice: fillPrice || order.price,
-      }),
-      ...(status === 'disappeared' && {
-        disappearedAt: new Date().toISOString(),
       }),
     };
 
