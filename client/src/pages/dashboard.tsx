@@ -216,7 +216,7 @@ export default function Dashboard() {
 
           {/* Whale Momentum & Liquidations - Two-column layout */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            <WhaleMomentum orders={timeRangeOrders} />
+            <WhaleMomentum orders={timeRangeOrders} currentPrice={currentBtcPrice} />
             <LiquidationTracker />
           </div>
 
