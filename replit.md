@@ -62,6 +62,7 @@ Preferred communication style: Simple, everyday language.
     - Scrollable container with 500px max height
 - **Whale Momentum Indicator**: Tracks rate of new 10+ BTC whale orders and their price areas
   - Description: "Rate of new 10+ BTC whale orders entering the market and their price areas. High momentum indicates increased whale activity."
+  - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
   - **10+ BTC Filter**: Only tracks orders with size >= 10 BTC (not all orders)
   - Monitors 3 time windows: 5 minutes, 10 minutes, and 30 minutes
   - Displays order count, total BTC, and orders per minute for each window
@@ -84,6 +85,7 @@ Preferred communication style: Simple, everyday language.
   - Time range: last 1 hour
 - **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
+  - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
   - Groups orders into $2,000 price buckets
   - Color intensity based on total BTC volume (5 intensity levels: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%)
   - Green for long-dominant levels, red for short-dominant levels
