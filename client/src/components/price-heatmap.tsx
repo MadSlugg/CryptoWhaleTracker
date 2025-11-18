@@ -28,9 +28,14 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
-            Price Level Heatmap
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
+              <span className="text-base">Price Level Heatmap</span>
+            </div>
+            <Badge variant="secondary" className="text-xs">
+              50+ BTC
+            </Badge>
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-2">
             Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters.
@@ -129,9 +134,14 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
-          Price Level Heatmap
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
+            <span className="text-base">Price Level Heatmap</span>
+          </div>
+          <Badge variant="secondary" className="text-xs">
+            50+ BTC
+          </Badge>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
           Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters.
