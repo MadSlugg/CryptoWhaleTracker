@@ -60,6 +60,26 @@ Preferred communication style: Simple, everyday language.
     - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
     - Dominance threshold: >20% more volume than average
     - Scrollable container with 500px max height
+- **Order Book Imbalance**: Real-time supply/demand pressure indicator
+  - Description: "Real-time supply and demand pressure from active whale orders. Shows market depth imbalance."
+  - Shows bid (buy) vs ask (sell) liquidity
+  - Imbalance ratio from -100% (strong sell pressure) to +100% (strong buy pressure)
+  - Pressure level badges: STRONG BUY/SELL, MODERATE BUY/SELL, SLIGHT BUY/SELL, BALANCED
+  - Visual balance bar showing buy/sell pressure split
+  - Detailed metrics: BTC volume, USD notional value, order counts for both sides
+  - Total active liquidity display
+  - Respects user's filter selections for time range, type, exchange, and status
+- **Price Entry Signals**: Intelligent entry point identification based on whale positioning
+  - Analyzes active whale orders to find support/resistance levels
+  - Groups orders into $500 price buckets for precise analysis
+  - **LONG signals**: Strong buy support below current price (potential entry for long positions)
+  - **SHORT signals**: Strong sell resistance above current price (potential entry for short positions)
+  - Strength levels: STRONG (>50 BTC), MODERATE (>20 BTC), WEAK (<20 BTC)
+  - Identifies trapped traders (recently filled counter-positions) indicating potential squeezes/dumps
+  - Only shows entries within ±15% of current price (realistic entry range)
+  - Displays top 5 signals sorted by strength and whale volume
+  - Shows detailed reasoning for each signal with whale volume and order counts
+  - Uses side-specific counts (only long orders for long signals, only short orders for short signals)
 - **Whale Momentum Indicator**: Tracks rate of new 10+ BTC whale orders and their price areas
   - Description: "Rate of new 10+ BTC whale orders entering the market and their price areas. High momentum indicates increased whale activity."
   - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
