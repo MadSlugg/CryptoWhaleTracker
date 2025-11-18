@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
-  const [status, setStatus] = useState<PositionStatus>('active');
+  const [status, setStatus] = useState<PositionStatus>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Connect to WebSocket for real-time updates
