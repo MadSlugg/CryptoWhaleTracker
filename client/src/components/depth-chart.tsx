@@ -22,7 +22,7 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
 
-    const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+    const margin = { top: 20, right: 20, bottom: 70, left: 60 };
     // Use container width or fallback to a minimum width
     const containerWidth = containerRef.current.clientWidth || 800;
     const width = Math.max(containerWidth - margin.left - margin.right, 400);
@@ -70,10 +70,10 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
         .attr("font-family", "var(--font-mono)")
         .text(`$${currentPrice.toLocaleString()}`);
 
-      // Add axes
+      // Add axes with detailed price labels
       const xAxis = d3.axisBottom(xScale)
-        .ticks(5)
-        .tickFormat(d => `$${(d as number / 1000).toFixed(0)}k`);
+        .ticks(6)
+        .tickFormat(d => `$${(d as number).toLocaleString()}`);
 
       const yAxis = d3.axisLeft(yScale)
         .ticks(5)
@@ -82,7 +82,11 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
       g.append("g")
         .attr("transform", `translate(0,${height})`)
         .call(xAxis)
-        .attr("color", "hsl(var(--muted-foreground))");
+        .attr("color", "hsl(var(--muted-foreground))")
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .style("text-anchor", "end")
+        .style("font-size", "10px");
 
       g.append("g")
         .call(yAxis)
@@ -263,10 +267,34 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
       .attr("font-family", "var(--font-mono)")
       .text(`$${currentPrice.toLocaleString()}`);
 
-    // Add axes
-    const xAxis = d3.axisBottom(xScale)
+    // Add grid lines for better readability
+    const xGrid = d3.axisBottom(xScale)
+      .ticks(8)
+      .tickSize(-height)
+      .tickFormat(() => '');
+
+    const yGrid = d3.axisLeft(yScale)
       .ticks(5)
-      .tickFormat(d => `$${(d as number / 1000).toFixed(0)}k`);
+      .tickSize(-width)
+      .tickFormat(() => '');
+
+    g.append("g")
+      .attr("class", "grid")
+      .attr("transform", `translate(0,${height})`)
+      .call(xGrid)
+      .attr("stroke", "hsl(var(--muted-foreground))")
+      .attr("stroke-opacity", 0.1);
+
+    g.append("g")
+      .attr("class", "grid")
+      .call(yGrid)
+      .attr("stroke", "hsl(var(--muted-foreground))")
+      .attr("stroke-opacity", 0.1);
+
+    // Add axes with more detailed price labels
+    const xAxis = d3.axisBottom(xScale)
+      .ticks(8)
+      .tickFormat(d => `$${(d as number).toLocaleString()}`);
 
     const yAxis = d3.axisLeft(yScale)
       .ticks(5)
@@ -275,7 +303,11 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
     g.append("g")
       .attr("transform", `translate(0,${height})`)
       .call(xAxis)
-      .attr("color", "hsl(var(--muted-foreground))");
+      .attr("color", "hsl(var(--muted-foreground))")
+      .selectAll("text")
+      .attr("transform", "rotate(-45)")
+      .style("text-anchor", "end")
+      .style("font-size", "10px");
 
     g.append("g")
       .call(yAxis)
