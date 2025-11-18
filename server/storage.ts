@@ -26,6 +26,7 @@ export interface IStorage {
   updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined>;
   deleteOrder(id: string): Promise<BitcoinOrder | undefined>;
   getOpenOrders(): Promise<BitcoinOrder[]>;
+  getActiveOrdersByExchange(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'): Promise<BitcoinOrder[]>;
   clearOldOrders(hoursAgo: number): Promise<string[]>;
   
   // Whale movements
@@ -162,6 +163,17 @@ export class MemStorage implements IStorage {
   async getOpenOrders(): Promise<BitcoinOrder[]> {
     const allOrders = await this.getOrders();
     return allOrders.filter(order => order.status === 'active');
+  }
+
+  async getActiveOrdersByExchange(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'): Promise<BitcoinOrder[]> {
+    // Efficient direct iteration without sorting - only returns active orders for specific exchange
+    const result: BitcoinOrder[] = [];
+    for (const order of this.orders.values()) {
+      if (order.status === 'active' && order.exchange === exchange) {
+        result.push(order);
+      }
+    }
+    return result;
   }
 
   async clearOldOrders(hoursAgo: number): Promise<string[]> {

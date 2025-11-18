@@ -143,7 +143,12 @@ Preferred communication style: Simple, everyday language.
     - Long orders filled when market price ≤ limit price
     - Short orders filled when market price ≥ limit price
     - Sweep runs every 10 seconds to detect filled orders
-- **Order Retention**: Orders are kept for 7 days before automatic cleanup (previously 24 hours)
+  - **Active → Deleted**: Orders deleted when they vanish from exchange order books
+    - During each exchange polling cycle (every 10-16 seconds), active orders are verified against fresh order book
+    - Orders that no longer exist in the order book are immediately deleted
+    - Could indicate cancellation by whale trader or fill that occurred between polling windows
+    - WebSocket broadcasts deletion event to frontend for real-time cache invalidation
+- **Order Retention**: Orders are kept for 7 days before automatic cleanup
 
 **API Endpoints**:
 - `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status (active/filled/all)

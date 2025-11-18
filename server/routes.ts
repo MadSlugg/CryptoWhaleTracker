@@ -150,11 +150,8 @@ class OrderGenerator {
 
   private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx', freshOrderBook: OrderBookEntry[]) {
     try {
-      // Get all existing active orders for this exchange
-      const allOrders = await storage.getOrders();
-      const activeOrdersForExchange = allOrders.filter(
-        order => order.exchange === exchange && order.status === 'active'
-      );
+      // Get only active orders for this specific exchange (efficient - no full scan or sort)
+      const activeOrdersForExchange = await storage.getActiveOrdersByExchange(exchange);
 
       // Check each active order to see if it still exists in the fresh order book
       for (const existingOrder of activeOrdersForExchange) {
