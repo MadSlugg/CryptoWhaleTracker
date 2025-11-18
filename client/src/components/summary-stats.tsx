@@ -4,12 +4,15 @@ import { Scale, TrendingUp, TrendingDown } from "lucide-react";
 interface SummaryStatsProps {
   longCount: number;
   shortCount: number;
+  longVolume: number;
+  shortVolume: number;
 }
 
-export function SummaryStats({ longCount, shortCount }: SummaryStatsProps) {
+export function SummaryStats({ longCount, shortCount, longVolume, shortVolume }: SummaryStatsProps) {
   const total = longCount + shortCount;
-  const longPercentage = total > 0 ? (longCount / total) * 100 : 0;
-  const shortPercentage = total > 0 ? (shortCount / total) * 100 : 0;
+  const totalVolume = longVolume + shortVolume;
+  const longPercentage = totalVolume > 0 ? (longVolume / totalVolume) * 100 : 0;
+  const shortPercentage = totalVolume > 0 ? (shortVolume / totalVolume) * 100 : 0;
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
@@ -31,7 +34,7 @@ export function SummaryStats({ longCount, shortCount }: SummaryStatsProps) {
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Based on current filters
+            By BTC volume ({totalVolume.toFixed(1)} BTC)
           </p>
         </CardContent>
       </Card>
@@ -48,7 +51,7 @@ export function SummaryStats({ longCount, shortCount }: SummaryStatsProps) {
             {longCount}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Long positions
+            {longVolume.toFixed(1)} BTC total
           </p>
         </CardContent>
       </Card>
@@ -65,7 +68,7 @@ export function SummaryStats({ longCount, shortCount }: SummaryStatsProps) {
             {shortCount}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Short positions
+            {shortVolume.toFixed(1)} BTC total
           </p>
         </CardContent>
       </Card>

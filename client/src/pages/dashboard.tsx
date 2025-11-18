@@ -200,6 +200,8 @@ export default function Dashboard() {
           <SummaryStats 
             longCount={filteredOrders.filter(o => o.type === 'long').length}
             shortCount={filteredOrders.filter(o => o.type === 'short').length}
+            longVolume={filteredOrders.filter(o => o.type === 'long').reduce((sum, o) => sum + o.size, 0)}
+            shortVolume={filteredOrders.filter(o => o.type === 'short').reduce((sum, o) => sum + o.size, 0)}
           />
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
