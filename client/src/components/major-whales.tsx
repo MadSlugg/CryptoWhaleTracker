@@ -83,7 +83,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
                   )}
                 </div>
 
-                {/* Price */}
+                {/* Price and Status */}
                 <div className="flex flex-col items-end ml-auto">
                   <span className="font-mono text-sm" data-testid={`text-price-${order.id}`}>
                     ${order.price.toLocaleString()}
@@ -92,11 +92,13 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
                     <Badge variant="outline" className="text-xs" data-testid={`badge-exchange-${order.id}`}>
                       {order.exchange.toUpperCase()}
                     </Badge>
-                    {order.status === 'filled' && (
-                      <Badge variant="secondary" className="text-xs">
-                        FILLED
-                      </Badge>
-                    )}
+                    <Badge 
+                      variant={order.status === 'filled' ? 'secondary' : 'default'} 
+                      className="text-xs"
+                      data-testid={`badge-status-${order.id}`}
+                    >
+                      {order.status.toUpperCase()}
+                    </Badge>
                   </div>
                 </div>
               </div>
