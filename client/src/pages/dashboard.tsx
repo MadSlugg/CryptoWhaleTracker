@@ -5,7 +5,7 @@ import { SummaryStats } from "@/components/summary-stats";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { RefreshCw, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SiBitcoin } from "react-icons/si";
@@ -65,8 +65,8 @@ export default function Dashboard() {
   
   const totalVolume = filteredOrders.reduce((sum, order) => sum + order.size, 0);
 
-  // Calculate current BTC price and price change from time-range-only orders
-  // Sort by timestamp to get newest and oldest orders
+  // Calculate current BTC price from time-range-only orders
+  // Sort by timestamp to get newest order
   const sortedTimeRangeOrders = [...timeRangeOrders].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
@@ -74,20 +74,6 @@ export default function Dashboard() {
   // Current price: most recent order in the time range
   const newestOrder = sortedTimeRangeOrders[0];
   const currentBtcPrice = newestOrder ? newestOrder.price : 93000;
-
-  // Price change: compare most recent to oldest in time range
-  const oldestOrder = sortedTimeRangeOrders[sortedTimeRangeOrders.length - 1];
-  const priceChange = newestOrder && oldestOrder && sortedTimeRangeOrders.length >= 2
-    ? ((newestOrder.price - oldestOrder.price) / oldestOrder.price) * 100
-    : 0;
-  
-  // Get time range label for display
-  const timeRangeLabels: Record<TimeRange, string> = {
-    '1h': '1h',
-    '4h': '4h',
-    '24h': '24h',
-    '7d': '7d'
-  };
 
   const handleRefresh = async () => {
     await refetch();
@@ -127,33 +113,9 @@ export default function Dashboard() {
               {/* BTC Price Display */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border">
                 <SiBitcoin className="h-5 w-5 text-orange-500" data-testid="icon-bitcoin" />
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-mono font-bold" data-testid="text-btc-price">
-                    ${currentBtcPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                  {priceChange !== 0 && (
-                    <Badge 
-                      variant={priceChange > 0 ? "outline" : "destructive"}
-                      className={`text-xs font-mono ${
-                        priceChange > 0 
-                          ? 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20' 
-                          : ''
-                      }`}
-                      data-testid="badge-price-change"
-                    >
-                      <div className="flex items-center gap-1">
-                        {priceChange > 0 ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
-                        )}
-                        <span>
-                          {priceChange > 0 ? '+' : ''}{priceChange.toFixed(2)}% {timeRangeLabels[timeRange]}
-                        </span>
-                      </div>
-                    </Badge>
-                  )}
-                </div>
+                <span className="text-lg font-mono font-bold" data-testid="text-btc-price">
+                  ${currentBtcPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
             
