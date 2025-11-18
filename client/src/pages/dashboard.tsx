@@ -22,8 +22,6 @@ export default function Dashboard() {
   const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [status, setStatus] = useState<PositionStatus>('all');
-  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
-  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { toast } = useToast();
 
@@ -33,15 +31,13 @@ export default function Dashboard() {
   // Fetch orders filtered by user's selections
   // Always include exchange in query key to prevent stale cache when switching
   const { data: orders = [], isLoading, refetch, error } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status, minPrice, maxPrice],
+    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (minSize > 1) params.append('minSize', minSize.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       if (exchange !== 'all') params.append('exchange', exchange);
       if (status !== 'all') params.append('status', status);
-      if (minPrice !== undefined) params.append('minPrice', minPrice.toString());
-      if (maxPrice !== undefined) params.append('maxPrice', maxPrice.toString());
       params.append('timeRange', timeRange);
       
       const response = await fetch(`/api/orders?${params.toString()}`);
@@ -52,7 +48,6 @@ export default function Dashboard() {
       return response.json();
     },
     refetchInterval: autoRefresh ? 10000 : false,
-    retry: false, // Don't retry on validation errors
   });
 
   // Show toast notification for errors (only once per error)
@@ -209,10 +204,6 @@ export default function Dashboard() {
             setTimeRange={setTimeRange}
             status={status}
             setStatus={setStatus}
-            minPrice={minPrice}
-            setMinPrice={setMinPrice}
-            maxPrice={maxPrice}
-            setMaxPrice={setMaxPrice}
           />
 
           {/* Whale Analytics - Pattern detection, accumulation, and order flow */}

@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 **Key Features**:
 - Real-time whale order feed with WebSocket updates
 - Multi-exchange whale order tracking from Binance, Kraken, Coinbase, and OKX ($450k+ positions)
-- Filterable dashboard (by size, order type, exchange, time range, status, and price range)
+- Filterable dashboard (by size, order type, exchange, time range, and status)
 - Summary statistics (24h volume, active longs/shorts)
 - Real Bitcoin prices updated every 5 seconds
 - Exchange badges on each order showing source exchange
@@ -48,7 +48,6 @@ Preferred communication style: Simple, everyday language.
   - Alerts trigger both when orders are placed (NEW ORDER) and when they execute (FILLED)
   - Shows order size, type (LONG/SHORT), price, and exchange
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
-  - **Price Range Filter**: Search orders by specific Bitcoin price ranges (min/max price inputs)
   - **Order Flow Indicator**: Real-time buying vs selling pressure from whale orders with progress bars
     - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
     - Shows long/short percentages, volumes, and pressure level (balanced/moderate/strong)
@@ -102,7 +101,7 @@ Preferred communication style: Simple, everyday language.
   - Sweep runs every 10 seconds to detect filled orders
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, status, minPrice, and maxPrice
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status
 - `GET /api/whale-movements` - Retrieve whale movement data
 - `GET /api/long-short-ratios` - Retrieve long/short ratio history
 - `GET /api/long-short-ratio/latest` - Get latest long/short ratio
