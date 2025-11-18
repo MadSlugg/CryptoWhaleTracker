@@ -60,12 +60,19 @@ Preferred communication style: Simple, everyday language.
     - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
     - Dominance threshold: >20% more volume than average
     - Scrollable container with 500px max height
-- **Whale Momentum Indicator**: Tracks rate of new whale orders entering the market
-  - Description: "Rate of new whale orders entering the market. High momentum indicates increased whale activity."
+- **Whale Momentum Indicator**: Tracks rate of new 10+ BTC whale orders and their price areas
+  - Description: "Rate of new 10+ BTC whale orders entering the market and their price areas. High momentum indicates increased whale activity."
+  - **10+ BTC Filter**: Only tracks orders with size >= 10 BTC (not all orders)
   - Monitors 3 time windows: 5 minutes, 10 minutes, and 30 minutes
   - Displays order count, total BTC, and orders per minute for each window
   - Shows momentum level badge (LOW/MODERATE/HIGH based on 5-min window rate)
   - Progress bars visualize relative activity across time windows
+  - **Active Price Areas**: Shows where 10+ BTC whales are placing orders (last 5 minutes)
+    - Groups orders into $2,000 price ranges
+    - Displays up to 5 most active price areas sorted by total BTC volume
+    - Shows long/short breakdown for each area (e.g., "3L • 2S")
+    - Highlights price area containing current Bitcoin price with "Current" badge
+    - Scrollable with 200px max height
   - Auto-updates with real-time order data
 - **Liquidation Tracker**: Real-time liquidation monitoring from Binance futures
   - Description: "Real-time liquidation events from Binance ($100k+ positions). High liquidations indicate forced position closures."
