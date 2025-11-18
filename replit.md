@@ -87,7 +87,7 @@ Preferred communication style: Simple, everyday language.
   - Groups orders into $500 price buckets for precise analysis
   - **LONG signals**: Strong buy support below current price (potential entry for long positions)
   - **SHORT signals**: Strong sell resistance above current price (potential entry for short positions)
-  - Strength levels: STRONG (>50 BTC), MODERATE (>20 BTC), WEAK (<20 BTC)
+  - Strength levels: STRONG (>150 BTC), MODERATE (>75 BTC), WEAK (<75 BTC)
   - Identifies trapped traders (recently filled counter-positions) indicating potential squeezes/dumps
   - Only shows entries within ±15% of current price (realistic entry range)
   - Displays top 5 signals sorted by strength and whale volume

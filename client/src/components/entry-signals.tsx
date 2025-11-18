@@ -70,10 +70,11 @@ export function EntrySignals({ orders, currentPrice }: EntrySignalsProps) {
             reasons.push(`Multiple whales (${longCount} orders) creating support`);
           }
           
-          if (longVolume > 50) {
-            reasons.push('Large whale accumulation zone');
+          if (longVolume > 150) {
+            reasons.push('Massive whale accumulation zone');
             strength = 'strong';
-          } else if (longVolume > 20) {
+          } else if (longVolume > 75) {
+            reasons.push('Large whale accumulation zone');
             strength = 'moderate';
           }
           
@@ -111,10 +112,11 @@ export function EntrySignals({ orders, currentPrice }: EntrySignalsProps) {
             reasons.push(`Multiple whales (${shortCount} orders) creating resistance`);
           }
           
-          if (shortVolume > 50) {
-            reasons.push('Large whale distribution zone');
+          if (shortVolume > 150) {
+            reasons.push('Massive whale distribution zone');
             strength = 'strong';
-          } else if (shortVolume > 20) {
+          } else if (shortVolume > 75) {
+            reasons.push('Large whale distribution zone');
             strength = 'moderate';
           }
           
