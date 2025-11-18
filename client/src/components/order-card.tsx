@@ -49,6 +49,13 @@ export function OrderCard({ order }: OrderCardProps) {
                   {isLong ? 'LONG' : 'SHORT'}
                 </Badge>
                 <Badge 
+                  variant="secondary"
+                  className="text-xs uppercase"
+                  data-testid={`badge-exchange-${order.id}`}
+                >
+                  {order.exchange}
+                </Badge>
+                <Badge 
                   variant={isClosed ? "secondary" : "outline"}
                   className="text-xs"
                   data-testid={`badge-status-${order.id}`}
@@ -61,8 +68,7 @@ export function OrderCard({ order }: OrderCardProps) {
                 >
                   {order.size.toFixed(2)} BTC
                 </span>
-              </div>
-              
+              </div>              
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />

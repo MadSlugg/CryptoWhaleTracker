@@ -103,20 +103,40 @@ export class BinanceService {
   /**
    * Parse order book and extract whale orders above notional threshold
    * @param minNotionalUSD Minimum USD value to be considered a whale order (default: $450k)
+   * @param referencePrice Current BTC price for validating order book entries (default: 90000)
    */
-  async getWhaleOrders(minNotionalUSD: number = 450000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const orderBook = await this.getOrderBook(100);
       const whaleOrders: OrderBookEntry[] = [];
       
-      // Process bids (buy orders)
+      // Validation helpers
+      const isValidPrice = (price: number): boolean => {
+        const deviation = Math.abs(price - referencePrice) / referencePrice;
+        return deviation <= 0.20; // 20% tolerance
+      };
+      
+      const isValidTotal = (total: number): boolean => {
+        return total >= 450000 && total <= 100000000; // $450k to $100M
+      };
+      
+      const isValidCalculation = (price: number, quantity: number, total: number): boolean => {
+        const expectedTotal = price * quantity;
+        const deviation = Math.abs(expectedTotal - total) / expectedTotal;
+        return deviation < 0.01; // 1% tolerance
+      };
+      
+      // Process bids (buy orders) - comprehensive validation
       for (const [priceStr, quantityStr] of orderBook.bids) {
         const price = parseFloat(priceStr);
         const quantity = parseFloat(quantityStr);
         const total = price * quantity;
         
-        // Filter by notional value (USD value of the order)
-        if (total >= minNotionalUSD) {
+        // Comprehensive validation: threshold, price range, total sanity, calculation accuracy
+        if (total >= minNotionalUSD && 
+            isValidPrice(price) && 
+            isValidTotal(total) && 
+            isValidCalculation(price, quantity, total)) {
           whaleOrders.push({
             price,
             quantity,
@@ -126,14 +146,17 @@ export class BinanceService {
         }
       }
       
-      // Process asks (sell orders)
+      // Process asks (sell orders) - comprehensive validation
       for (const [priceStr, quantityStr] of orderBook.asks) {
         const price = parseFloat(priceStr);
         const quantity = parseFloat(quantityStr);
         const total = price * quantity;
         
-        // Filter by notional value (USD value of the order)
-        if (total >= minNotionalUSD) {
+        // Comprehensive validation: threshold, price range, total sanity, calculation accuracy
+        if (total >= minNotionalUSD && 
+            isValidPrice(price) && 
+            isValidTotal(total) && 
+            isValidCalculation(price, quantity, total)) {
           whaleOrders.push({
             price,
             quantity,

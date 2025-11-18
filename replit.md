@@ -28,11 +28,12 @@ Preferred communication style: Simple, everyday language.
 - Local React state for UI filters and controls
 
 **Key Features**:
-- Real-time order feed with WebSocket updates
-- Complete position lifecycle tracking (open and closed positions)
-- Profit/loss calculation for closed positions with color-coded indicators
-- Filterable dashboard (by size, order type, time range, and status)
+- Real-time whale order feed with WebSocket updates
+- Multi-exchange whale order tracking from Binance, Kraken, Coinbase, and OKX ($450k+ positions)
+- Filterable dashboard (by size, order type, exchange, time range, and status)
 - Summary statistics (24h volume, active longs/shorts)
+- Real Bitcoin prices updated every 5 seconds
+- Exchange badges on each order showing source exchange
 
 **Routing**: Wouter for client-side routing
 
@@ -44,23 +45,24 @@ Preferred communication style: Simple, everyday language.
 
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
 
-**Binance Integration**: Real-time Bitcoin data integration with Binance API:
-- Real Bitcoin prices fetched from Binance ticker API every 5 seconds
-- Real whale orders extracted from Binance order book depth (orders with $450k+ notional value)
-- Order book polling every ~10 seconds to detect new large buy/sell orders
+**Multi-Exchange Integration**: Real-time Bitcoin whale tracking from multiple exchanges:
+- **Binance**: Real Bitcoin prices fetched from ticker API every 5 seconds, order book polling every ~10 seconds
+- **Kraken**: Order book polling every ~12 seconds using public Depth API (XXBTZUSD pair)
+- **Coinbase**: Order book polling every ~14 seconds using Exchange API (BTC-USD pair)
+- **OKX**: Order book polling every ~16 seconds using public market books API (BTC-USDT pair)
+- All exchanges use public endpoints requiring no authentication
+- Staggered polling intervals to distribute API load
 - Fallback to last known price with small drift if API temporarily unavailable
-- Uses data-api.binance.vision endpoint (market data-only) to avoid geo-restrictions
 
-**Order Generation**: Mixed data source combining real and simulated orders:
-- Real whale orders from Binance order book (large buy/sell orders)
-- Simulated orders generated every ~12.5 seconds for additional activity
-- Size distribution favoring smaller orders with occasional whale trades
-- Batch initial data generation (15 orders) on startup
-- Automatic position closing mechanism that randomly closes open positions every 5-15 seconds
-- Profit/loss calculation based on entry/exit price percentage change
+**Order Tracking**: Real-only data from exchange order books:
+- Real whale orders extracted from public order book depth (orders with $450k+ notional value)
+- Each order tagged with source exchange (binance, kraken, coinbase, okx)
+- Only displays orders that can be verified from exchanges' public order books
+- No simulated data - all displayed positions are real market orders
+- Exchange filter allows users to view orders from specific exchanges or all combined
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, timeRange, and status
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status
 - `GET /api/whale-movements` - Retrieve whale movement data
 - `GET /api/long-short-ratios` - Retrieve long/short ratio history
 - `GET /api/long-short-ratio/latest` - Get latest long/short ratio

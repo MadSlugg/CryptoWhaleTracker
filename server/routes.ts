@@ -5,14 +5,16 @@ import { storage } from "./storage";
 import type { InsertBitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
+import { krakenService, coinbaseService, okxService } from "./exchange-services";
 import { liquidationService } from "./liquidation-service";
 import { whaleCorrelationService } from "./whale-correlation-service";
 
-// Simulated order generator with real Binance data
+// Real whale order tracker from multiple exchanges
 class OrderGenerator {
-  private intervalId: NodeJS.Timeout | null = null;
-  private closeIntervalId: NodeJS.Timeout | null = null;
-  private whaleIntervalId: NodeJS.Timeout | null = null;
+  private binanceIntervalId: NodeJS.Timeout | null = null;
+  private krakenIntervalId: NodeJS.Timeout | null = null;
+  private coinbaseIntervalId: NodeJS.Timeout | null = null;
+  private okxIntervalId: NodeJS.Timeout | null = null;
   private wss: WebSocketServer | null = null;
   private seenOrderBookEntries: Set<string> = new Set();
   private currentBtcPrice: number = 93000; // Cache current price
@@ -22,29 +24,31 @@ class OrderGenerator {
     
     // Fetch initial Bitcoin price
     this.updateBitcoinPrice();
-    
-    // Generate initial orders
-    this.generateBatch(15);
-    
-    // Generate new simulated order every ~12.5 seconds (static interval)
-    this.intervalId = setInterval(() => {
-      this.generateOrder();
-    }, Math.random() * 5000 + 10000);
 
-    // Fetch real whale orders from Binance every ~10 seconds (static interval)
-    this.whaleIntervalId = setInterval(() => {
-      this.fetchRealWhaleOrders();
+    // Fetch whale orders from Binance every ~10 seconds
+    this.binanceIntervalId = setInterval(() => {
+      this.fetchWhaleOrders('binance');
     }, Math.random() * 4000 + 8000);
+
+    // Fetch whale orders from Kraken every ~12 seconds (stagger to avoid spikes)
+    this.krakenIntervalId = setInterval(() => {
+      this.fetchWhaleOrders('kraken');
+    }, Math.random() * 4000 + 10000);
+
+    // Fetch whale orders from Coinbase every ~14 seconds
+    this.coinbaseIntervalId = setInterval(() => {
+      this.fetchWhaleOrders('coinbase');
+    }, Math.random() * 4000 + 12000);
+
+    // Fetch whale orders from OKX every ~16 seconds
+    this.okxIntervalId = setInterval(() => {
+      this.fetchWhaleOrders('okx');
+    }, Math.random() * 4000 + 14000);
 
     // Update Bitcoin price every 5 seconds
     setInterval(() => {
       this.updateBitcoinPrice();
     }, 5000);
-
-    // Close random positions every 5-15 seconds
-    this.closeIntervalId = setInterval(() => {
-      this.closeRandomPosition();
-    }, Math.random() * 10000 + 5000);
 
     // Clean old orders every hour
     setInterval(() => {
@@ -53,36 +57,60 @@ class OrderGenerator {
   }
 
   stop() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-    }
-    if (this.closeIntervalId) {
-      clearInterval(this.closeIntervalId);
-      this.closeIntervalId = null;
-    }
-    if (this.whaleIntervalId) {
-      clearInterval(this.whaleIntervalId);
-      this.whaleIntervalId = null;
-    }
+    if (this.binanceIntervalId) clearInterval(this.binanceIntervalId);
+    if (this.krakenIntervalId) clearInterval(this.krakenIntervalId);
+    if (this.coinbaseIntervalId) clearInterval(this.coinbaseIntervalId);
+    if (this.okxIntervalId) clearInterval(this.okxIntervalId);
+    this.binanceIntervalId = null;
+    this.krakenIntervalId = null;
+    this.coinbaseIntervalId = null;
+    this.okxIntervalId = null;
   }
 
   private async updateBitcoinPrice() {
     try {
-      this.currentBtcPrice = await binanceService.getCurrentPrice();
+      const newPrice = await binanceService.getCurrentPrice();
+      // Only update if we got a valid price
+      if (typeof newPrice === 'number' && newPrice > 0 && !isNaN(newPrice)) {
+        this.currentBtcPrice = newPrice;
+      }
     } catch (error) {
       console.error('Failed to update Bitcoin price:', error);
+      // Keep using last known valid price
     }
   }
 
-  private async fetchRealWhaleOrders() {
+  private async fetchWhaleOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx') {
     try {
-      // Fetch orders with $450k+ notional value (approx 5 BTC at $90k)
-      const whaleOrders = await binanceService.getWhaleOrders(450000);
+      // Fetch orders with $450k+ notional value from the specified exchange
+      // Use current BTC price as reference to filter out stale/outlier prices
+      let whaleOrders: OrderBookEntry[] = [];
+      
+      // Validate currentBtcPrice is a valid number, fallback to default if not
+      const validReferencePrice = (typeof this.currentBtcPrice === 'number' && 
+                                   this.currentBtcPrice > 0 && 
+                                   !isNaN(this.currentBtcPrice)) 
+                                   ? this.currentBtcPrice 
+                                   : 90000;
+      
+      switch (exchange) {
+        case 'binance':
+          whaleOrders = await binanceService.getWhaleOrders(450000, validReferencePrice);
+          break;
+        case 'kraken':
+          whaleOrders = await krakenService.getWhaleOrders(450000, validReferencePrice);
+          break;
+        case 'coinbase':
+          whaleOrders = await coinbaseService.getWhaleOrders(450000, validReferencePrice);
+          break;
+        case 'okx':
+          whaleOrders = await okxService.getWhaleOrders(450000, validReferencePrice);
+          break;
+      }
       
       for (const whaleOrder of whaleOrders) {
-        // Create unique key for this order book entry
-        const entryKey = `${whaleOrder.type}-${whaleOrder.price.toFixed(2)}-${whaleOrder.quantity.toFixed(2)}`;
+        // Create unique key including exchange to avoid duplicates
+        const entryKey = `${exchange}-${whaleOrder.type}-${whaleOrder.price.toFixed(2)}-${whaleOrder.quantity.toFixed(2)}`;
         
         // Skip if we've already shown this order
         if (this.seenOrderBookEntries.has(entryKey)) {
@@ -92,9 +120,9 @@ class OrderGenerator {
         // Mark as seen
         this.seenOrderBookEntries.add(entryKey);
         
-        // Clean up old entries periodically (keep last 1000)
-        if (this.seenOrderBookEntries.size > 1000) {
-          const entriesToDelete = Array.from(this.seenOrderBookEntries).slice(0, 500);
+        // Clean up old entries periodically (keep last 2000 for 4 exchanges)
+        if (this.seenOrderBookEntries.size > 2000) {
+          const entriesToDelete = Array.from(this.seenOrderBookEntries).slice(0, 1000);
           entriesToDelete.forEach(key => this.seenOrderBookEntries.delete(key));
         }
         
@@ -107,6 +135,7 @@ class OrderGenerator {
           type,
           size: Math.round(whaleOrder.quantity * 100) / 100,
           price: Math.round(whaleOrder.price * 100) / 100,
+          exchange,
           timestamp: new Date().toISOString(),
           status: 'open',
         };
@@ -128,111 +157,7 @@ class OrderGenerator {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch real whale orders:', error);
-    }
-  }
-
-  private async generateBatch(count: number) {
-    for (let i = 0; i < count; i++) {
-      await this.generateOrder(false);
-      // Small delay to stagger timestamps
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  }
-
-  private async generateOrder(broadcast = true) {
-    // Use real Bitcoin price with small variation
-    const btcPrice = this.currentBtcPrice;
-    
-    const type = Math.random() > 0.5 ? 'long' : 'short';
-    
-    // Size distribution: more whales and larger transactions
-    const sizeRandom = Math.random();
-    let size: number;
-    if (sizeRandom < 0.2) {
-      size = 1 + Math.random() * 9; // 1-10 BTC (small)
-    } else if (sizeRandom < 0.5) {
-      size = 10 + Math.random() * 20; // 10-30 BTC (medium)
-    } else if (sizeRandom < 0.8) {
-      size = 30 + Math.random() * 45; // 30-75 BTC (large)
-    } else {
-      size = 75 + Math.random() * 125; // 75-200 BTC (massive whales)
-    }
-
-    // Add some price variation (proportional to current BTC price)
-    const priceVariation = (Math.random() - 0.5) * 500;
-    const price = btcPrice + priceVariation;
-
-    const order: InsertBitcoinOrder = {
-      type: type as 'long' | 'short',
-      size: Math.round(size * 100) / 100,
-      price: Math.round(price * 100) / 100,
-      timestamp: new Date().toISOString(),
-      status: 'open',
-    };
-
-    const createdOrder = await storage.createOrder(order);
-
-    // Broadcast to all WebSocket clients
-    if (broadcast && this.wss) {
-      const message = JSON.stringify({
-        type: 'new_order',
-        order: createdOrder,
-      });
-
-      this.wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
-    }
-
-    return createdOrder;
-  }
-
-  private async closeRandomPosition() {
-    const openOrders = await storage.getOpenOrders();
-    
-    // Only close positions if there are at least 5 open orders
-    if (openOrders.length < 5) {
-      return;
-    }
-
-    // Pick a random open order
-    const randomIndex = Math.floor(Math.random() * openOrders.length);
-    const order = openOrders[randomIndex];
-
-    // Generate realistic close price using real Bitcoin price
-    const currentBtcPrice = this.currentBtcPrice;
-    const priceVariation = (Math.random() - 0.5) * 1000;
-    const closePrice = currentBtcPrice + priceVariation;
-
-    // Calculate profit/loss
-    const profitLoss = calculateProfitLoss(
-      order.price,
-      closePrice,
-      order.type
-    );
-
-    // Close the order
-    const closedOrder = await storage.closeOrder(
-      order.id,
-      Math.round(closePrice * 100) / 100,
-      Math.round(profitLoss * 100) / 100
-    );
-
-    // Broadcast to all WebSocket clients
-    if (closedOrder && this.wss) {
-      const message = JSON.stringify({
-        type: 'close_order',
-        order: closedOrder,
-      });
-
-      this.wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
+      console.error(`Failed to fetch whale orders from ${exchange}:`, error);
     }
   }
 }
@@ -246,6 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate and parse query parameters
       let minSize = 0;
       let orderType: 'long' | 'short' | 'all' = 'all';
+      let exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
       let status: 'open' | 'closed' | 'all' = 'all';
       
@@ -263,6 +189,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: 'Invalid orderType parameter (must be long, short, or all)' });
         }
         orderType = type as 'long' | 'short' | 'all';
+      }
+      
+      if (req.query.exchange) {
+        const exch = req.query.exchange as string;
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(exch)) {
+          return res.status(400).json({ error: 'Invalid exchange parameter' });
+        }
+        exchange = exch as 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
       }
       
       if (req.query.timeRange) {
@@ -285,6 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orders = await storage.getFilteredOrders({
         minSize,
         orderType,
+        exchange,
         timeRange,
         status,
       });

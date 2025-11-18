@@ -1,13 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import type { OrderType, TimeRange, PositionStatus } from "@shared/schema";
+import type { OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
 
 interface FilterControlsProps {
   minSize: number;
   setMinSize: (value: number) => void;
   orderType: OrderType;
   setOrderType: (value: OrderType) => void;
+  exchange: Exchange;
+  setExchange: (value: Exchange) => void;
   timeRange: TimeRange;
   setTimeRange: (value: TimeRange) => void;
   status: PositionStatus;
@@ -19,6 +21,8 @@ export function FilterControls({
   setMinSize,
   orderType,
   setOrderType,
+  exchange,
+  setExchange,
   timeRange,
   setTimeRange,
   status,
@@ -30,7 +34,7 @@ export function FilterControls({
         <CardTitle className="text-lg font-semibold">Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-2">
             <Label htmlFor="min-size" className="text-sm font-medium">
               Minimum Size
@@ -48,6 +52,27 @@ export function FilterControls({
                 <SelectItem value="10">≥ 10 BTC</SelectItem>
                 <SelectItem value="25">≥ 25 BTC</SelectItem>
                 <SelectItem value="50">≥ 50 BTC</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="exchange" className="text-sm font-medium">
+              Exchange
+            </Label>
+            <Select
+              value={exchange}
+              onValueChange={(value) => setExchange(value as Exchange)}
+            >
+              <SelectTrigger id="exchange" data-testid="select-exchange">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Exchanges</SelectItem>
+                <SelectItem value="binance">Binance</SelectItem>
+                <SelectItem value="kraken">Kraken</SelectItem>
+                <SelectItem value="coinbase">Coinbase</SelectItem>
+                <SelectItem value="okx">OKX</SelectItem>
               </SelectContent>
             </Select>
           </div>

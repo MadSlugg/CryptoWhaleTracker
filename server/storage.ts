@@ -11,6 +11,7 @@ import { randomUUID } from "crypto";
 export interface OrderFilters {
   minSize?: number;
   orderType?: 'long' | 'short' | 'all';
+  exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
   timeRange?: '1h' | '4h' | '24h' | '7d';
   status?: 'open' | 'closed' | 'all';
 }
@@ -74,6 +75,10 @@ export class MemStorage implements IStorage {
     
     if (filters.orderType && filters.orderType !== 'all') {
       orders = orders.filter(order => order.type === filters.orderType);
+    }
+    
+    if (filters.exchange && filters.exchange !== 'all') {
+      orders = orders.filter(order => order.exchange === filters.exchange);
     }
     
     if (filters.status && filters.status !== 'all') {

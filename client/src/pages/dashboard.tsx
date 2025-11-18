@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { BitcoinOrder, OrderType, TimeRange, PositionStatus } from "@shared/schema";
+import type { BitcoinOrder, OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
 import { SummaryStats } from "@/components/summary-stats";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
@@ -14,6 +14,7 @@ import { format } from "date-fns";
 export default function Dashboard() {
   const [minSize, setMinSize] = useState<number>(1);
   const [orderType, setOrderType] = useState<OrderType>('all');
+  const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [status, setStatus] = useState<PositionStatus>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -22,12 +23,14 @@ export default function Dashboard() {
   useWebSocket();
 
   // Fetch orders filtered by user's selections
+  // Always include exchange in query key to prevent stale cache when switching
   const { data: orders = [], isLoading, refetch } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', { minSize, orderType, timeRange, status }],
+    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (minSize > 1) params.append('minSize', minSize.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
+      if (exchange !== 'all') params.append('exchange', exchange);
       if (status !== 'all') params.append('status', status);
       params.append('timeRange', timeRange);
       
@@ -195,6 +198,8 @@ export default function Dashboard() {
             setMinSize={setMinSize}
             orderType={orderType}
             setOrderType={setOrderType}
+            exchange={exchange}
+            setExchange={setExchange}
             timeRange={timeRange}
             setTimeRange={setTimeRange}
             status={status}

@@ -5,6 +5,7 @@ export const bitcoinOrderSchema = z.object({
   type: z.enum(['long', 'short']),
   size: z.number().positive(),
   price: z.number().positive(),
+  exchange: z.enum(['binance', 'kraken', 'coinbase', 'okx']),
   timestamp: z.string(),
   status: z.enum(['open', 'closed']),
   closedAt: z.string().optional(),
@@ -20,6 +21,7 @@ export type InsertBitcoinOrder = z.infer<typeof insertBitcoinOrderSchema>;
 export type OrderType = 'long' | 'short' | 'all';
 export type TimeRange = '1h' | '4h' | '24h' | '7d';
 export type PositionStatus = 'open' | 'closed' | 'all';
+export type Exchange = 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
 
 // Whale Alert schema - large BTC transfers to/from exchanges
 export const whaleMovementSchema = z.object({
