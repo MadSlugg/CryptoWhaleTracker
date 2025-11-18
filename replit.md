@@ -108,12 +108,12 @@ Preferred communication style: Simple, everyday language.
 **Routing**: Wouter for client-side routing
 
 **Order Display**:
-- Active Orders, Filled Orders, and Disappeared Orders sections at bottom of dashboard
+- Active Orders and Filled Orders sections at bottom of dashboard
 - Each section limited to 5 most recent orders for compact display
 - Shows "Showing X of Y" counter to indicate total available orders
 - Scrollable containers with 500px max height
 - Order cards display position type, exchange, status, BTC amount, price, and timestamp
-- Order statuses: Active (outlined), Filled (grey), Disappeared (grey)
+- Order statuses: Active (outlined), Filled (grey)
 
 ### Backend Architecture
 
@@ -143,20 +143,17 @@ Preferred communication style: Simple, everyday language.
     - Long orders filled when market price ≤ limit price
     - Short orders filled when market price ≥ limit price
     - Sweep runs every 10 seconds to detect filled orders
-  - **Active → Disappeared**: Orders transition when they vanish from exchange order books
-    - Verified during each exchange polling cycle (every 10-16 seconds)
-    - Could indicate cancellation by whale trader or fill that occurred between polling windows
-    - Real-time verification against live order book data from each exchange
+- **Order Retention**: Orders are kept for 7 days before automatic cleanup (previously 24 hours)
 
 **API Endpoints**:
-- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status (active/filled/disappeared/all)
+- `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, orderType, exchange, timeRange, and status (active/filled/all)
 - `GET /api/whale-movements` - Retrieve whale movement data
 - `GET /api/long-short-ratios` - Retrieve long/short ratio history
 - `GET /api/long-short-ratio/latest` - Get latest long/short ratio
 - `GET /api/liquidations` - Retrieve liquidation events
 - `GET /api/whale-correlations` - Retrieve whale correlation analysis
 
-**Data Cleanup**: Automated hourly cleanup removing orders older than 24 hours
+**Data Cleanup**: Automated hourly cleanup removing orders older than 7 days
 
 ### External Dependencies
 
