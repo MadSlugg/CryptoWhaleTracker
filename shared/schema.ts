@@ -5,9 +5,7 @@ export const bitcoinOrderSchema = z.object({
   type: z.enum(['long', 'short']),
   size: z.number().positive(),
   price: z.number().positive(),
-  leverage: z.number().min(1).max(100),
   timestamp: z.string(),
-  liquidationPrice: z.number().positive().optional(),
   status: z.enum(['open', 'closed']),
   closedAt: z.string().optional(),
   closePrice: z.number().positive().optional(),
@@ -21,61 +19,78 @@ export type InsertBitcoinOrder = z.infer<typeof insertBitcoinOrderSchema>;
 
 export type OrderType = 'long' | 'short' | 'all';
 export type TimeRange = '1h' | '4h' | '24h' | '7d';
-export type LeverageRiskLevel = 'minimal' | 'moderate' | 'high' | 'extreme';
 export type PositionStatus = 'open' | 'closed' | 'all';
 
-export function getLeverageRiskLevel(leverage: number): LeverageRiskLevel {
-  if (leverage < 5) return 'minimal';
-  if (leverage < 10) return 'moderate';
-  if (leverage < 25) return 'high';
-  return 'extreme';
-}
+// Whale Alert schema - large BTC transfers to/from exchanges
+export const whaleMovementSchema = z.object({
+  id: z.string(),
+  amount: z.number().positive(), // BTC amount
+  amountUSD: z.number().positive(), // USD value
+  from: z.string(), // Source address or exchange name
+  to: z.string(), // Destination address or exchange name
+  hash: z.string(), // Transaction hash
+  timestamp: z.string(),
+  isToExchange: z.boolean(), // True if moving TO an exchange (potential sell pressure)
+  isFromExchange: z.boolean(), // True if moving FROM an exchange (potential accumulation)
+});
 
-export function calculateLiquidationPrice(
-  entryPrice: number,
-  leverage: number,
-  type: 'long' | 'short'
-): number {
-  // Maintenance margin rate (typically 0.5-1% for crypto exchanges)
-  const maintenanceMarginRate = 0.005;
-  
-  // Small epsilon to ensure liquidation is always meaningfully away from entry price
-  const epsilon = 0.001; // 0.1% minimum distance
-  
-  // Calculate base price movement from leverage and maintenance margin
-  // Formula: priceMovement = (1/leverage) - maintenanceMargin
-  const basePriceMovement = (1 / leverage) - maintenanceMarginRate;
-  
-  // Ensure price movement is at least epsilon to guarantee meaningful liquidation distance
-  // This handles extreme leverage cases where basePriceMovement might be very small or negative
-  const effectivePriceMovement = Math.max(basePriceMovement, epsilon);
-  
-  let liquidationPrice: number;
-  if (type === 'long') {
-    // For longs, liquidation happens when price drops
-    liquidationPrice = entryPrice * (1 - effectivePriceMovement);
-  } else {
-    // For shorts, liquidation happens when price rises
-    liquidationPrice = entryPrice * (1 + effectivePriceMovement);
-  }
-  
-  // Ensure liquidation price is never negative
-  return Math.max(0, liquidationPrice);
-}
+export type WhaleMovement = z.infer<typeof whaleMovementSchema>;
+
+// Long/Short Ratio data from Binance
+export const longShortRatioSchema = z.object({
+  id: z.string(),
+  timestamp: z.string(),
+  symbol: z.string(),
+  longShortRatio: z.number(), // Ratio of longs to shorts
+  longAccount: z.number(), // Percentage of accounts that are long
+  shortAccount: z.number(), // Percentage of accounts that are short
+  period: z.enum(['5m', '15m', '30m', '1h', '2h', '4h']),
+  isTopTrader: z.boolean(), // True if this is top trader data
+});
+
+export type LongShortRatio = z.infer<typeof longShortRatioSchema>;
+
+// Liquidation event from Binance
+export const liquidationSchema = z.object({
+  id: z.string(),
+  symbol: z.string(),
+  side: z.enum(['BUY', 'SELL']), // BUY = long liquidation, SELL = short liquidation
+  price: z.number().positive(),
+  quantity: z.number().positive(),
+  timestamp: z.string(),
+  totalUSD: z.number().positive(), // USD value of liquidation
+});
+
+export type Liquidation = z.infer<typeof liquidationSchema>;
+
+// Whale correlation event - connects whale movement with trading pattern
+export const whaleCorrelationSchema = z.object({
+  id: z.string(),
+  whaleMovementId: z.string(),
+  timestamp: z.string(),
+  btcAmount: z.number().positive(),
+  initialLongShortRatio: z.number(),
+  currentLongShortRatio: z.number(),
+  ratioChange: z.number(), // Percentage change in ratio
+  shortSpike: z.boolean(), // True if shorts spiked significantly
+  likelyAction: z.enum(['shorting', 'longing', 'neutral']),
+  confidence: z.enum(['low', 'medium', 'high']),
+});
+
+export type WhaleCorrelation = z.infer<typeof whaleCorrelationSchema>;
 
 export function calculateProfitLoss(
   entryPrice: number,
   exitPrice: number,
-  leverage: number,
   type: 'long' | 'short'
 ): number {
   const priceChange = ((exitPrice - entryPrice) / entryPrice) * 100;
   
   if (type === 'long') {
     // For longs, profit when price goes up
-    return priceChange * leverage;
+    return priceChange;
   } else {
     // For shorts, profit when price goes down
-    return -priceChange * leverage;
+    return -priceChange;
   }
 }

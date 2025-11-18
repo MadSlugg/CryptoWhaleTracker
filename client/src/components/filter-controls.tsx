@@ -6,8 +6,6 @@ import type { OrderType, TimeRange, PositionStatus } from "@shared/schema";
 interface FilterControlsProps {
   minSize: number;
   setMinSize: (value: number) => void;
-  minLeverage: number;
-  setMinLeverage: (value: number) => void;
   orderType: OrderType;
   setOrderType: (value: OrderType) => void;
   timeRange: TimeRange;
@@ -19,8 +17,6 @@ interface FilterControlsProps {
 export function FilterControls({
   minSize,
   setMinSize,
-  minLeverage,
-  setMinLeverage,
   orderType,
   setOrderType,
   timeRange,
@@ -34,7 +30,7 @@ export function FilterControls({
         <CardTitle className="text-lg font-semibold">Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label htmlFor="min-size" className="text-sm font-medium">
               Minimum Size
@@ -52,27 +48,6 @@ export function FilterControls({
                 <SelectItem value="10">≥ 10 BTC</SelectItem>
                 <SelectItem value="25">≥ 25 BTC</SelectItem>
                 <SelectItem value="50">≥ 50 BTC</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="min-leverage" className="text-sm font-medium">
-              Minimum Leverage
-            </Label>
-            <Select
-              value={minLeverage.toString()}
-              onValueChange={(value) => setMinLeverage(Number(value))}
-            >
-              <SelectTrigger id="min-leverage" data-testid="select-min-leverage">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">All (1x+)</SelectItem>
-                <SelectItem value="5">Moderate (5x+)</SelectItem>
-                <SelectItem value="10">High (10x+)</SelectItem>
-                <SelectItem value="25">Extreme (25x+)</SelectItem>
-                <SelectItem value="50">Ultra (50x+)</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -1,4 +1,4 @@
-// Binance API service for fetching real Bitcoin prices and order book data
+// Binance API service for fetching real Bitcoin prices, order book data, long/short ratios, and liquidations
 
 interface BinanceTickerResponse {
   symbol: string;
@@ -18,13 +18,39 @@ export interface OrderBookEntry {
   total: number; // price * quantity in USD
 }
 
+// Long/Short Ratio response from Binance Futures API
+export interface LongShortRatioResponse {
+  symbol: string;
+  longShortRatio: string;
+  longAccount: string;
+  shortAccount: string;
+  timestamp: number;
+}
+
+// Liquidation order from WebSocket stream
+export interface LiquidationOrder {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  orderType: string;
+  timeInForce: string;
+  quantity: string;
+  price: string;
+  averagePrice: string;
+  orderStatus: string;
+  lastFilledQty: string;
+  accumulatedFilledQty: string;
+  tradeTime: number;
+}
+
 // Using Binance's market data-only endpoint which has different geo-restrictions
 const BINANCE_API_BASE = 'https://data-api.binance.vision';
+const BINANCE_FUTURES_API = 'https://fapi.binance.com';
 const BINANCE_SYMBOL = 'BTCUSDT';
 
 export class BinanceService {
   private lastUpdateId: number = 0;
   private lastKnownPrice: number = 90000; // Cache last known price
+  private longShortRatioCache: Map<string, LongShortRatioResponse[]> = new Map();
   
   /**
    * Fetch current Bitcoin price from Binance
@@ -122,6 +148,93 @@ export class BinanceService {
       console.error('Error fetching whale orders:', error);
       return [];
     }
+  }
+  
+  /**
+   * Fetch long/short ratio from Binance Futures API
+   * @param period Time interval (5m, 15m, 30m, 1h, 2h, 4h)
+   * @param limit Number of data points (default: 30, max: 500)
+   * @param isTopTrader If true, fetches top trader ratio instead of global
+   */
+  async getLongShortRatio(
+    period: '5m' | '15m' | '30m' | '1h' | '2h' | '4h' = '15m',
+    limit: number = 30,
+    isTopTrader: boolean = false
+  ): Promise<LongShortRatioResponse[]> {
+    try {
+      const endpoint = isTopTrader 
+        ? '/futures/data/topLongShortAccountRatio'
+        : '/futures/data/globalLongShortAccountRatio';
+      
+      const response = await fetch(
+        `${BINANCE_FUTURES_API}${endpoint}?symbol=${BINANCE_SYMBOL}&period=${period}&limit=${limit}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Binance Futures API error: ${response.status}`);
+      }
+      
+      const data: LongShortRatioResponse[] = await response.json();
+      
+      // Cache the data
+      const cacheKey = `${isTopTrader ? 'top' : 'global'}-${period}`;
+      this.longShortRatioCache.set(cacheKey, data);
+      
+      console.log(`[Binance] Fetched ${data.length} long/short ratio data points (${cacheKey})`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching long/short ratio from Binance:', error);
+      
+      // Return cached data if available
+      const cacheKey = `${isTopTrader ? 'top' : 'global'}-${period}`;
+      const cached = this.longShortRatioCache.get(cacheKey);
+      if (cached) {
+        console.log(`[Binance] Using cached long/short ratio data (${cacheKey})`);
+        return cached;
+      }
+      
+      return [];
+    }
+  }
+  
+  /**
+   * Get the latest long/short ratio (most recent data point)
+   */
+  async getLatestLongShortRatio(isTopTrader: boolean = false): Promise<LongShortRatioResponse | null> {
+    const data = await this.getLongShortRatio('15m', 1, isTopTrader);
+    return data.length > 0 ? data[0] : null;
+  }
+  
+  /**
+   * Analyze if shorts spiked after a whale movement
+   * @param initialRatio The long/short ratio before the whale movement
+   * @param currentRatio The long/short ratio after the whale movement
+   * @returns Object with spike detection and percentage change
+   */
+  analyzeShortSpike(initialRatio: number, currentRatio: number): {
+    spiked: boolean;
+    percentageChange: number;
+    confidence: 'low' | 'medium' | 'high';
+  } {
+    // Calculate percentage change in the ratio
+    // Lower ratio = more shorts relative to longs
+    const percentageChange = ((currentRatio - initialRatio) / initialRatio) * 100;
+    
+    // Negative change means shorts increased
+    const spiked = percentageChange < -5; // At least 5% decrease in ratio = short spike
+    
+    let confidence: 'low' | 'medium' | 'high' = 'low';
+    if (Math.abs(percentageChange) > 15) {
+      confidence = 'high';
+    } else if (Math.abs(percentageChange) > 8) {
+      confidence = 'medium';
+    }
+    
+    return {
+      spiked,
+      percentageChange,
+      confidence
+    };
   }
 }
 

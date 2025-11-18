@@ -1,8 +1,6 @@
 import type { BitcoinOrder } from "@shared/schema";
-import { getLeverageRiskLevel } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LeverageIndicator } from "./leverage-indicator";
 import { TrendingUp, TrendingDown, Clock, DollarSign, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -13,7 +11,6 @@ interface OrderCardProps {
 export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
   const isClosed = order.status === 'closed';
-  const riskLevel = getLeverageRiskLevel(order.leverage);
   
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
@@ -99,44 +96,7 @@ export function OrderCard({ order }: OrderCardProps) {
               </div>
             </div>
           </div>
-
-          {/* Right section: Leverage indicator */}
-          <div className="flex items-center gap-3 sm:flex-shrink-0">
-            <LeverageIndicator 
-              leverage={order.leverage} 
-              riskLevel={riskLevel}
-              orderId={order.id}
-            />
-            
-            {order.liquidationPrice && (
-              <div className="text-right hidden sm:block">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Liquidation
-                </div>
-                <div 
-                  className="text-sm font-mono font-semibold text-destructive"
-                  data-testid={`text-liquidation-${order.id}`}
-                >
-                  ${order.liquidationPrice.toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
-
-        {/* Mobile liquidation price */}
-        {order.liquidationPrice && (
-          <div className="mt-3 pt-3 border-t sm:hidden">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                Liquidation Price
-              </span>
-              <span className="text-sm font-mono font-semibold text-destructive">
-                ${order.liquidationPrice.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { BitcoinOrder, OrderType, TimeRange, PositionStatus } from "@shared/schema";
 import { SummaryStats } from "@/components/summary-stats";
-import { HighRiskAlert } from "@/components/high-risk-alert";
 import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -14,7 +13,6 @@ import { format } from "date-fns";
 
 export default function Dashboard() {
   const [minSize, setMinSize] = useState<number>(1);
-  const [minLeverage, setMinLeverage] = useState<number>(1);
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [status, setStatus] = useState<PositionStatus>('all');
@@ -25,11 +23,10 @@ export default function Dashboard() {
 
   // Fetch orders filtered by user's selections
   const { data: orders = [], isLoading, refetch } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', { minSize, minLeverage, orderType, timeRange, status }],
+    queryKey: ['/api/orders', { minSize, orderType, timeRange, status }],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (minSize > 1) params.append('minSize', minSize.toString());
-      if (minLeverage > 1) params.append('minLeverage', minLeverage.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       if (status !== 'all') params.append('status', status);
       params.append('timeRange', timeRange);
@@ -60,14 +57,10 @@ export default function Dashboard() {
   // Orders are already filtered by the backend
   const filteredOrders = orders;
 
-  const highRiskOrders = filteredOrders.filter(order => order.leverage >= 25);
   const longOrders = filteredOrders.filter(order => order.type === 'long');
   const shortOrders = filteredOrders.filter(order => order.type === 'short');
   
   const totalVolume = filteredOrders.reduce((sum, order) => sum + order.size, 0);
-  const avgLeverage = filteredOrders.length > 0
-    ? filteredOrders.reduce((sum, order) => sum + order.leverage, 0) / filteredOrders.length
-    : 0;
 
   // Calculate current BTC price and price change from time-range-only orders
   // Sort by timestamp to get newest and oldest orders
@@ -194,20 +187,12 @@ export default function Dashboard() {
             totalVolume={totalVolume}
             longCount={longOrders.length}
             shortCount={shortOrders.length}
-            avgLeverage={avgLeverage}
           />
-
-          {/* High Risk Alert */}
-          {highRiskOrders.length > 0 && (
-            <HighRiskAlert count={highRiskOrders.length} />
-          )}
 
           {/* Filters */}
           <FilterControls
             minSize={minSize}
             setMinSize={setMinSize}
-            minLeverage={minLeverage}
-            setMinLeverage={setMinLeverage}
             orderType={orderType}
             setOrderType={setOrderType}
             timeRange={timeRange}

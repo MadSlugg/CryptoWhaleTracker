@@ -1,16 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bitcoin, TrendingUp, TrendingDown, Zap } from "lucide-react";
+import { Bitcoin, TrendingUp, TrendingDown } from "lucide-react";
 
 interface SummaryStatsProps {
   totalVolume: number;
   longCount: number;
   shortCount: number;
-  avgLeverage: number;
 }
 
-export function SummaryStats({ totalVolume, longCount, shortCount, avgLeverage }: SummaryStatsProps) {
+export function SummaryStats({ totalVolume, longCount, shortCount }: SummaryStatsProps) {
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
       <Card data-testid="card-total-volume">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
@@ -58,23 +57,6 @@ export function SummaryStats({ totalVolume, longCount, shortCount, avgLeverage }
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Short positions
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card data-testid="card-avg-leverage">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            Avg Leverage
-          </CardTitle>
-          <Zap className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-lg font-mono font-semibold" data-testid="text-avg-leverage">
-            {avgLeverage > 0 ? `${avgLeverage.toFixed(1)}x` : '0x'}
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Average multiplier
           </p>
         </CardContent>
       </Card>

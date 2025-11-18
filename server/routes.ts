@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import type { InsertBitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
+import { liquidationService } from "./liquidation-service";
+import { whaleCorrelationService } from "./whale-correlation-service";
 
 // Simulated order generator with real Binance data
 class OrderGenerator {
@@ -101,22 +103,10 @@ class OrderGenerator {
         // ask = sell order = someone going short
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
         
-        // Generate realistic leverage for the order (order book doesn't show leverage)
-        const leverageRandom = Math.random();
-        let leverage: number;
-        if (leverageRandom < 0.5) {
-          leverage = 1 + Math.random() * 4; // 1-5x (spot/low leverage)
-        } else if (leverageRandom < 0.8) {
-          leverage = 5 + Math.random() * 10; // 5-15x
-        } else {
-          leverage = 15 + Math.random() * 10; // 15-25x
-        }
-        
         const order: InsertBitcoinOrder = {
           type,
           size: Math.round(whaleOrder.quantity * 100) / 100,
           price: Math.round(whaleOrder.price * 100) / 100,
-          leverage: Math.round(leverage * 10) / 10,
           timestamp: new Date().toISOString(),
           status: 'open',
         };
@@ -169,21 +159,6 @@ class OrderGenerator {
       size = 75 + Math.random() * 125; // 75-200 BTC (massive whales)
     }
 
-    // Leverage distribution: mostly conservative, some degenerates
-    const leverageRandom = Math.random();
-    let leverage: number;
-    if (leverageRandom < 0.3) {
-      leverage = 1 + Math.random() * 4; // 1-5x
-    } else if (leverageRandom < 0.6) {
-      leverage = 5 + Math.random() * 5; // 5-10x
-    } else if (leverageRandom < 0.85) {
-      leverage = 10 + Math.random() * 15; // 10-25x
-    } else if (leverageRandom < 0.95) {
-      leverage = 25 + Math.random() * 25; // 25-50x
-    } else {
-      leverage = 50 + Math.random() * 50; // 50-100x (extremely risky)
-    }
-
     // Add some price variation (proportional to current BTC price)
     const priceVariation = (Math.random() - 0.5) * 500;
     const price = btcPrice + priceVariation;
@@ -192,7 +167,6 @@ class OrderGenerator {
       type: type as 'long' | 'short',
       size: Math.round(size * 100) / 100,
       price: Math.round(price * 100) / 100,
-      leverage: Math.round(leverage * 10) / 10,
       timestamp: new Date().toISOString(),
       status: 'open',
     };
@@ -237,7 +211,6 @@ class OrderGenerator {
     const profitLoss = calculateProfitLoss(
       order.price,
       closePrice,
-      order.leverage,
       order.type
     );
 
@@ -272,7 +245,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate and parse query parameters
       let minSize = 0;
-      let minLeverage = 0;
       let orderType: 'long' | 'short' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
       let status: 'open' | 'closed' | 'all' = 'all';
@@ -283,14 +255,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: 'Invalid minSize parameter' });
         }
         minSize = parsed;
-      }
-      
-      if (req.query.minLeverage) {
-        const parsed = parseFloat(req.query.minLeverage as string);
-        if (isNaN(parsed) || parsed < 1 || parsed > 100) {
-          return res.status(400).json({ error: 'Invalid minLeverage parameter (must be 1-100)' });
-        }
-        minLeverage = parsed;
       }
       
       if (req.query.orderType) {
@@ -320,7 +284,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get filtered orders from storage
       const orders = await storage.getFilteredOrders({
         minSize,
-        minLeverage,
         orderType,
         timeRange,
         status,
@@ -330,6 +293,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching orders:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+  });
+
+  // API endpoint for whale movements
+  app.get("/api/whale-movements", async (req, res) => {
+    try {
+      const hoursAgo = req.query.hours ? parseInt(req.query.hours as string) : 24;
+      const movements = await storage.getWhaleMovements(hoursAgo);
+      res.json(movements);
+    } catch (error) {
+      console.error('Error fetching whale movements:', error);
+      res.status(500).json({ error: 'Failed to fetch whale movements' });
+    }
+  });
+
+  // API endpoint for long/short ratios
+  app.get("/api/long-short-ratios", async (req, res) => {
+    try {
+      const period = req.query.period as string | undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 100;
+      const ratios = await storage.getLongShortRatios(period, limit);
+      res.json(ratios);
+    } catch (error) {
+      console.error('Error fetching long/short ratios:', error);
+      res.status(500).json({ error: 'Failed to fetch long/short ratios' });
+    }
+  });
+
+  // API endpoint for latest long/short ratio
+  app.get("/api/long-short-ratio/latest", async (req, res) => {
+    try {
+      const isTopTrader = req.query.topTrader === 'true';
+      const ratio = await storage.getLatestLongShortRatio(isTopTrader);
+      if (!ratio) {
+        return res.status(404).json({ error: 'No ratio data available' });
+      }
+      res.json(ratio);
+    } catch (error) {
+      console.error('Error fetching latest long/short ratio:', error);
+      res.status(500).json({ error: 'Failed to fetch latest long/short ratio' });
+    }
+  });
+
+  // API endpoint for liquidations
+  app.get("/api/liquidations", async (req, res) => {
+    try {
+      const hoursAgo = req.query.hours ? parseInt(req.query.hours as string) : 24;
+      const liquidations = await storage.getLiquidations(hoursAgo);
+      res.json(liquidations);
+    } catch (error) {
+      console.error('Error fetching liquidations:', error);
+      res.status(500).json({ error: 'Failed to fetch liquidations' });
+    }
+  });
+
+  // API endpoint for whale correlations
+  app.get("/api/whale-correlations", async (req, res) => {
+    try {
+      const hoursAgo = req.query.hours ? parseInt(req.query.hours as string) : 24;
+      const correlations = await storage.getWhaleCorrelations(hoursAgo);
+      res.json(correlations);
+    } catch (error) {
+      console.error('Error fetching whale correlations:', error);
+      res.status(500).json({ error: 'Failed to fetch whale correlations' });
     }
   });
 
@@ -364,6 +391,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Start order generator
   orderGenerator.start(wss);
+
+  // Start liquidation monitoring service
+  liquidationService.start();
+  
+  // Start whale correlation tracking service
+  whaleCorrelationService.start();
 
   return httpServer;
 }
