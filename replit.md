@@ -45,12 +45,13 @@ Preferred communication style: Simple, everyday language.
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
 
 **Order Generation**: Simulated order generator that creates realistic Bitcoin trading orders with:
-- Random price fluctuations around $43k-$45k
+- Random price fluctuations around $91k-$96k (current realistic Bitcoin market prices verified against Binance)
 - Size distribution favoring smaller orders with occasional whale trades
 - Leverage between 1x-50x
 - Automatic liquidation price calculation
 - Batch initial data generation (15 orders) on startup
 - Continuous generation every 3-8 seconds
+- Wallet address tracking using native SegWit (bc1...) format for identifying whale movements
 
 **API Endpoints**:
 - `GET /api/orders` - Retrieve filtered orders with query parameters for minSize, minLeverage, orderType, and timeRange
