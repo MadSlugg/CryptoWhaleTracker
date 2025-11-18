@@ -24,6 +24,7 @@ export interface IStorage {
   createOrder(order: InsertBitcoinOrder): Promise<BitcoinOrder>;
   getOrder(id: string): Promise<BitcoinOrder | undefined>;
   updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined>;
+  deleteOrder(id: string): Promise<BitcoinOrder | undefined>;
   getOpenOrders(): Promise<BitcoinOrder[]>;
   clearOldOrders(hoursAgo: number): Promise<string[]>;
   
@@ -147,6 +148,15 @@ export class MemStorage implements IStorage {
 
     this.orders.set(id, updatedOrder);
     return updatedOrder;
+  }
+
+  async deleteOrder(id: string): Promise<BitcoinOrder | undefined> {
+    const order = this.orders.get(id);
+    if (!order) {
+      return undefined;
+    }
+    this.orders.delete(id);
+    return order;
   }
 
   async getOpenOrders(): Promise<BitcoinOrder[]> {

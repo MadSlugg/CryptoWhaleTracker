@@ -73,7 +73,7 @@ export function useWebSocket() {
               }
             }
             
-            if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled') {
+            if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled' || data.type === 'order_deleted') {
               // Invalidate all /api/orders queries regardless of filter parameters
               queryClient.invalidateQueries({ 
                 predicate: (query) => {

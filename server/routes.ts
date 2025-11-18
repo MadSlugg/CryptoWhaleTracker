@@ -148,6 +148,53 @@ class OrderGenerator {
     this.okxIntervalId = null;
   }
 
+  private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx', freshOrderBook: OrderBookEntry[]) {
+    try {
+      // Get all existing active orders for this exchange
+      const allOrders = await storage.getOrders();
+      const activeOrdersForExchange = allOrders.filter(
+        order => order.exchange === exchange && order.status === 'active'
+      );
+
+      // Check each active order to see if it still exists in the fresh order book
+      for (const existingOrder of activeOrdersForExchange) {
+        const stillExists = freshOrderBook.some(freshOrder => {
+          const type = freshOrder.type === 'bid' ? 'long' : 'short';
+          const roundedSize = Math.round(freshOrder.quantity * 100) / 100;
+          const roundedPrice = Math.round(freshOrder.price * 100) / 100;
+          
+          return (
+            type === existingOrder.type &&
+            Math.abs(roundedPrice - existingOrder.price) < 0.01 && // Price within 1 cent
+            Math.abs(roundedSize - existingOrder.size) < 0.01 // Size within 0.01 BTC
+          );
+        });
+
+        // If order vanished from the order book, delete it
+        if (!stillExists) {
+          await storage.deleteOrder(existingOrder.id);
+          this.activeOrderIds.delete(existingOrder.id);
+
+          // Broadcast deletion to WebSocket clients
+          if (this.wss) {
+            const message = JSON.stringify({
+              type: 'order_deleted',
+              orderId: existingOrder.id,
+            });
+
+            this.wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+              }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to verify active orders for ${exchange}:`, error);
+    }
+  }
+
   private async updateBitcoinPrice() {
     try {
       const newPrice = await binanceService.getCurrentPrice();
@@ -188,6 +235,9 @@ class OrderGenerator {
           whaleOrders = await okxService.getWhaleOrders(450000, validReferencePrice);
           break;
       }
+      
+      // Verify existing active orders from this exchange still exist in the fresh order book
+      await this.verifyActiveOrders(exchange, whaleOrders);
       
       for (const whaleOrder of whaleOrders) {
         // Convert order book entry to our format
