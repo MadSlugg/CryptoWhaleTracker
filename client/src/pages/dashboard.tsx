@@ -8,7 +8,6 @@ import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { WhaleAnalytics } from "@/components/whale-analytics";
 import { PriceHeatmap } from "@/components/price-heatmap";
-import { WhaleMomentum } from "@/components/whale-momentum";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { EntrySignals } from "@/components/entry-signals";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -229,9 +228,6 @@ export default function Dashboard() {
             orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
-
-          {/* Whale Momentum */}
-          <WhaleMomentum orders={filteredOrders} currentPrice={currentBtcPrice} />
 
           {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
