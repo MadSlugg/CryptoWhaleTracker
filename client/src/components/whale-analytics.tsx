@@ -191,24 +191,34 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
             </p>
           ) : (
             <div className="space-y-3">
-              {patterns.map((pattern, idx) => (
-                <div key={idx} className="flex flex-col gap-2 p-2 rounded-md border bg-muted/30" data-testid={`pattern-${idx}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-semibold">
-                      ${pattern.price.toLocaleString()}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-semibold">
-                        {pattern.totalSize.toFixed(1)} BTC
-                      </span>
-                      <Badge 
-                        variant={pattern.type === 'long' ? 'default' : pattern.type === 'short' ? 'destructive' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {pattern.type === 'mixed' ? 'Balanced' : pattern.type.toUpperCase()}
-                      </Badge>
+              {patterns.map((pattern, idx) => {
+                const priceRange = 1000; // Same as detection logic
+                const minPrice = pattern.price - priceRange / 2;
+                const maxPrice = pattern.price + priceRange / 2;
+                
+                return (
+                  <div key={idx} className="flex flex-col gap-2 p-2 rounded-md border bg-muted/30" data-testid={`pattern-${idx}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="font-mono text-sm font-semibold">
+                          ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Center: ${pattern.price.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-semibold">
+                          {pattern.totalSize.toFixed(1)} BTC
+                        </span>
+                        <Badge 
+                          variant={pattern.type === 'long' ? 'default' : pattern.type === 'short' ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {pattern.type === 'mixed' ? 'Balanced' : pattern.type.toUpperCase()}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-green-600 dark:text-green-400">
@@ -221,7 +231,8 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
