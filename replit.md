@@ -83,7 +83,7 @@ Preferred communication style: Simple, everyday language.
   - Auto-refreshes every 10 seconds
   - Scrollable feed with 400px max height showing up to 10 most recent events
   - Time range: last 1 hour
-- **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
+- **Price Level Heatmap**: Visual map of whale concentration across price levels
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
   - **Respects User Filters**: Uses filtered orders based on user's selected size, type, exchange, time range, and status filters
   - Groups orders into $2,000 price buckets
