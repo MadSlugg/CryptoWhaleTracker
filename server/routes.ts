@@ -15,7 +15,6 @@ class OrderGenerator {
   private coinbaseIntervalId: NodeJS.Timeout | null = null;
   private okxIntervalId: NodeJS.Timeout | null = null;
   private wss: WebSocketServer | null = null;
-  private seenOrderBookEntries: Set<string> = new Set();
   private currentBtcPrice: number = 93000; // Cache current price
   private activeOrderIds: Set<string> = new Set(); // Cache of active order IDs for fast lookup
 
@@ -191,32 +190,32 @@ class OrderGenerator {
       }
       
       for (const whaleOrder of whaleOrders) {
-        // Create unique key including exchange to avoid duplicates
-        const entryKey = `${exchange}-${whaleOrder.type}-${whaleOrder.price.toFixed(2)}-${whaleOrder.quantity.toFixed(2)}`;
-        
-        // Skip if we've already shown this order
-        if (this.seenOrderBookEntries.has(entryKey)) {
-          continue;
-        }
-        
-        // Mark as seen
-        this.seenOrderBookEntries.add(entryKey);
-        
-        // Clean up old entries periodically (keep last 2000 for 4 exchanges)
-        if (this.seenOrderBookEntries.size > 2000) {
-          const entriesToDelete = Array.from(this.seenOrderBookEntries).slice(0, 1000);
-          entriesToDelete.forEach(key => this.seenOrderBookEntries.delete(key));
-        }
-        
         // Convert order book entry to our format
         // bid = buy order = someone going long
         // ask = sell order = someone going short
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
+        const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
+        const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
+        
+        // Check if an active order with same details already exists in storage
+        const existingOrders = await storage.getOrders();
+        const isDuplicate = existingOrders.some(existing => 
+          existing.exchange === exchange &&
+          existing.type === type &&
+          Math.abs(existing.price - roundedPrice) < 0.01 && // Price within 1 cent
+          Math.abs(existing.size - roundedSize) < 0.01 && // Size within 0.01 BTC
+          existing.status === 'active' // Only check against active orders
+        );
+        
+        // Skip if duplicate found
+        if (isDuplicate) {
+          continue;
+        }
         
         const order: InsertBitcoinOrder = {
           type,
-          size: Math.round(whaleOrder.quantity * 100) / 100,
-          price: Math.round(whaleOrder.price * 100) / 100,
+          size: roundedSize,
+          price: roundedPrice,
           exchange,
           timestamp: new Date().toISOString(),
           status: 'active',
