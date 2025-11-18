@@ -14,6 +14,8 @@ export interface OrderFilters {
   exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
   timeRange?: '1h' | '4h' | '24h' | '7d';
   status?: 'active' | 'filled' | 'all';
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export interface IStorage {
@@ -85,6 +87,14 @@ export class MemStorage implements IStorage {
       orders = orders.filter(order => order.status === filters.status);
     }
     
+    if (filters.minPrice !== undefined) {
+      orders = orders.filter(order => order.price >= filters.minPrice!);
+    }
+    
+    if (filters.maxPrice !== undefined) {
+      orders = orders.filter(order => order.price <= filters.maxPrice!);
+    }
+    
     if (filters.timeRange) {
       const now = Date.now();
       const timeRanges: Record<string, number> = {
@@ -103,7 +113,11 @@ export class MemStorage implements IStorage {
       }
     }
     
-    return orders;
+    // Re-sort by timestamp after filtering to ensure consistent ordering
+    // Return new array to avoid mutating cached data
+    return [...orders].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 
   async createOrder(insertOrder: InsertBitcoinOrder): Promise<BitcoinOrder> {

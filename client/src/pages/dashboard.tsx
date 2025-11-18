@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { BitcoinOrder, OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
 import { SummaryStats } from "@/components/summary-stats";
@@ -6,7 +6,9 @@ import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
+import { WhaleAnalytics } from "@/components/whale-analytics";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,29 +21,49 @@ export default function Dashboard() {
   const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [status, setStatus] = useState<PositionStatus>('all');
+  const [minPrice, setMinPrice] = useState<number | undefined>(undefined);
+  const [maxPrice, setMaxPrice] = useState<number | undefined>(undefined);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const { toast } = useToast();
 
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
   // Fetch orders filtered by user's selections
   // Always include exchange in query key to prevent stale cache when switching
-  const { data: orders = [], isLoading, refetch } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status],
+  const { data: orders = [], isLoading, refetch, error } = useQuery<BitcoinOrder[]>({
+    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status, minPrice, maxPrice],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (minSize > 1) params.append('minSize', minSize.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       if (exchange !== 'all') params.append('exchange', exchange);
       if (status !== 'all') params.append('status', status);
+      if (minPrice !== undefined) params.append('minPrice', minPrice.toString());
+      if (maxPrice !== undefined) params.append('maxPrice', maxPrice.toString());
       params.append('timeRange', timeRange);
       
       const response = await fetch(`/api/orders?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch orders' }));
+        throw new Error(errorData.error || 'Failed to fetch orders');
+      }
       return response.json();
     },
     refetchInterval: autoRefresh ? 10000 : false,
+    retry: false, // Don't retry on validation errors
   });
+
+  // Show toast notification for errors (only once per error)
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Filter Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [error?.message, toast]);
 
   // Fetch time-range-only orders for accurate price calculation (separate cache key)
   const { data: timeRangeOrders = [] } = useQuery<BitcoinOrder[]>({
@@ -186,6 +208,16 @@ export default function Dashboard() {
             setTimeRange={setTimeRange}
             status={status}
             setStatus={setStatus}
+            minPrice={minPrice}
+            setMinPrice={setMinPrice}
+            maxPrice={maxPrice}
+            setMaxPrice={setMaxPrice}
+          />
+
+          {/* Whale Analytics - Pattern detection, accumulation, and order flow */}
+          <WhaleAnalytics 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
           />
 
           {/* Depth Chart - Shows concentration of orders at different price levels */}

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import type { OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
 
 interface FilterControlsProps {
@@ -14,6 +15,10 @@ interface FilterControlsProps {
   setTimeRange: (value: TimeRange) => void;
   status: PositionStatus;
   setStatus: (value: PositionStatus) => void;
+  minPrice?: number;
+  setMinPrice: (value: number | undefined) => void;
+  maxPrice?: number;
+  setMaxPrice: (value: number | undefined) => void;
 }
 
 export function FilterControls({
@@ -27,6 +32,10 @@ export function FilterControls({
   setTimeRange,
   status,
   setStatus,
+  minPrice,
+  setMinPrice,
+  maxPrice,
+  setMaxPrice,
 }: FilterControlsProps) {
   return (
     <Card data-testid="card-filters">
@@ -34,7 +43,7 @@ export function FilterControls({
         <CardTitle className="text-lg font-semibold">Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-7">
           <div className="space-y-2">
             <Label htmlFor="min-size" className="text-sm font-medium">
               Minimum Size
@@ -133,6 +142,34 @@ export function FilterControls({
                 <SelectItem value="filled">Filled Orders</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="min-price" className="text-sm font-medium">
+              Min Price ($)
+            </Label>
+            <Input
+              id="min-price"
+              type="number"
+              placeholder="No minimum"
+              value={minPrice ?? ''}
+              onChange={(e) => setMinPrice(e.target.value ? Number(e.target.value) : undefined)}
+              data-testid="input-min-price"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max-price" className="text-sm font-medium">
+              Max Price ($)
+            </Label>
+            <Input
+              id="max-price"
+              type="number"
+              placeholder="No maximum"
+              value={maxPrice ?? ''}
+              onChange={(e) => setMaxPrice(e.target.value ? Number(e.target.value) : undefined)}
+              data-testid="input-max-price"
+            />
           </div>
         </div>
       </CardContent>

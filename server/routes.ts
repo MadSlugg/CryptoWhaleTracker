@@ -260,6 +260,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
       let status: 'active' | 'filled' | 'all' = 'all';
+      let minPrice: number | undefined = undefined;
+      let maxPrice: number | undefined = undefined;
       
       if (req.query.minSize) {
         const parsed = parseFloat(req.query.minSize as string);
@@ -301,6 +303,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status = st as 'active' | 'filled' | 'all';
       }
       
+      if (req.query.minPrice) {
+        const parsed = parseFloat(req.query.minPrice as string);
+        if (isNaN(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'Invalid minPrice parameter' });
+        }
+        minPrice = parsed;
+      }
+      
+      if (req.query.maxPrice) {
+        const parsed = parseFloat(req.query.maxPrice as string);
+        if (isNaN(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'Invalid maxPrice parameter' });
+        }
+        maxPrice = parsed;
+      }
+      
+      // Validate price range
+      if (minPrice !== undefined && maxPrice !== undefined && minPrice > maxPrice) {
+        return res.status(400).json({ error: 'minPrice cannot be greater than maxPrice' });
+      }
+      
       // Get filtered orders from storage
       const orders = await storage.getFilteredOrders({
         minSize,
@@ -308,6 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exchange,
         timeRange,
         status,
+        minPrice,
+        maxPrice,
       });
       
       res.json(orders);
