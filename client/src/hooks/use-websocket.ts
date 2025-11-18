@@ -24,25 +24,50 @@ export function useWebSocket() {
           try {
             const data = JSON.parse(event.data);
             
-            // Handle large order alerts
+            // Handle new order alerts
             if (data.type === 'new_order' && data.order) {
               const order = data.order;
               const orderSizeBTC = order.size;
               
-              // Alert for 1000+ BTC orders
+              // Alert for 1000+ BTC new orders
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "MEGA WHALE ALERT",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  title: "MEGA WHALE ALERT - NEW ORDER",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order placed at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   variant: "destructive",
                   duration: 10000,
                 });
               }
-              // Alert for 100+ BTC orders
+              // Alert for 100+ BTC new orders
               else if (orderSizeBTC >= 100) {
                 toast({
-                  title: "Large Whale Alert",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  title: "Large Whale Alert - New Order",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order placed at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  duration: 7000,
+                });
+              }
+            }
+            
+            // Handle filled order alerts
+            if (data.type === 'order_filled' && data.order) {
+              const order = data.order;
+              const orderSizeBTC = order.size;
+              const fillPrice = order.fillPrice || order.price;
+              
+              // Alert for 1000+ BTC filled orders
+              if (orderSizeBTC >= 1000) {
+                toast({
+                  title: "MEGA WHALE FILLED",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order FILLED at $${fillPrice.toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  variant: "destructive",
+                  duration: 10000,
+                });
+              }
+              // Alert for 100+ BTC filled orders
+              else if (orderSizeBTC >= 100) {
+                toast({
+                  title: "Large Whale Filled",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} order FILLED at $${fillPrice.toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   duration: 7000,
                 });
               }
