@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import type { InsertBitcoinOrder } from "@shared/schema";
+import { calculateProfitLoss } from "@shared/schema";
 
 // Generate realistic Bitcoin wallet address (bc1 native SegWit format)
 function generateWalletAddress(): string {
@@ -20,6 +21,7 @@ function generateWalletAddress(): string {
 // Simulated order generator
 class OrderGenerator {
   private intervalId: NodeJS.Timeout | null = null;
+  private closeIntervalId: NodeJS.Timeout | null = null;
   private wss: WebSocketServer | null = null;
 
   start(wss: WebSocketServer) {
@@ -33,6 +35,11 @@ class OrderGenerator {
       this.generateOrder();
     }, Math.random() * 5000 + 3000);
 
+    // Close random positions every 5-15 seconds
+    this.closeIntervalId = setInterval(() => {
+      this.closeRandomPosition();
+    }, Math.random() * 10000 + 5000);
+
     // Clean old orders every hour
     setInterval(() => {
       storage.clearOldOrders(24);
@@ -43,6 +50,10 @@ class OrderGenerator {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
+    }
+    if (this.closeIntervalId) {
+      clearInterval(this.closeIntervalId);
+      this.closeIntervalId = null;
     }
   }
 
@@ -98,6 +109,7 @@ class OrderGenerator {
       leverage: Math.round(leverage * 10) / 10,
       timestamp: new Date().toISOString(),
       walletAddress: generateWalletAddress(),
+      status: 'open',
     };
 
     const createdOrder = await storage.createOrder(order);
@@ -118,6 +130,54 @@ class OrderGenerator {
 
     return createdOrder;
   }
+
+  private async closeRandomPosition() {
+    const openOrders = await storage.getOpenOrders();
+    
+    // Only close positions if there are at least 5 open orders
+    if (openOrders.length < 5) {
+      return;
+    }
+
+    // Pick a random open order
+    const randomIndex = Math.floor(Math.random() * openOrders.length);
+    const order = openOrders[randomIndex];
+
+    // Generate realistic close price (could be profit or loss)
+    // Price moves in a range around the entry price
+    const currentBtcPrice = 91000 + Math.random() * 5000;
+    const priceVariation = (Math.random() - 0.5) * 1000;
+    const closePrice = currentBtcPrice + priceVariation;
+
+    // Calculate profit/loss
+    const profitLoss = calculateProfitLoss(
+      order.price,
+      closePrice,
+      order.leverage,
+      order.type
+    );
+
+    // Close the order
+    const closedOrder = await storage.closeOrder(
+      order.id,
+      Math.round(closePrice * 100) / 100,
+      Math.round(profitLoss * 100) / 100
+    );
+
+    // Broadcast to all WebSocket clients
+    if (closedOrder && this.wss) {
+      const message = JSON.stringify({
+        type: 'close_order',
+        order: closedOrder,
+      });
+
+      this.wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    }
+  }
 }
 
 const orderGenerator = new OrderGenerator();
@@ -131,6 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let minLeverage = 0;
       let orderType: 'long' | 'short' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
+      let status: 'open' | 'closed' | 'all' = 'all';
       
       if (req.query.minSize) {
         const parsed = parseFloat(req.query.minSize as string);
@@ -163,6 +224,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         timeRange = range as '1h' | '4h' | '24h' | '7d';
       }
+
+      if (req.query.status) {
+        const st = req.query.status as string;
+        if (!['open', 'closed', 'all'].includes(st)) {
+          return res.status(400).json({ error: 'Invalid status parameter (must be open, closed, or all)' });
+        }
+        status = st as 'open' | 'closed' | 'all';
+      }
       
       // Get filtered orders from storage
       const orders = await storage.getFilteredOrders({
@@ -170,6 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         minLeverage,
         orderType,
         timeRange,
+        status,
       });
       
       res.json(orders);
