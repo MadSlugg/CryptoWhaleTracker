@@ -9,6 +9,8 @@ import { MajorWhales } from "@/components/major-whales";
 import { WhaleAnalytics } from "@/components/whale-analytics";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { WhaleMomentum } from "@/components/whale-momentum";
+import { SentimentScore } from "@/components/sentiment-score";
+import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -192,6 +194,21 @@ export default function Dashboard() {
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
+
+          {/* AI-Driven Market Intelligence - Two column grid */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            {/* Sentiment Score - AI analysis */}
+            <SentimentScore 
+              orders={filteredOrders} 
+              currentPrice={currentBtcPrice}
+            />
+
+            {/* Order Book Imbalance - Supply/Demand pressure */}
+            <OrderBookImbalance 
+              orders={filteredOrders} 
+              currentPrice={currentBtcPrice}
+            />
+          </div>
 
           {/* Filters */}
           <FilterControls
