@@ -87,8 +87,14 @@ export function EntrySignals({ orders, currentPrice }: EntrySignalsProps) {
           );
           
           if (recentFilledShorts.length > 0) {
-            reasons.push('Short sellers trapped - potential squeeze');
-            strength = strength === 'weak' ? 'moderate' : 'strong';
+            const trappedVolume = recentFilledShorts.reduce((sum, o) => sum + o.size, 0);
+            reasons.push(`Short sellers trapped (${trappedVolume.toFixed(2)} BTC) - potential squeeze`);
+            // Only upgrade if trapped volume is significant
+            if (strength === 'weak' && trappedVolume > 30) {
+              strength = 'moderate';
+            } else if (strength === 'moderate' && trappedVolume > 75) {
+              strength = 'strong';
+            }
           }
           
           signals.push({
@@ -129,8 +135,14 @@ export function EntrySignals({ orders, currentPrice }: EntrySignalsProps) {
           );
           
           if (recentFilledLongs.length > 0) {
-            reasons.push('Long buyers trapped - potential dump');
-            strength = strength === 'weak' ? 'moderate' : 'strong';
+            const trappedVolume = recentFilledLongs.reduce((sum, o) => sum + o.size, 0);
+            reasons.push(`Long buyers trapped (${trappedVolume.toFixed(2)} BTC) - potential dump`);
+            // Only upgrade if trapped volume is significant
+            if (strength === 'weak' && trappedVolume > 30) {
+              strength = 'moderate';
+            } else if (strength === 'moderate' && trappedVolume > 75) {
+              strength = 'strong';
+            }
           }
           
           signals.push({
