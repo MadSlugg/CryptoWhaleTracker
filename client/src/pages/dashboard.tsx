@@ -42,10 +42,10 @@ export default function Dashboard() {
   const { data: timeRangeOrders = [] } = useQuery<BitcoinOrder[]>({
     queryKey: ['price-calculation-orders', timeRange],
     queryFn: async () => {
-      // Fetch with ONLY timeRange filter (no size/leverage/type filters)
+      // Fetch with ONLY timeRange filter (no size/type filters)
       const params = new URLSearchParams();
       params.append('timeRange', timeRange);
-      // Don't send minSize/minLeverage/orderType - backend defaults will not filter these
+      // Don't send minSize/orderType - backend defaults will not filter these
       
       const response = await fetch(`/api/orders?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch orders');
