@@ -37,12 +37,12 @@ class OrderGenerator {
     // Generate initial orders
     this.generateBatch(15);
     
-    // Generate new simulated order every 10-15 seconds
+    // Generate new simulated order every ~12.5 seconds (static interval)
     this.intervalId = setInterval(() => {
       this.generateOrder();
     }, Math.random() * 5000 + 10000);
 
-    // Fetch real whale orders from Binance every 8-12 seconds
+    // Fetch real whale orders from Binance every ~10 seconds (static interval)
     this.whaleIntervalId = setInterval(() => {
       this.fetchRealWhaleOrders();
     }, Math.random() * 4000 + 8000);
@@ -88,7 +88,8 @@ class OrderGenerator {
 
   private async fetchRealWhaleOrders() {
     try {
-      const whaleOrders = await binanceService.getWhaleOrders(5); // 5+ BTC orders
+      // Fetch orders with $450k+ notional value (approx 5 BTC at $90k)
+      const whaleOrders = await binanceService.getWhaleOrders(450000);
       
       for (const whaleOrder of whaleOrders) {
         // Create unique key for this order book entry

@@ -18,11 +18,13 @@ export interface OrderBookEntry {
   total: number; // price * quantity in USD
 }
 
-const BINANCE_API_BASE = 'https://api.binance.com';
+// Using Binance's market data-only endpoint which has different geo-restrictions
+const BINANCE_API_BASE = 'https://data-api.binance.vision';
 const BINANCE_SYMBOL = 'BTCUSDT';
 
 export class BinanceService {
   private lastUpdateId: number = 0;
+  private lastKnownPrice: number = 90000; // Cache last known price
   
   /**
    * Fetch current Bitcoin price from Binance
@@ -38,11 +40,14 @@ export class BinanceService {
       }
       
       const data: BinanceTickerResponse = await response.json();
-      return parseFloat(data.price);
+      const price = parseFloat(data.price);
+      this.lastKnownPrice = price; // Cache the price
+      return price;
     } catch (error) {
       console.error('Error fetching Bitcoin price from Binance:', error);
-      // Fallback to simulated price if API fails
-      return 91000 + Math.random() * 5000;
+      // Fallback to last known price with small random drift
+      const drift = (Math.random() - 0.5) * 200; // ±$100 drift
+      return this.lastKnownPrice + drift;
     }
   }
   
@@ -70,10 +75,10 @@ export class BinanceService {
   }
   
   /**
-   * Parse order book and extract whale orders above threshold
-   * @param minBtcSize Minimum BTC size to be considered a whale order
+   * Parse order book and extract whale orders above notional threshold
+   * @param minNotionalUSD Minimum USD value to be considered a whale order (default: $450k)
    */
-  async getWhaleOrders(minBtcSize: number = 5): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 450000): Promise<OrderBookEntry[]> {
     try {
       const orderBook = await this.getOrderBook(100);
       const whaleOrders: OrderBookEntry[] = [];
@@ -84,7 +89,8 @@ export class BinanceService {
         const quantity = parseFloat(quantityStr);
         const total = price * quantity;
         
-        if (quantity >= minBtcSize) {
+        // Filter by notional value (USD value of the order)
+        if (total >= minNotionalUSD) {
           whaleOrders.push({
             price,
             quantity,
@@ -100,7 +106,8 @@ export class BinanceService {
         const quantity = parseFloat(quantityStr);
         const total = price * quantity;
         
-        if (quantity >= minBtcSize) {
+        // Filter by notional value (USD value of the order)
+        if (total >= minNotionalUSD) {
           whaleOrders.push({
             price,
             quantity,

@@ -46,13 +46,20 @@ Preferred communication style: Simple, everyday language.
 
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
 
-**Order Generation**: Simulated order generator that creates realistic Bitcoin trading orders with:
-- Random price fluctuations around $91k-$96k (current realistic Bitcoin market prices verified against Binance)
+**Binance Integration**: Real-time Bitcoin data integration with Binance API:
+- Real Bitcoin prices fetched from Binance ticker API every 5 seconds
+- Real whale orders extracted from Binance order book depth (orders with $450k+ notional value)
+- Order book polling every ~10 seconds to detect new large buy/sell orders
+- Fallback to last known price with small drift if API temporarily unavailable
+- Uses data-api.binance.vision endpoint (market data-only) to avoid geo-restrictions
+
+**Order Generation**: Mixed data source combining real and simulated orders:
+- Real whale orders from Binance order book (large buy/sell orders)
+- Simulated orders generated every ~12.5 seconds for additional activity
 - Size distribution favoring smaller orders with occasional whale trades
 - Leverage between 1x-50x
 - Automatic liquidation price calculation
 - Batch initial data generation (15 orders) on startup
-- Continuous generation every 3-8 seconds
 - Automatic position closing mechanism that randomly closes open positions every 5-15 seconds
 - Profit/loss calculation based on entry/exit price and leverage
 - Wallet address tracking using native SegWit (bc1...) format for identifying whale movements
