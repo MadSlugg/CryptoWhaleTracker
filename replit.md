@@ -43,10 +43,10 @@ Preferred communication style: Simple, everyday language.
   - Shows order size, type, price, exchange, and status
   - Auto-updates every 10 seconds with real-time data
 - **Major Whale Alerts**: Real-time toast notifications for large orders:
-  - 1000+ BTC orders: "MEGA WHALE ALERT" (red/destructive variant, 10s duration)
-  - 100+ BTC orders: "Large Whale Alert" (default variant, 7s duration)
-  - Alerts trigger both when orders are placed (NEW ORDER) and when they execute (FILLED)
-  - Shows order size, type (LONG/SHORT), price, and exchange
+  - 1000+ BTC orders: "MEGA WHALE ALERT - ACTIVE" or "MEGA WHALE - FILLED" (red/destructive variant, 10s duration)
+  - 100+ BTC orders: "Large Whale Alert - ACTIVE" or "Large Whale - FILLED" (default variant, 7s duration)
+  - Alerts trigger both when orders are placed (ACTIVE status) and when they execute (FILLED status)
+  - Shows order size, type (LONG/SHORT), price, exchange, and status (ACTIVE/FILLED)
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
   - **Order Flow Indicator**: Real-time buying vs selling pressure from whale orders with progress bars
     - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
