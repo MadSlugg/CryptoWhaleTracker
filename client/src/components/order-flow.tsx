@@ -20,10 +20,15 @@ export function OrderFlow({ orders }: OrderFlowProps) {
     const longPercentage = totalVolume > 0 ? (longVolume / totalVolume) * 100 : 50;
     const shortPercentage = totalVolume > 0 ? (shortVolume / totalVolume) * 100 : 50;
     
+    // Calculate pressure as difference between long and short percentages
+    // Pressure thresholds aligned with Order Book Imbalance:
+    // >50% difference = 75/25 split or more extreme (STRONG)
+    // >30% difference = 65/35 split (MODERATE)
+    // <=30% difference = relatively balanced
     const pressure = Math.abs(longPercentage - shortPercentage);
     let pressureLevel: 'balanced' | 'moderate' | 'strong' = 'balanced';
-    if (pressure > 30) pressureLevel = 'strong';
-    else if (pressure > 15) pressureLevel = 'moderate';
+    if (pressure > 50) pressureLevel = 'strong';
+    else if (pressure > 30) pressureLevel = 'moderate';
     
     let dominance: 'buying' | 'selling' | 'neutral' = 'neutral';
     if (longPercentage > shortPercentage) dominance = 'buying';
