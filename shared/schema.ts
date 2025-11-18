@@ -8,7 +8,6 @@ export const bitcoinOrderSchema = z.object({
   leverage: z.number().min(1).max(100),
   timestamp: z.string(),
   liquidationPrice: z.number().positive().optional(),
-  walletAddress: z.string(),
   status: z.enum(['open', 'closed']),
   closedAt: z.string().optional(),
   closePrice: z.number().positive().optional(),

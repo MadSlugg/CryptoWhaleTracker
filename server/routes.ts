@@ -6,19 +6,6 @@ import type { InsertBitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 
-// Generate realistic Bitcoin wallet address (bc1 native SegWit format)
-function generateWalletAddress(): string {
-  const chars = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
-  const length = 42; // bc1 addresses are typically 42 characters
-  let address = 'bc1q';
-  
-  for (let i = 0; i < length - 4; i++) {
-    address += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  
-  return address;
-}
-
 // Simulated order generator with real Binance data
 class OrderGenerator {
   private intervalId: NodeJS.Timeout | null = null;
@@ -131,7 +118,6 @@ class OrderGenerator {
           price: Math.round(whaleOrder.price * 100) / 100,
           leverage: Math.round(leverage * 10) / 10,
           timestamp: new Date().toISOString(),
-          walletAddress: generateWalletAddress(),
           status: 'open',
         };
         
@@ -208,7 +194,6 @@ class OrderGenerator {
       price: Math.round(price * 100) / 100,
       leverage: Math.round(leverage * 10) / 10,
       timestamp: new Date().toISOString(),
-      walletAddress: generateWalletAddress(),
       status: 'open',
     };
 

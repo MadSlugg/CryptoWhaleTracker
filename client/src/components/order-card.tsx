@@ -2,12 +2,9 @@ import type { BitcoinOrder } from "@shared/schema";
 import { getLeverageRiskLevel } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { LeverageIndicator } from "./leverage-indicator";
-import { TrendingUp, TrendingDown, Clock, DollarSign, Wallet, Copy, Check, ArrowRight } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, DollarSign, ArrowRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 interface OrderCardProps {
   order: BitcoinOrder;
@@ -17,8 +14,6 @@ export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
   const isClosed = order.status === 'closed';
   const riskLevel = getLeverageRiskLevel(order.leverage);
-  const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
   
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
@@ -27,28 +22,6 @@ export function OrderCard({ order }: OrderCardProps) {
   const formattedCloseTime = order.closedAt ? formatDistanceToNow(new Date(order.closedAt), {
     addSuffix: true,
   }) : null;
-
-  const truncateAddress = (address: string) => {
-    return `${address.slice(0, 8)}...${address.slice(-6)}`;
-  };
-
-  const copyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(order.walletAddress);
-      setCopied(true);
-      toast({
-        title: "Wallet address copied",
-        description: "Address copied to clipboard",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "Could not copy wallet address",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <Card 
@@ -123,29 +96,6 @@ export function OrderCard({ order }: OrderCardProps) {
                     {order.profitLoss >= 0 ? '+' : ''}{order.profitLoss.toFixed(2)}%
                   </Badge>
                 )}
-              </div>
-              
-              <div className="flex items-center gap-1 mt-1">
-                <Wallet className="h-3 w-3 text-muted-foreground" />
-                <span 
-                  className="text-xs font-mono text-muted-foreground"
-                  data-testid={`text-wallet-${order.id}`}
-                >
-                  {truncateAddress(order.walletAddress)}
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5 ml-1"
-                  onClick={copyAddress}
-                  data-testid={`button-copy-wallet-${order.id}`}
-                >
-                  {copied ? (
-                    <Check className="h-3 w-3 text-green-500" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
               </div>
             </div>
           </div>
