@@ -111,7 +111,7 @@ export function WhaleMomentum({ orders, currentPrice = 0 }: WhaleMomentumProps) 
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" data-testid="icon-momentum" />
-            <span className="text-base">Whale Momentum (10+ BTC)</span>
+            <span className="text-base">Whale Momentum</span>
           </div>
           <Badge 
             variant={momentumColor}
@@ -122,7 +122,7 @@ export function WhaleMomentum({ orders, currentPrice = 0 }: WhaleMomentumProps) 
           </Badge>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
-          Rate of new 10+ BTC whale orders entering the market and their price areas. High momentum indicates increased whale activity.
+          Rate of new whale orders entering the market and their price areas. High momentum indicates increased whale activity.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
