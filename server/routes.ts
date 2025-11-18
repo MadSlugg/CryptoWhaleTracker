@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import type { InsertBitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
+import { binanceService, type OrderBookEntry } from "./binance";
 
 // Generate realistic Bitcoin wallet address (bc1 native SegWit format)
 function generateWalletAddress(): string {
@@ -18,22 +19,38 @@ function generateWalletAddress(): string {
   return address;
 }
 
-// Simulated order generator
+// Simulated order generator with real Binance data
 class OrderGenerator {
   private intervalId: NodeJS.Timeout | null = null;
   private closeIntervalId: NodeJS.Timeout | null = null;
+  private whaleIntervalId: NodeJS.Timeout | null = null;
   private wss: WebSocketServer | null = null;
+  private seenOrderBookEntries: Set<string> = new Set();
+  private currentBtcPrice: number = 93000; // Cache current price
 
   start(wss: WebSocketServer) {
     this.wss = wss;
     
+    // Fetch initial Bitcoin price
+    this.updateBitcoinPrice();
+    
     // Generate initial orders
     this.generateBatch(15);
     
-    // Generate new order every 3-8 seconds
+    // Generate new simulated order every 10-15 seconds
     this.intervalId = setInterval(() => {
       this.generateOrder();
-    }, Math.random() * 5000 + 3000);
+    }, Math.random() * 5000 + 10000);
+
+    // Fetch real whale orders from Binance every 8-12 seconds
+    this.whaleIntervalId = setInterval(() => {
+      this.fetchRealWhaleOrders();
+    }, Math.random() * 4000 + 8000);
+
+    // Update Bitcoin price every 5 seconds
+    setInterval(() => {
+      this.updateBitcoinPrice();
+    }, 5000);
 
     // Close random positions every 5-15 seconds
     this.closeIntervalId = setInterval(() => {
@@ -55,6 +72,87 @@ class OrderGenerator {
       clearInterval(this.closeIntervalId);
       this.closeIntervalId = null;
     }
+    if (this.whaleIntervalId) {
+      clearInterval(this.whaleIntervalId);
+      this.whaleIntervalId = null;
+    }
+  }
+
+  private async updateBitcoinPrice() {
+    try {
+      this.currentBtcPrice = await binanceService.getCurrentPrice();
+    } catch (error) {
+      console.error('Failed to update Bitcoin price:', error);
+    }
+  }
+
+  private async fetchRealWhaleOrders() {
+    try {
+      const whaleOrders = await binanceService.getWhaleOrders(5); // 5+ BTC orders
+      
+      for (const whaleOrder of whaleOrders) {
+        // Create unique key for this order book entry
+        const entryKey = `${whaleOrder.type}-${whaleOrder.price.toFixed(2)}-${whaleOrder.quantity.toFixed(2)}`;
+        
+        // Skip if we've already shown this order
+        if (this.seenOrderBookEntries.has(entryKey)) {
+          continue;
+        }
+        
+        // Mark as seen
+        this.seenOrderBookEntries.add(entryKey);
+        
+        // Clean up old entries periodically (keep last 1000)
+        if (this.seenOrderBookEntries.size > 1000) {
+          const entriesToDelete = Array.from(this.seenOrderBookEntries).slice(0, 500);
+          entriesToDelete.forEach(key => this.seenOrderBookEntries.delete(key));
+        }
+        
+        // Convert order book entry to our format
+        // bid = buy order = someone going long
+        // ask = sell order = someone going short
+        const type = whaleOrder.type === 'bid' ? 'long' : 'short';
+        
+        // Generate realistic leverage for the order (order book doesn't show leverage)
+        const leverageRandom = Math.random();
+        let leverage: number;
+        if (leverageRandom < 0.5) {
+          leverage = 1 + Math.random() * 4; // 1-5x (spot/low leverage)
+        } else if (leverageRandom < 0.8) {
+          leverage = 5 + Math.random() * 10; // 5-15x
+        } else {
+          leverage = 15 + Math.random() * 10; // 15-25x
+        }
+        
+        const order: InsertBitcoinOrder = {
+          type,
+          size: Math.round(whaleOrder.quantity * 100) / 100,
+          price: Math.round(whaleOrder.price * 100) / 100,
+          leverage: Math.round(leverage * 10) / 10,
+          timestamp: new Date().toISOString(),
+          walletAddress: generateWalletAddress(),
+          status: 'open',
+        };
+        
+        const createdOrder = await storage.createOrder(order);
+        
+        // Broadcast to WebSocket clients
+        if (this.wss) {
+          const message = JSON.stringify({
+            type: 'new_order',
+            order: createdOrder,
+          });
+          
+          this.wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(message);
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch real whale orders:', error);
+    }
   }
 
   private async generateBatch(count: number) {
@@ -66,7 +164,8 @@ class OrderGenerator {
   }
 
   private async generateOrder(broadcast = true) {
-    const btcPrice = 91000 + Math.random() * 5000; // Base price around $91k-$96k (current realistic range)
+    // Use real Bitcoin price with small variation
+    const btcPrice = this.currentBtcPrice;
     
     const type = Math.random() > 0.5 ? 'long' : 'short';
     
@@ -143,9 +242,8 @@ class OrderGenerator {
     const randomIndex = Math.floor(Math.random() * openOrders.length);
     const order = openOrders[randomIndex];
 
-    // Generate realistic close price (could be profit or loss)
-    // Price moves in a range around the entry price
-    const currentBtcPrice = 91000 + Math.random() * 5000;
+    // Generate realistic close price using real Bitcoin price
+    const currentBtcPrice = this.currentBtcPrice;
     const priceVariation = (Math.random() - 0.5) * 1000;
     const closePrice = currentBtcPrice + priceVariation;
 
