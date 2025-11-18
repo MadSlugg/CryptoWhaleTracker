@@ -63,12 +63,18 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
       const count = allOrders.length;
       
       if (count >= 3 || totalSize >= 50) {
-        let type: 'long' | 'short' | 'mixed' = 'mixed';
-        if (cluster.longs.length === 0) type = 'short';
-        else if (cluster.shorts.length === 0) type = 'long';
-        
         const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
         const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
+        
+        // Determine type based on BTC volume, not just presence
+        let type: 'long' | 'short' | 'mixed' = 'mixed';
+        const volumeDifference = Math.abs(longSize - shortSize);
+        const averageVolume = (longSize + shortSize) / 2;
+        
+        // If one side has >20% more volume than average, it dominates
+        if (volumeDifference > averageVolume * 0.2) {
+          type = longSize > shortSize ? 'long' : 'short';
+        }
         
         significantClusters.push({
           price,
@@ -115,14 +121,20 @@ export function WhaleAnalytics({ orders, currentPrice }: WhaleAnalyticsProps) {
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
         
-        let type: 'long' | 'short' | 'mixed' = 'mixed';
-        if (zone.longs === 0) type = 'short';
-        else if (zone.shorts === 0) type = 'long';
-        
         const longOrders = zone.orders.filter(o => o.type === 'long');
         const shortOrders = zone.orders.filter(o => o.type === 'short');
         const longSize = longOrders.reduce((sum, o) => sum + o.size, 0);
         const shortSize = shortOrders.reduce((sum, o) => sum + o.size, 0);
+        
+        // Determine type based on BTC volume, not just presence
+        let type: 'long' | 'short' | 'mixed' = 'mixed';
+        const volumeDifference = Math.abs(longSize - shortSize);
+        const averageVolume = (longSize + shortSize) / 2;
+        
+        // If one side has >20% more volume than average, it dominates
+        if (volumeDifference > averageVolume * 0.2) {
+          type = longSize > shortSize ? 'long' : 'short';
+        }
         
         zones.push({
           price,
