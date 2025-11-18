@@ -22,7 +22,7 @@ export function useWebSocket() {
           try {
             const data = JSON.parse(event.data);
             
-            if (data.type === 'initial_data' || data.type === 'new_order') {
+            if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled') {
               // Invalidate all /api/orders queries regardless of filter parameters
               queryClient.invalidateQueries({ 
                 predicate: (query) => {

@@ -13,7 +13,7 @@ export interface OrderFilters {
   orderType?: 'long' | 'short' | 'all';
   exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
   timeRange?: '1h' | '4h' | '24h' | '7d';
-  status?: 'open' | 'closed' | 'all';
+  status?: 'active' | 'filled' | 'all';
 }
 
 export interface IStorage {
@@ -22,9 +22,9 @@ export interface IStorage {
   getFilteredOrders(filters: OrderFilters): Promise<BitcoinOrder[]>;
   createOrder(order: InsertBitcoinOrder): Promise<BitcoinOrder>;
   getOrder(id: string): Promise<BitcoinOrder | undefined>;
-  closeOrder(id: string, closePrice: number, profitLoss: number): Promise<BitcoinOrder | undefined>;
+  updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined>;
   getOpenOrders(): Promise<BitcoinOrder[]>;
-  clearOldOrders(hoursAgo: number): Promise<void>;
+  clearOldOrders(hoursAgo: number): Promise<string[]>;
   
   // Whale movements
   addWhaleMovement(movement: Omit<WhaleMovement, 'id'>): Promise<WhaleMovement>;
@@ -112,7 +112,7 @@ export class MemStorage implements IStorage {
     const order: BitcoinOrder = {
       ...insertOrder,
       id,
-      status: insertOrder.status || 'open',
+      status: insertOrder.status || 'active',
     };
     
     this.orders.set(id, order);
@@ -123,38 +123,42 @@ export class MemStorage implements IStorage {
     return this.orders.get(id);
   }
 
-  async closeOrder(id: string, closePrice: number, profitLoss: number): Promise<BitcoinOrder | undefined> {
+  async updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined> {
     const order = this.orders.get(id);
-    // Treat undefined status as open (for legacy records)
-    if (!order || order.status === 'closed') {
+    if (!order) {
       return undefined;
     }
 
-    const closedOrder: BitcoinOrder = {
+    const updatedOrder: BitcoinOrder = {
       ...order,
-      status: 'closed',
-      closePrice,
-      closedAt: new Date().toISOString(),
-      profitLoss,
+      status,
+      ...(status === 'filled' && {
+        filledAt: new Date().toISOString(),
+        fillPrice: fillPrice || order.price,
+      }),
     };
 
-    this.orders.set(id, closedOrder);
-    return closedOrder;
+    this.orders.set(id, updatedOrder);
+    return updatedOrder;
   }
 
   async getOpenOrders(): Promise<BitcoinOrder[]> {
     const allOrders = await this.getOrders();
-    return allOrders.filter(order => order.status === 'open');
+    return allOrders.filter(order => order.status === 'active');
   }
 
-  async clearOldOrders(hoursAgo: number): Promise<void> {
+  async clearOldOrders(hoursAgo: number): Promise<string[]> {
     const cutoffTime = new Date(Date.now() - hoursAgo * 60 * 60 * 1000);
+    const deletedIds: string[] = [];
     
     for (const [id, order] of Array.from(this.orders.entries())) {
       if (new Date(order.timestamp) < cutoffTime) {
         this.orders.delete(id);
+        deletedIds.push(id);
       }
     }
+    
+    return deletedIds;
   }
 
   // Whale movement methods

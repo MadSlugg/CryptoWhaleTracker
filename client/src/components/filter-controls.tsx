@@ -128,9 +128,9 @@ export function FilterControls({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Positions</SelectItem>
-                <SelectItem value="open">Open Only</SelectItem>
-                <SelectItem value="closed">Closed Only</SelectItem>
+                <SelectItem value="all">All Orders</SelectItem>
+                <SelectItem value="active">Active Orders</SelectItem>
+                <SelectItem value="filled">Filled Orders</SelectItem>
               </SelectContent>
             </Select>
           </div>

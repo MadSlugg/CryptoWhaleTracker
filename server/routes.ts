@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import type { InsertBitcoinOrder } from "@shared/schema";
+import type { InsertBitcoinOrder, BitcoinOrder } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 import { krakenService, coinbaseService, okxService } from "./exchange-services";
@@ -18,9 +18,13 @@ class OrderGenerator {
   private wss: WebSocketServer | null = null;
   private seenOrderBookEntries: Set<string> = new Set();
   private currentBtcPrice: number = 93000; // Cache current price
+  private activeOrderIds: Set<string> = new Set(); // Cache of active order IDs for fast lookup
 
-  start(wss: WebSocketServer) {
+  async start(wss: WebSocketServer) {
     this.wss = wss;
+    
+    // Initialize activeOrderIds cache with existing active orders
+    await this.initializeActiveOrdersCache();
     
     // Fetch initial Bitcoin price
     this.updateBitcoinPrice();
@@ -50,10 +54,89 @@ class OrderGenerator {
       this.updateBitcoinPrice();
     }, 5000);
 
-    // Clean old orders every hour
-    setInterval(() => {
-      storage.clearOldOrders(24);
+    // Clean old orders every hour and sync cache
+    setInterval(async () => {
+      const deletedIds = await storage.clearOldOrders(24);
+      // Remove deleted order IDs from active cache
+      deletedIds.forEach(id => this.activeOrderIds.delete(id));
     }, 60 * 60 * 1000);
+
+    // Check for filled orders every 10 seconds
+    setInterval(() => {
+      this.checkFilledOrders();
+    }, 10000);
+  }
+
+  private async initializeActiveOrdersCache() {
+    try {
+      const allOrders = await storage.getOrders();
+      const activeOrders = allOrders.filter(o => o.status === 'active');
+      this.activeOrderIds = new Set(activeOrders.map(o => o.id));
+      console.log(`[OrderGenerator] Initialized with ${this.activeOrderIds.size} active orders`);
+    } catch (error) {
+      console.error('Failed to initialize active orders cache:', error);
+    }
+  }
+
+  private async checkFilledOrders() {
+    try {
+      // Snapshot active IDs to avoid issues with concurrent modifications
+      const activeIdsSnapshot = Array.from(this.activeOrderIds);
+      
+      // Fetch all orders in parallel
+      const orderPromises = activeIdsSnapshot.map(id => storage.getOrder(id));
+      const orders = await Promise.all(orderPromises);
+      
+      // Build map of ID -> order for easy lookup
+      const orderMap = new Map<string, BitcoinOrder>();
+      activeIdsSnapshot.forEach((id, index) => {
+        const order = orders[index];
+        if (order && order.status === 'active') {
+          orderMap.set(id, order);
+        } else {
+          // Order doesn't exist or is no longer active - remove from cache
+          this.activeOrderIds.delete(id);
+        }
+      });
+
+      // Check each active order for fill conditions
+      for (const [orderId, order] of Array.from(orderMap.entries())) {
+        let isFilled = false;
+
+        // For long orders (buy orders): filled if current price dropped to or below the limit price
+        // For short orders (sell orders): filled if current price rose to or above the limit price
+        if (order.type === 'long' && this.currentBtcPrice <= order.price) {
+          isFilled = true;
+        } else if (order.type === 'short' && this.currentBtcPrice >= order.price) {
+          isFilled = true;
+        }
+
+        if (isFilled) {
+          // Mark order as filled - use the returned updated order
+          const updatedOrder = await storage.updateOrderStatus(order.id, 'filled', this.currentBtcPrice);
+
+          // Remove from active orders cache
+          this.activeOrderIds.delete(order.id);
+
+          // Broadcast the updated order (with fillPrice and filledAt) to WebSocket clients
+          // Also trigger cache invalidation
+          if (this.wss && updatedOrder) {
+            const message = JSON.stringify({
+              type: 'order_filled',
+              order: updatedOrder,
+            });
+
+            this.wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+              }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check filled orders:', error);
+    }
   }
 
   stop() {
@@ -137,10 +220,13 @@ class OrderGenerator {
           price: Math.round(whaleOrder.price * 100) / 100,
           exchange,
           timestamp: new Date().toISOString(),
-          status: 'open',
+          status: 'active',
         };
         
         const createdOrder = await storage.createOrder(order);
+        
+        // Add to active orders cache
+        this.activeOrderIds.add(createdOrder.id);
         
         // Broadcast to WebSocket clients
         if (this.wss) {
@@ -173,7 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let orderType: 'long' | 'short' | 'all' = 'all';
       let exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
-      let status: 'open' | 'closed' | 'all' = 'all';
+      let status: 'active' | 'filled' | 'all' = 'all';
       
       if (req.query.minSize) {
         const parsed = parseFloat(req.query.minSize as string);
@@ -209,10 +295,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (req.query.status) {
         const st = req.query.status as string;
-        if (!['open', 'closed', 'all'].includes(st)) {
-          return res.status(400).json({ error: 'Invalid status parameter (must be open, closed, or all)' });
+        if (!['active', 'filled', 'all'].includes(st)) {
+          return res.status(400).json({ error: 'Invalid status parameter (must be active, filled, or all)' });
         }
-        status = st as 'open' | 'closed' | 'all';
+        status = st as 'active' | 'filled' | 'all';
       }
       
       // Get filtered orders from storage

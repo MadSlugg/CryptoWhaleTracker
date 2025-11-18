@@ -6,13 +6,14 @@ import { InboxIcon } from "lucide-react";
 interface OrderFeedProps {
   orders: BitcoinOrder[];
   isLoading: boolean;
+  title?: string;
 }
 
-export function OrderFeed({ orders, isLoading }: OrderFeedProps) {
+export function OrderFeed({ orders, isLoading, title = "Recent Orders" }: OrderFeedProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Recent Orders</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         <div className="space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <Card key={i} className="animate-pulse">
@@ -29,7 +30,7 @@ export function OrderFeed({ orders, isLoading }: OrderFeedProps) {
   if (orders.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Recent Orders</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         <Card>
           <CardContent className="p-12">
             <div className="flex flex-col items-center justify-center text-center space-y-3">
@@ -50,7 +51,7 @@ export function OrderFeed({ orders, isLoading }: OrderFeedProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Recent Orders</h2>
+        <h2 className="text-lg font-semibold">{title}</h2>
         <span className="text-sm text-muted-foreground" data-testid="text-order-count">
           {orders.length} order{orders.length !== 1 ? 's' : ''}
         </span>
