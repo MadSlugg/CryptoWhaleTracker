@@ -52,9 +52,9 @@ class OrderGenerator {
       this.updateBitcoinPrice();
     }, 5000);
 
-    // Clean old orders every hour and sync cache
+    // Clean old orders every hour and sync cache (keep for 7 days)
     setInterval(async () => {
-      const deletedIds = await storage.clearOldOrders(24);
+      const deletedIds = await storage.clearOldOrders(168); // 7 days
       // Remove deleted order IDs from active cache
       deletedIds.forEach(id => this.activeOrderIds.delete(id));
     }, 60 * 60 * 1000);
@@ -189,9 +189,6 @@ class OrderGenerator {
           break;
       }
       
-      // Verify existing active orders against fresh order book data
-      await this.verifyActiveOrders(exchange, whaleOrders);
-      
       for (const whaleOrder of whaleOrders) {
         // Convert order book entry to our format
         // bid = buy order = someone going long
@@ -247,57 +244,6 @@ class OrderGenerator {
       console.error(`Failed to fetch whale orders from ${exchange}:`, error);
     }
   }
-
-  private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx', whaleOrders: OrderBookEntry[]) {
-    try {
-      // Get all active orders for this exchange from storage
-      const allOrders = await storage.getOrders();
-      const activeOrdersForExchange = allOrders.filter(o => 
-        o.exchange === exchange && o.status === 'active'
-      );
-
-      // Check each active order against the fresh order book data
-      for (const activeOrder of activeOrdersForExchange) {
-        const roundedPrice = Math.round(activeOrder.price * 100) / 100;
-        const roundedSize = Math.round(activeOrder.size * 100) / 100;
-        
-        // Check if this order still exists in the current order book
-        const stillExists = whaleOrders.some(whaleOrder => {
-          const type = whaleOrder.type === 'bid' ? 'long' : 'short';
-          const whaleRoundedSize = Math.round(whaleOrder.quantity * 100) / 100;
-          const whaleRoundedPrice = Math.round(whaleOrder.price * 100) / 100;
-          
-          return type === activeOrder.type &&
-                 Math.abs(whaleRoundedPrice - roundedPrice) < 0.01 && // Price within 1 cent
-                 Math.abs(whaleRoundedSize - roundedSize) < 0.01; // Size within 0.01 BTC
-        });
-
-        // If order no longer exists in book, mark as disappeared
-        if (!stillExists) {
-          const updatedOrder = await storage.updateOrderStatus(activeOrder.id, 'disappeared');
-          
-          // Remove from active orders cache
-          this.activeOrderIds.delete(activeOrder.id);
-          
-          // Broadcast disappeared status to WebSocket clients
-          if (this.wss && updatedOrder) {
-            const message = JSON.stringify({
-              type: 'order_disappeared',
-              order: updatedOrder,
-            });
-            
-            this.wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-              }
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to verify active orders for ${exchange}:`, error);
-    }
-  }
 }
 
 const orderGenerator = new OrderGenerator();
@@ -311,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let orderType: 'long' | 'short' | 'all' = 'all';
       let exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all' = 'all';
       let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
-      let status: 'active' | 'filled' | 'disappeared' | 'all' = 'all';
+      let status: 'active' | 'filled' | 'all' = 'all';
       let minPrice: number | undefined = undefined;
       let maxPrice: number | undefined = undefined;
       
@@ -349,10 +295,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (req.query.status) {
         const st = req.query.status as string;
-        if (!['active', 'filled', 'disappeared', 'all'].includes(st)) {
-          return res.status(400).json({ error: 'Invalid status parameter (must be active, filled, disappeared, or all)' });
+        if (!['active', 'filled', 'all'].includes(st)) {
+          return res.status(400).json({ error: 'Invalid status parameter (must be active, filled, or all)' });
         }
-        status = st as 'active' | 'filled' | 'disappeared' | 'all';
+        status = st as 'active' | 'filled' | 'all';
       }
       
       if (req.query.minPrice) {
