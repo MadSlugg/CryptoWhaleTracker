@@ -9,6 +9,7 @@ import { WhaleAnalytics } from "@/components/whale-analytics";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { EntrySignals } from "@/components/entry-signals";
+import { SummaryStats } from "@/components/summary-stats";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -193,6 +194,12 @@ export default function Dashboard() {
             setTimeRange={setTimeRange}
             status={status}
             setStatus={setStatus}
+          />
+
+          {/* Summary Stats - Long vs Short ratio based on filtered orders */}
+          <SummaryStats 
+            longCount={filteredOrders.filter(o => o.type === 'long').length}
+            shortCount={filteredOrders.filter(o => o.type === 'short').length}
           />
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
