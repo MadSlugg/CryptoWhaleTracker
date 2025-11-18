@@ -177,7 +177,7 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
                         {level.priceRange}
                       </span>
                       {isNearCurrentPrice && (
-                        <Badge variant="outline" className="text-[10px] w-fit px-1 py-0 bg-background">
+                        <Badge className="text-[10px] w-fit px-1 py-0 bg-green-600 dark:bg-green-500 text-white">
                           Current Price
                         </Badge>
                       )}
