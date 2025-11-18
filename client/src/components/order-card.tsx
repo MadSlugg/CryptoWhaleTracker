@@ -11,12 +11,17 @@ interface OrderCardProps {
 export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
   const isFilled = order.status === 'filled';
+  const isDisappeared = order.status === 'disappeared';
   
   const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
     addSuffix: true,
   });
 
   const formattedFillTime = order.filledAt ? formatDistanceToNow(new Date(order.filledAt), {
+    addSuffix: true,
+  }) : null;
+
+  const formattedDisappearedTime = order.disappearedAt ? formatDistanceToNow(new Date(order.disappearedAt), {
     addSuffix: true,
   }) : null;
 
@@ -56,11 +61,11 @@ export function OrderCard({ order }: OrderCardProps) {
                   {order.exchange}
                 </Badge>
                 <Badge 
-                  variant={isFilled ? "secondary" : "outline"}
+                  variant={isFilled ? "secondary" : isDisappeared ? "destructive" : "outline"}
                   className="text-xs"
                   data-testid={`badge-status-${order.id}`}
                 >
-                  {isFilled ? 'FILLED' : 'ACTIVE'}
+                  {isFilled ? 'FILLED' : isDisappeared ? 'DISAPPEARED' : 'ACTIVE'}
                 </Badge>
                 <span 
                   className="text-lg font-mono font-semibold"
@@ -87,7 +92,11 @@ export function OrderCard({ order }: OrderCardProps) {
                 
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span data-testid={`text-time-${order.id}`}>{isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : `Opened ${formattedTime}`}</span>
+                  <span data-testid={`text-time-${order.id}`}>
+                    {isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : 
+                     isDisappeared && formattedDisappearedTime ? `Disappeared ${formattedDisappearedTime}` : 
+                     `Opened ${formattedTime}`}
+                  </span>
                 </div>
               </div>
             </div>

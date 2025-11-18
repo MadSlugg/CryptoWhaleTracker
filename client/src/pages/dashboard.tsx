@@ -241,20 +241,27 @@ export default function Dashboard() {
             title="Order Book Depth - Active Whale Orders"
           />
 
-          {/* Two-column layout: Active vs Filled Orders */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+          {/* Three-column layout: Active, Filled, Disappeared Orders */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
             {/* Active Orders Column */}
             <OrderFeed 
               orders={filteredOrders.filter(o => o.status === 'active')} 
               isLoading={isLoading}
-              title="Active Orders (Waiting)"
+              title="Active Orders"
             />
 
             {/* Filled Orders Column */}
             <OrderFeed 
               orders={filteredOrders.filter(o => o.status === 'filled')} 
               isLoading={isLoading}
-              title="Filled Orders (Executed)"
+              title="Filled Orders"
+            />
+
+            {/* Disappeared Orders Column */}
+            <OrderFeed 
+              orders={filteredOrders.filter(o => o.status === 'disappeared')} 
+              isLoading={isLoading}
+              title="Disappeared Orders"
             />
           </div>
         </div>

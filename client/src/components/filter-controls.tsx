@@ -131,6 +131,7 @@ export function FilterControls({
                 <SelectItem value="all">All Orders</SelectItem>
                 <SelectItem value="active">Active Orders</SelectItem>
                 <SelectItem value="filled">Filled Orders</SelectItem>
+                <SelectItem value="disappeared">Disappeared Orders</SelectItem>
               </SelectContent>
             </Select>
           </div>

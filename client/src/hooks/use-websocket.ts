@@ -73,7 +73,13 @@ export function useWebSocket() {
               }
             }
             
-            if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled') {
+            // Handle disappeared order events (orders that vanished from order book)
+            if (data.type === 'order_disappeared' && data.order) {
+              // Silently update - don't spam toasts for disappeared orders
+              // Just invalidate cache to refresh the UI
+            }
+            
+            if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled' || data.type === 'order_disappeared') {
               // Invalidate all /api/orders queries regardless of filter parameters
               queryClient.invalidateQueries({ 
                 predicate: (query) => {
