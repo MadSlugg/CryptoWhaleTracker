@@ -55,10 +55,26 @@ Preferred communication style: Simple, everyday language.
   - **Price Clusters**: Multiple large orders concentrated at similar price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
     - Groups orders within $1000 price ranges
-    - Shows top 5 clusters (3+ orders or 50+ BTC threshold)
+    - Shows top 10 clusters (3+ orders or 50+ BTC threshold)
     - Displays long/short breakdown with counts and BTC amounts
     - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
     - Dominance threshold: >20% more volume than average
+    - Scrollable container with 500px max height
+- **Whale Momentum Indicator**: Tracks rate of new whale orders entering the market
+  - Description: "Rate of new whale orders entering the market. High momentum indicates increased whale activity."
+  - Monitors 3 time windows: 5 minutes, 10 minutes, and 30 minutes
+  - Displays order count, total BTC, and orders per minute for each window
+  - Shows momentum level badge (LOW/MODERATE/HIGH based on 5-min window rate)
+  - Progress bars visualize relative activity across time windows
+  - Auto-updates with real-time order data
+- **Liquidation Tracker**: Real-time liquidation monitoring from Binance futures
+  - Description: "Real-time liquidation events from Binance ($100k+ positions). High liquidations indicate forced position closures."
+  - Tracks $100k+ liquidations from Binance liquidation stream
+  - Shows summary statistics: total liquidated BTC and USD value
+  - Displays individual liquidation events with side (LONG/SHORT), quantity, price, and value
+  - Auto-refreshes every 10 seconds
+  - Scrollable feed with 400px max height showing up to 10 most recent events
+  - Time range: last 1 hour
 - **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
   - Groups orders into $2,000 price buckets
@@ -71,6 +87,13 @@ Preferred communication style: Simple, everyday language.
   - Summary stats: total orders, total volume, number of price levels
 
 **Routing**: Wouter for client-side routing
+
+**Order Display**:
+- Active Orders and Filled Orders sections at bottom of dashboard
+- Each section limited to 5 most recent orders for compact display
+- Shows "Showing X of Y" counter to indicate total available orders
+- Scrollable containers with 500px max height
+- Order cards display position type, exchange, status, BTC amount, price, and timestamp
 
 ### Backend Architecture
 
