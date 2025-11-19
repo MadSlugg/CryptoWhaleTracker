@@ -65,7 +65,8 @@ Preferred communication style: Simple, everyday language.
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
     - Analyzes ACTIVE orders only (consistent with Order Book Imbalance)
     - Groups orders within $1000 price ranges
-    - Shows all clusters (3+ orders or 50+ BTC threshold) with no height limit
+    - Shows ALL price levels with orders (respects user's filter settings: minSize, orderType, exchange, status)
+    - No hardcoded thresholds - displays based on user's selected filters
     - Horizontal bar visualization with color gradients (green for longs, red for shorts, blue for mixed)
     - Bar width indicates volume intensity relative to maximum cluster
     - Displays long/short breakdown as "L:X S:Y" format on each bar
