@@ -152,12 +152,16 @@ export function OrderBookImbalance({ orders, currentPrice }: OrderBookImbalanceP
               <div className="h-4 w-full bg-muted rounded-full overflow-hidden flex">
                 <div 
                   className="bg-green-600 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, imbalance.imbalanceRatio + 50))}%` }}
+                  style={{ 
+                    width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.bidVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
+                  }}
                   data-testid="bar-bid-pressure"
                 />
                 <div 
                   className="bg-red-600 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, 50 - imbalance.imbalanceRatio))}%` }}
+                  style={{ 
+                    width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.askVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
+                  }}
                   data-testid="bar-ask-pressure"
                 />
               </div>
