@@ -31,7 +31,7 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
-              <span className="text-base">Price Level Heatmap</span>
+              <span className="text-base">Large Price Level Heatmap</span>
             </div>
             <Badge variant="secondary" className="text-xs">
               50+ BTC
@@ -137,7 +137,7 @@ export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Flame className="h-4 w-4 text-primary" data-testid="icon-heatmap" />
-            <span className="text-base">Price Level Heatmap</span>
+            <span className="text-base">Large Price Level Heatmap</span>
           </div>
           <Badge variant="secondary" className="text-xs">
             50+ BTC

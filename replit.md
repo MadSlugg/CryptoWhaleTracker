@@ -40,7 +40,7 @@ Preferred communication style: Simple, everyday language.
   - Major Whales Box: Top 10 largest orders (100+ BTC)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
   - Price Clusters: Liquidation heatmap showing long/short breakdown (no height limit)
-  - Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
+  - Large Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
 - **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)
@@ -81,7 +81,7 @@ Preferred communication style: Simple, everyday language.
   - Detailed metrics: BTC volume, USD notional value, order counts for both sides
   - Total active liquidity display
   - Respects user's filter selections for time range, type, exchange, and status
-- **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
+- **Large Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
   - **Internal 50+ BTC Filter**: Only shows orders >= 50 BTC, works in combination with user's selected filters
   - Groups orders into $2,000 price buckets

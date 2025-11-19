@@ -218,7 +218,7 @@ export default function Dashboard() {
             currentPrice={currentBtcPrice}
           />
 
-          {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
+          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
             orders={filteredOrders} 
             currentPrice={currentBtcPrice}
