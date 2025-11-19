@@ -475,10 +475,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       filledOrders.forEach(order => {
         // Calculate time-decay weight: recent fills have higher impact on VOLUME
         // Using exponential decay: weight = e^(-λ * age_in_hours)
-        // λ = 1.0 means: 30min old = 61% weight, 1hr = 37%, 2hr = 14%, 4hr = 2%
+        // λ = 2.0 means: 5min old = 85% weight, 10min = 71%, 30min = 37%, 1hr = 14%, 2hr = 2%
         const filledTime = order.filledAt ? new Date(order.filledAt).getTime() : new Date(order.timestamp).getTime();
         const ageInHours = (now - filledTime) / (1000 * 60 * 60);
-        const decayRate = 1.0;
+        const decayRate = 2.0;
         const timeWeight = Math.exp(-decayRate * ageInHours);
         
         // Apply time-weight to VOLUME only (not order counts - those remain integers)

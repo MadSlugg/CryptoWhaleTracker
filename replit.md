@@ -65,7 +65,7 @@ Preferred communication style: Simple, everyday language.
   - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
     - Description: "Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish)."
     - Analyzes FILLED orders only (actual whale executions, not intent)
-    - **Time-Decay Weighting**: Recent fills have exponentially higher impact (30min old = 61% weight, 1hr = 37%, 2hr = 14%, 4hr = 2%)
+    - **Time-Decay Weighting**: Recent fills have exponentially higher impact (5min old = 85% weight, 10min = 71%, 30min = 37%, 1hr = 14%, 2hr = 2%)
     - Volume-weighted long/short execution ratio
     - Signal strength indicators:
       - STRONG ACCUMULATION (>40% difference): Whales aggressively buying dips - Strong bullish
