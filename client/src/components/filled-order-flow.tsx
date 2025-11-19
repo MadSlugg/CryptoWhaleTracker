@@ -53,10 +53,10 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="w-5 h-5" />
-            Filled Order Flow
+            Filled Order Flow (Last 30 Minutes)
           </CardTitle>
           <CardDescription>
-            Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
+            Time-weighted analysis of whale executions in the last 30 minutes. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
           </CardDescription>
         </CardHeader>
         <CardContent>
