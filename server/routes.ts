@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import type { InsertBitcoinOrder, BitcoinOrder } from "@shared/schema";
+import type { InsertBitcoinOrder, BitcoinOrder, Exchange } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 import { krakenService, coinbaseService, okxService } from "./exchange-services";
@@ -415,6 +415,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching orders:', error);
       res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+  });
+
+  // API endpoint for filled order flow analysis
+  app.get("/api/filled-order-analysis", async (req, res) => {
+    try {
+      // Get time range for analysis (default 24h)
+      let timeRange: 'all' | '1h' | '4h' | '24h' | '7d' = '24h';
+      if (req.query.timeRange) {
+        const tr = req.query.timeRange as string;
+        if (!['1h', '4h', '24h', '7d', 'all'].includes(tr)) {
+          return res.status(400).json({ error: 'Invalid timeRange parameter' });
+        }
+        timeRange = tr as typeof timeRange;
+      }
+
+      // Get minimum size filter (default 5 BTC to match whale threshold)
+      let minSize = 5;
+      if (req.query.minSize) {
+        const parsed = parseFloat(req.query.minSize as string);
+        if (isNaN(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'Invalid minSize parameter' });
+        }
+        minSize = parsed;
+      }
+
+      // Get exchange filter (default all)
+      let exchange: Exchange = 'all';
+      if (req.query.exchange) {
+        const ex = req.query.exchange as string;
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(ex)) {
+          return res.status(400).json({ error: 'Invalid exchange parameter' });
+        }
+        exchange = ex as Exchange;
+      }
+
+      // Fetch only filled orders
+      const filledOrders = await storage.getFilteredOrders({
+        minSize,
+        orderType: 'all',
+        exchange,
+        timeRange,
+        status: 'filled',
+      });
+
+      // Calculate volume-weighted metrics
+      let totalLongVolume = 0;
+      let totalShortVolume = 0;
+      let longOrderCount = 0;
+      let shortOrderCount = 0;
+
+      // Track execution price levels for heatmap
+      const priceLevels: Record<string, { price: number; longVolume: number; shortVolume: number; count: number }> = {};
+
+      filledOrders.forEach(order => {
+        const volume = order.size;
+        
+        if (order.type === 'long') {
+          totalLongVolume += volume;
+          longOrderCount++;
+        } else {
+          totalShortVolume += volume;
+          shortOrderCount++;
+        }
+
+        // Group by $1000 price buckets for execution levels
+        const fillPrice = order.fillPrice || order.price;
+        const priceLevel = Math.floor(fillPrice / 1000) * 1000;
+        const levelKey = priceLevel.toString();
+
+        if (!priceLevels[levelKey]) {
+          priceLevels[levelKey] = {
+            price: priceLevel,
+            longVolume: 0,
+            shortVolume: 0,
+            count: 0,
+          };
+        }
+
+        if (order.type === 'long') {
+          priceLevels[levelKey].longVolume += volume;
+        } else {
+          priceLevels[levelKey].shortVolume += volume;
+        }
+        priceLevels[levelKey].count++;
+      });
+
+      const totalVolume = totalLongVolume + totalShortVolume;
+
+      // Calculate volume-weighted percentages
+      const longPercentage = totalVolume > 0 ? (totalLongVolume / totalVolume) * 100 : 50;
+      const shortPercentage = totalVolume > 0 ? (totalShortVolume / totalVolume) * 100 : 50;
+
+      // Determine signal strength and direction
+      let signal: 'strong_accumulation' | 'accumulation' | 'neutral' | 'distribution' | 'strong_distribution';
+      let signalStrength: number;
+
+      const difference = Math.abs(longPercentage - shortPercentage);
+
+      if (longPercentage > shortPercentage) {
+        // More longs filling = whales buying dips = bullish
+        if (difference >= 40) {
+          signal = 'strong_accumulation';
+          signalStrength = 100;
+        } else if (difference >= 20) {
+          signal = 'accumulation';
+          signalStrength = 70;
+        } else {
+          signal = 'neutral';
+          signalStrength = 50;
+        }
+      } else {
+        // More shorts filling = whales selling rallies = bearish
+        if (difference >= 40) {
+          signal = 'strong_distribution';
+          signalStrength = 100;
+        } else if (difference >= 20) {
+          signal = 'distribution';
+          signalStrength = 70;
+        } else {
+          signal = 'neutral';
+          signalStrength = 50;
+        }
+      }
+
+      // Convert price levels to sorted array
+      const executionLevels = Object.values(priceLevels)
+        .sort((a, b) => b.price - a.price) // Sort by price descending
+        .map(level => ({
+          price: level.price,
+          longVolume: level.longVolume,
+          shortVolume: level.shortVolume,
+          totalVolume: level.longVolume + level.shortVolume,
+          orderCount: level.count,
+          dominantType: level.longVolume > level.shortVolume ? 'long' : level.shortVolume > level.longVolume ? 'short' : 'mixed',
+        }));
+
+      // Response with comprehensive analysis
+      res.json({
+        timeRange,
+        totalOrders: filledOrders.length,
+        totalVolume,
+        longVolume: totalLongVolume,
+        shortVolume: totalShortVolume,
+        longPercentage,
+        shortPercentage,
+        longOrderCount,
+        shortOrderCount,
+        signal,
+        signalStrength,
+        executionLevels,
+        recentOrders: filledOrders.slice(0, 10), // Most recent 10 filled orders
+      });
+    } catch (error) {
+      console.error('Error analyzing filled orders:', error);
+      res.status(500).json({ error: 'Failed to analyze filled orders' });
     }
   });
 

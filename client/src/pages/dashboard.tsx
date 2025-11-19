@@ -9,6 +9,8 @@ import { PriceClusters } from "@/components/price-clusters";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { SummaryStats } from "@/components/summary-stats";
+import { FilledOrderFlow } from "@/components/filled-order-flow";
+import { ExecutionLevels } from "@/components/execution-levels";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -201,6 +203,21 @@ export default function Dashboard() {
             shortCount={filteredOrders.filter(o => o.status === 'active' && o.type === 'short').length}
             longVolume={filteredOrders.filter(o => o.status === 'active' && o.type === 'long').reduce((sum, o) => sum + o.size, 0)}
             shortVolume={filteredOrders.filter(o => o.status === 'active' && o.type === 'short').reduce((sum, o) => sum + o.size, 0)}
+          />
+
+          {/* Filled Order Flow - Predicts price direction based on whale execution patterns */}
+          <FilledOrderFlow
+            timeRange={timeRange}
+            minSize={minSize}
+            exchange={exchange}
+          />
+
+          {/* Execution Levels - Shows actual support/resistance where whales executed */}
+          <ExecutionLevels
+            timeRange={timeRange}
+            minSize={minSize}
+            exchange={exchange}
+            currentPrice={currentBtcPrice}
           />
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
