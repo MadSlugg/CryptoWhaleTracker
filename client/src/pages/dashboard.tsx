@@ -219,15 +219,15 @@ export default function Dashboard() {
             exchange={exchange}
           />
 
-          {/* Order Book Imbalance - Supply/Demand pressure */}
-          <OrderBookImbalance 
-            orders={filteredOrders} 
-            currentPrice={currentBtcPrice}
-          />
-
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
             orders={filteredOrders}
+            currentPrice={currentBtcPrice}
+          />
+
+          {/* Order Book Imbalance - Supply/Demand pressure */}
+          <OrderBookImbalance 
+            orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
 

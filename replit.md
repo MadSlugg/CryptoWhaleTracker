@@ -40,8 +40,8 @@ Preferred communication style: Simple, everyday language.
   - **Large Price Level Heatmap**: Visual concentration map (50+ BTC orders, volume-weighted)
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
+  - **Price Clusters**: Liquidation heatmap showing long/short breakdown (positioned next to Filled Order Flow for complementary analysis)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
-  - Price Clusters: Liquidation heatmap showing long/short breakdown (no height limit)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
 - **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)
