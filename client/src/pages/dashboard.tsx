@@ -196,6 +196,9 @@ export default function Dashboard() {
             setStatus={setStatus}
           />
 
+          {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
+          <MajorWhales orders={majorWhaleOrders} />
+
           {/* Summary Stats - Long vs Short ratio based on active orders only */}
           <SummaryStats 
             longCount={filteredOrders.filter(o => o.status === 'active' && o.type === 'long').length}
@@ -210,9 +213,6 @@ export default function Dashboard() {
             minSize={minSize}
             exchange={exchange}
           />
-
-          {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
-          <MajorWhales orders={majorWhaleOrders} />
 
           {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
