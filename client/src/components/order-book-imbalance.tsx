@@ -191,7 +191,7 @@ export function OrderBookImbalance({ orders, currentPrice }: OrderBookImbalanceP
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Notional</span>
+                  <span className="text-xs text-muted-foreground">USD Value</span>
                   <span className="text-sm font-mono font-bold" data-testid="text-bid-volume-usd">
                     {formatUSD(imbalance.bidVolumeUSD)}
                   </span>
@@ -230,7 +230,7 @@ export function OrderBookImbalance({ orders, currentPrice }: OrderBookImbalanceP
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Notional</span>
+                  <span className="text-xs text-muted-foreground">USD Value</span>
                   <span className="text-sm font-mono font-bold" data-testid="text-ask-volume-usd">
                     {formatUSD(imbalance.askVolumeUSD)}
                   </span>
