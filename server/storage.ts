@@ -11,7 +11,7 @@ export interface OrderFilters {
   minSize?: number;
   orderType?: 'long' | 'short' | 'all';
   exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
-  timeRange?: '1h' | '4h' | '24h' | '7d';
+  timeRange?: '30m' | '1h' | '4h' | '24h' | '7d';
   status?: 'active' | 'filled' | 'all';
   minPrice?: number;
   maxPrice?: number;
@@ -93,6 +93,7 @@ export class MemStorage implements IStorage {
     if (filters.timeRange) {
       const now = Date.now();
       const timeRanges: Record<string, number> = {
+        '30m': 30 * 60 * 1000,
         '1h': 60 * 60 * 1000,
         '4h': 4 * 60 * 60 * 1000,
         '24h': 24 * 60 * 60 * 1000,
@@ -168,7 +169,7 @@ export class MemStorage implements IStorage {
   async getActiveOrdersByExchange(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'): Promise<BitcoinOrder[]> {
     // Efficient direct iteration without sorting - only returns active orders for specific exchange
     const result: BitcoinOrder[] = [];
-    for (const order of this.orders.values()) {
+    for (const order of Array.from(this.orders.values())) {
       if (order.status === 'active' && order.exchange === exchange) {
         result.push(order);
       }

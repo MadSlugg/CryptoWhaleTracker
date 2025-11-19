@@ -213,9 +213,8 @@ export default function Dashboard() {
             shortVolume={filteredOrders.filter(o => o.status === 'active' && o.type === 'short').reduce((sum, o) => sum + o.size, 0)}
           />
 
-          {/* Filled Order Flow - Predicts price direction based on whale execution patterns */}
+          {/* Filled Order Flow - Predicts price direction based on whale execution patterns (Last 30 Minutes) */}
           <FilledOrderFlow
-            timeRange={timeRange}
             minSize={minSize}
             exchange={exchange}
           />

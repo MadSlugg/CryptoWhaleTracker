@@ -163,7 +163,11 @@ class OrderGenerator {
             break;
           case 'kraken':
             const krakenData = await krakenService.getOrderBook();
-            fullOrderBook = { bids: krakenData.bids, asks: krakenData.asks };
+            // Kraken returns [price, volume, timestamp] but we only need [price, volume]
+            fullOrderBook = {
+              bids: krakenData.bids.map(([price, volume]) => [price, volume]),
+              asks: krakenData.asks.map(([price, volume]) => [price, volume])
+            };
             break;
           case 'coinbase':
             const coinbaseData = await coinbaseService.getOrderBook();
@@ -421,11 +425,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for filled order flow analysis
   app.get("/api/filled-order-analysis", async (req, res) => {
     try {
-      // Get time range for analysis (default 24h)
-      let timeRange: 'all' | '1h' | '4h' | '24h' | '7d' = '24h';
+      // Get time range for analysis (default 30m for most relevant signals)
+      let timeRange: 'all' | '30m' | '1h' | '4h' | '24h' | '7d' = '30m';
       if (req.query.timeRange) {
         const tr = req.query.timeRange as string;
-        if (!['1h', '4h', '24h', '7d', 'all'].includes(tr)) {
+        if (!['30m', '1h', '4h', '24h', '7d', 'all'].includes(tr)) {
           return res.status(400).json({ error: 'Invalid timeRange parameter' });
         }
         timeRange = tr as typeof timeRange;

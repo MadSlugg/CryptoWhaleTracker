@@ -5,7 +5,6 @@ import { TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import type { Exchange } from '@shared/schema';
 
 interface FilledOrderFlowProps {
-  timeRange: '1h' | '4h' | '24h' | '7d' | 'all';
   minSize: number;
   exchange: Exchange;
 }
@@ -32,12 +31,12 @@ interface FilledOrderAnalysis {
   }>;
 }
 
-export function FilledOrderFlow({ timeRange, minSize, exchange }: FilledOrderFlowProps) {
+export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
   const { data, isLoading } = useQuery<FilledOrderAnalysis>({
-    queryKey: ['/api/filled-order-analysis', timeRange, minSize, exchange],
+    queryKey: ['/api/filled-order-analysis', minSize, exchange],
     queryFn: async () => {
       const params = new URLSearchParams({
-        timeRange,
+        timeRange: '30m', // Fixed 30-minute window for most relevant signals
         minSize: minSize.toString(),
         exchange,
       });
@@ -122,10 +121,10 @@ export function FilledOrderFlow({ timeRange, minSize, exchange }: FilledOrderFlo
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="w-5 h-5" />
-          Filled Order Flow
+          Filled Order Flow (Last 30 Minutes)
         </CardTitle>
         <CardDescription>
-          Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
+          Time-weighted analysis of whale executions in the last 30 minutes. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -63,8 +63,9 @@ Preferred communication style: Simple, everyday language.
   - Philosophy: "Not every trade is equal" - bigger trades have proper weight
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
   - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
-    - Description: "Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish)."
+    - Description: "Time-weighted analysis of whale executions in the last 30 minutes. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish)."
     - Analyzes FILLED orders only (actual whale executions, not intent)
+    - **Fixed 30-minute window** for most relevant price direction signals
     - **Time-Decay Weighting**: Recent fills have exponentially higher impact (5min old = 85% weight, 10min = 71%, 30min = 37%, 1hr = 14%, 2hr = 2%)
     - Volume-weighted long/short execution ratio
     - Signal strength indicators:
@@ -76,7 +77,8 @@ Preferred communication style: Simple, everyday language.
     - Visual bar showing actual volume percentages (long vs short)
     - Detailed metrics: filled long/short volumes, order counts
     - Philosophy: "Not every trade is equal" - weighted by BTC volume
-    - Respects user's filter settings (minSize, exchange, timeRange)
+    - Fixed 30-minute window (ignores user's timeRange filter)
+    - Respects user's minSize and exchange filters only
     - Auto-updates every 10 seconds
   - **Price Clusters**: Liquidation heatmap showing whale concentration at price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
