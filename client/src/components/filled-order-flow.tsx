@@ -146,7 +146,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {data.totalOrders} filled orders ({data.totalVolume.toFixed(1)} BTC)
+            {data.totalOrders} filled orders ({data.totalVolume.toFixed(1)} BTC ⏱️ weighted)
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
         {/* Volume-Weighted Ratio */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span>Volume-Weighted Execution</span>
+            <span>Time-Weighted Volume Execution</span>
             <span className="font-mono">
               {data.longPercentage.toFixed(1)}% L / {data.shortPercentage.toFixed(1)}% S
             </span>
@@ -191,7 +191,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
               <span className="text-2xl font-bold font-mono text-green-600 dark:text-green-400" data-testid="text-long-volume">
                 {data.longVolume.toFixed(1)}
               </span>
-              <span className="text-sm text-muted-foreground">BTC</span>
+              <span className="text-sm text-muted-foreground">BTC ⏱️</span>
             </div>
             <div className="text-xs text-muted-foreground">
               {data.longOrderCount} orders
@@ -204,7 +204,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
               <span className="text-2xl font-bold font-mono text-red-600 dark:text-red-400" data-testid="text-short-volume">
                 {data.shortVolume.toFixed(1)}
               </span>
-              <span className="text-sm text-muted-foreground">BTC</span>
+              <span className="text-sm text-muted-foreground">BTC ⏱️</span>
             </div>
             <div className="text-xs text-muted-foreground">
               {data.shortOrderCount} orders
@@ -214,7 +214,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
 
         {/* Philosophy Note */}
         <div className="text-xs text-muted-foreground italic pt-2 border-t">
-          "Not every trade is equal" - Metrics weighted by actual BTC volume, not order count
+          ⏱️ Time-weighted volumes: Recent fills = higher weight. Order counts = actual numbers.
         </div>
       </CardContent>
     </Card>
