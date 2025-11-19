@@ -10,7 +10,6 @@ import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { SummaryStats } from "@/components/summary-stats";
 import { FilledOrderFlow } from "@/components/filled-order-flow";
-import { ExecutionLevels } from "@/components/execution-levels";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -210,14 +209,6 @@ export default function Dashboard() {
             timeRange={timeRange}
             minSize={minSize}
             exchange={exchange}
-          />
-
-          {/* Execution Levels - Shows actual support/resistance where whales executed */}
-          <ExecutionLevels
-            timeRange={timeRange}
-            minSize={minSize}
-            exchange={exchange}
-            currentPrice={currentBtcPrice}
           />
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}

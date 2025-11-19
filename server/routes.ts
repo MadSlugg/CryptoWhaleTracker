@@ -460,7 +460,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'filled',
       });
 
-      // Calculate volume-weighted metrics
+      // Calculate volume-weighted metrics with TIME-DECAY weighting
+      // Recent executions matter more for predicting current market direction
       let totalLongVolume = 0;
       let totalShortVolume = 0;
       let longOrderCount = 0;
@@ -469,15 +470,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Track execution price levels for heatmap
       const priceLevels: Record<string, { price: number; longVolume: number; shortVolume: number; count: number }> = {};
 
+      const now = Date.now();
+      
       filledOrders.forEach(order => {
-        const volume = order.size;
+        // Calculate time-decay weight: recent fills have higher impact on VOLUME
+        // Using exponential decay: weight = e^(-λ * age_in_hours)
+        // λ = 1.0 means: 30min old = 61% weight, 1hr = 37%, 2hr = 14%, 4hr = 2%
+        const filledTime = order.filledAt ? new Date(order.filledAt).getTime() : new Date(order.timestamp).getTime();
+        const ageInHours = (now - filledTime) / (1000 * 60 * 60);
+        const decayRate = 1.0;
+        const timeWeight = Math.exp(-decayRate * ageInHours);
+        
+        // Apply time-weight to VOLUME only (not order counts - those remain integers)
+        const weightedVolume = order.size * timeWeight;
         
         if (order.type === 'long') {
-          totalLongVolume += volume;
-          longOrderCount++;
+          totalLongVolume += weightedVolume;
+          longOrderCount++; // Keep as integer count
         } else {
-          totalShortVolume += volume;
-          shortOrderCount++;
+          totalShortVolume += weightedVolume;
+          shortOrderCount++; // Keep as integer count
         }
 
         // Group by $1000 price buckets for execution levels
@@ -495,11 +507,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (order.type === 'long') {
-          priceLevels[levelKey].longVolume += volume;
+          priceLevels[levelKey].longVolume += weightedVolume;
         } else {
-          priceLevels[levelKey].shortVolume += volume;
+          priceLevels[levelKey].shortVolume += weightedVolume;
         }
-        priceLevels[levelKey].count++;
+        priceLevels[levelKey].count++; // Keep as integer count
       });
 
       const totalVolume = totalLongVolume + totalShortVolume;

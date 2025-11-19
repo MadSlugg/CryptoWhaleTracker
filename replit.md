@@ -37,8 +37,7 @@ Preferred communication style: Simple, everyday language.
   - Header: BTC price, long/short counts, refresh controls
   - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
-  - **Filled Order Flow**: Price direction prediction based on whale execution patterns (NEW)
-  - **Execution Levels**: Actual support/resistance where whales executed (NEW)
+  - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
   - Major Whales Box: Top 10 largest orders (100+ BTC)
   - Large Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
@@ -63,9 +62,10 @@ Preferred communication style: Simple, everyday language.
   - Displays total BTC volume for each side
   - Philosophy: "Not every trade is equal" - bigger trades have proper weight
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
-  - **Filled Order Flow**: Price direction prediction based on whale execution patterns
-    - Description: "Tracks where whales actually executed. More filled longs = accumulation (bullish), more filled shorts = distribution (bearish)."
+  - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
+    - Description: "Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish)."
     - Analyzes FILLED orders only (actual whale executions, not intent)
+    - **Time-Decay Weighting**: Recent fills have exponentially higher impact (30min old = 61% weight, 1hr = 37%, 2hr = 14%, 4hr = 2%)
     - Volume-weighted long/short execution ratio
     - Signal strength indicators:
       - STRONG ACCUMULATION (>40% difference): Whales aggressively buying dips - Strong bullish
@@ -76,18 +76,6 @@ Preferred communication style: Simple, everyday language.
     - Visual bar showing actual volume percentages (long vs short)
     - Detailed metrics: filled long/short volumes, order counts
     - Philosophy: "Not every trade is equal" - weighted by BTC volume
-    - Respects user's filter settings (minSize, exchange, timeRange)
-    - Auto-updates every 10 seconds
-  - **Execution Levels**: Actual support/resistance where whales executed orders
-    - Description: "Shows actual support/resistance where whales executed orders. High volume = strong level."
-    - Price levels grouped by $1,000 buckets showing where fills occurred
-    - Volume breakdown per level (long vs short execution)
-    - Intensity bars showing relative volume at each level
-    - Dominant type badges (LONG/SHORT/MIXED) based on execution volume
-    - Highlights current price level when within 2% of execution zone
-    - Sorted by price descending for easy analysis
-    - Shows total execution volume and order count per level
-    - Color-coded: green for long-dominant, red for short-dominant, blue for mixed
     - Respects user's filter settings (minSize, exchange, timeRange)
     - Auto-updates every 10 seconds
   - **Price Clusters**: Liquidation heatmap showing whale concentration at price levels

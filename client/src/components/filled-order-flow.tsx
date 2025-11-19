@@ -57,7 +57,7 @@ export function FilledOrderFlow({ timeRange, minSize, exchange }: FilledOrderFlo
             Filled Order Flow
           </CardTitle>
           <CardDescription>
-            Tracks where whales actually executed. More filled longs = accumulation (bullish), more filled shorts = distribution (bearish).
+            Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -125,7 +125,7 @@ export function FilledOrderFlow({ timeRange, minSize, exchange }: FilledOrderFlo
           Filled Order Flow
         </CardTitle>
         <CardDescription>
-          Tracks where whales actually executed. More filled longs = accumulation (bullish), more filled shorts = distribution (bearish).
+          Time-weighted analysis of whale executions. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
