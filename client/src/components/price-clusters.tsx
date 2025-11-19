@@ -49,27 +49,30 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
       const count = allOrders.length;
       
-      const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
-      const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
-      
-      let type: 'long' | 'short' | 'mixed' = 'mixed';
-      const volumeDifference = Math.abs(longSize - shortSize);
-      const averageVolume = (longSize + shortSize) / 2;
-      
-      if (volumeDifference > averageVolume * 0.2) {
-        type = longSize > shortSize ? 'long' : 'short';
+      // Only show important clusters: 2+ orders OR 50+ BTC
+      if (count >= 2 || totalSize >= 50) {
+        const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
+        const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
+        
+        let type: 'long' | 'short' | 'mixed' = 'mixed';
+        const volumeDifference = Math.abs(longSize - shortSize);
+        const averageVolume = (longSize + shortSize) / 2;
+        
+        if (volumeDifference > averageVolume * 0.2) {
+          type = longSize > shortSize ? 'long' : 'short';
+        }
+        
+        significantClusters.push({
+          price,
+          count,
+          totalSize,
+          type,
+          longCount: cluster.longs.length,
+          shortCount: cluster.shorts.length,
+          longSize,
+          shortSize,
+        });
       }
-      
-      significantClusters.push({
-        price,
-        count,
-        totalSize,
-        type,
-        longCount: cluster.longs.length,
-        shortCount: cluster.shorts.length,
-        longSize,
-        shortSize,
-      });
     });
     
     return significantClusters.sort((a, b) => b.price - a.price);
