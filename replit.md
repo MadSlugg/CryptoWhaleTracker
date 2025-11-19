@@ -84,7 +84,8 @@ Preferred communication style: Simple, everyday language.
   - Respects user's filter selections for time range, type, exchange, and status
 - **Large Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
-  - **Internal 50+ BTC Filter**: Only shows orders >= 50 BTC, works in combination with user's selected filters
+  - Analyzes ACTIVE orders only (consistent with Price Clusters and Order Book Imbalance)
+  - **Internal 50+ BTC Filter**: Only shows active orders >= 50 BTC, works in combination with user's selected filters
   - Groups orders into $2,000 price buckets
   - Color intensity based on total BTC volume (5 intensity levels: 0-20%, 20-40%, 40-60%, 60-80%, 80-100%)
   - Green for long-dominant levels, red for short-dominant levels

@@ -21,8 +21,8 @@ interface HeatmapLevel {
 }
 
 export function PriceHeatmap({ orders, currentPrice }: PriceHeatmapProps) {
-  // Filter for 50+ BTC orders only
-  const whaleOrders = orders.filter(order => order.size >= 50);
+  // Filter for active orders with 50+ BTC only (consistent with Price Clusters and Order Book Imbalance)
+  const whaleOrders = orders.filter(order => order.status === 'active' && order.size >= 50);
 
   if (whaleOrders.length === 0) {
     return (
