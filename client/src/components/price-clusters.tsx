@@ -21,10 +21,13 @@ interface PriceCluster {
 
 export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   const detectPatterns = (): PriceCluster[] => {
+    // Filter to active orders only (consistent with Order Book Imbalance)
+    const activeOrders = orders.filter(o => o.status === 'active');
+    
     const priceRange = 1000;
     const clusters = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
     
-    orders.forEach(order => {
+    activeOrders.forEach(order => {
       const clusterPrice = Math.round(order.price / priceRange) * priceRange;
       
       if (!clusters.has(clusterPrice)) {

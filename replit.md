@@ -63,6 +63,7 @@ Preferred communication style: Simple, everyday language.
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
   - **Price Clusters**: Liquidation heatmap showing whale concentration at price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
+    - Analyzes ACTIVE orders only (consistent with Order Book Imbalance)
     - Groups orders within $1000 price ranges
     - Shows all clusters (3+ orders or 50+ BTC threshold) with no height limit
     - Horizontal bar visualization with color gradients (green for longs, red for shorts, blue for mixed)
