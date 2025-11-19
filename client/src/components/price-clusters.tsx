@@ -191,7 +191,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
                         {pattern.totalSize.toFixed(1)} BTC
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        ({pattern.count} orders)
+                        (L:{pattern.longCount} S:{pattern.shortCount})
                       </span>
                     </div>
                   </div>
