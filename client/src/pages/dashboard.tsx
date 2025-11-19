@@ -18,7 +18,7 @@ import { SiBitcoin } from "react-icons/si";
 import { format } from "date-fns";
 
 export default function Dashboard() {
-  const [minSize, setMinSize] = useState<number>(1);
+  const [minSize, setMinSize] = useState<number>(5);
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
@@ -35,7 +35,7 @@ export default function Dashboard() {
     queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (minSize > 1) params.append('minSize', minSize.toString());
+      if (minSize > 5) params.append('minSize', minSize.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       if (exchange !== 'all') params.append('exchange', exchange);
       if (status !== 'all') params.append('status', status);

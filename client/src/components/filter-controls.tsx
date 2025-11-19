@@ -47,11 +47,11 @@ export function FilterControls({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">≥ 1 BTC</SelectItem>
                 <SelectItem value="5">≥ 5 BTC</SelectItem>
                 <SelectItem value="10">≥ 10 BTC</SelectItem>
                 <SelectItem value="25">≥ 25 BTC</SelectItem>
                 <SelectItem value="50">≥ 50 BTC</SelectItem>
+                <SelectItem value="100">≥ 100 BTC</SelectItem>
               </SelectContent>
             </Select>
           </div>
