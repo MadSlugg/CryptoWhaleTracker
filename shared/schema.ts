@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { pgTable, varchar, doublePrecision, timestamp, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 export const bitcoinOrderSchema = z.object({
   id: z.string(),
@@ -95,3 +97,58 @@ export function calculateProfitLoss(
     return -priceChange;
   }
 }
+
+// Drizzle ORM Database Tables
+export const bitcoinOrders = pgTable("bitcoin_orders", {
+  id: varchar("id").primaryKey(),
+  type: varchar("type", { length: 10 }).notNull(),
+  size: doublePrecision("size").notNull(),
+  price: doublePrecision("price").notNull(),
+  exchange: varchar("exchange", { length: 20 }).notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  status: varchar("status", { length: 10 }).notNull(),
+  filledAt: timestamp("filled_at"),
+  fillPrice: doublePrecision("fill_price"),
+});
+
+export const whaleMovements = pgTable("whale_movements", {
+  id: varchar("id").primaryKey(),
+  amount: doublePrecision("amount").notNull(),
+  amountUSD: doublePrecision("amount_usd").notNull(),
+  from: varchar("from", { length: 255 }).notNull(),
+  to: varchar("to", { length: 255 }).notNull(),
+  hash: varchar("hash", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  isToExchange: boolean("is_to_exchange").notNull(),
+  isFromExchange: boolean("is_from_exchange").notNull(),
+});
+
+export const longShortRatios = pgTable("long_short_ratios", {
+  id: varchar("id").primaryKey(),
+  timestamp: timestamp("timestamp").notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  longShortRatio: doublePrecision("long_short_ratio").notNull(),
+  longAccount: doublePrecision("long_account").notNull(),
+  shortAccount: doublePrecision("short_account").notNull(),
+  period: varchar("period", { length: 10 }).notNull(),
+  isTopTrader: boolean("is_top_trader").notNull(),
+});
+
+export const whaleCorrelations = pgTable("whale_correlations", {
+  id: varchar("id").primaryKey(),
+  whaleMovementId: varchar("whale_movement_id", { length: 255 }).notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  btcAmount: doublePrecision("btc_amount").notNull(),
+  initialLongShortRatio: doublePrecision("initial_long_short_ratio").notNull(),
+  currentLongShortRatio: doublePrecision("current_long_short_ratio").notNull(),
+  ratioChange: doublePrecision("ratio_change").notNull(),
+  shortSpike: boolean("short_spike").notNull(),
+  likelyAction: varchar("likely_action", { length: 20 }).notNull(),
+  confidence: varchar("confidence", { length: 10 }).notNull(),
+});
+
+// Drizzle insert schemas
+export const insertBitcoinOrderSchemaDB = createInsertSchema(bitcoinOrders).omit({ id: true });
+export const insertWhaleMovementSchemaDB = createInsertSchema(whaleMovements).omit({ id: true });
+export const insertLongShortRatioSchemaDB = createInsertSchema(longShortRatios).omit({ id: true });
+export const insertWhaleCorrelationSchemaDB = createInsertSchema(whaleCorrelations).omit({ id: true });
