@@ -38,9 +38,9 @@ Preferred communication style: Simple, everyday language.
   - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - Major Whales Box: Top 10 largest orders (100+ BTC)
+  - Large Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
   - Price Clusters: Liquidation heatmap showing long/short breakdown (no height limit)
-  - Large Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
 - **Major Whales Display Box**: Prominent section showing top 10 largest orders (100+ BTC minimum)

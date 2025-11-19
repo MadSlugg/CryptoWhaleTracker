@@ -206,6 +206,12 @@ export default function Dashboard() {
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
 
+          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
+          <PriceHeatmap 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
+          />
+
           {/* Order Book Imbalance - Supply/Demand pressure */}
           <OrderBookImbalance 
             orders={filteredOrders} 
@@ -215,12 +221,6 @@ export default function Dashboard() {
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
             orders={filteredOrders}
-            currentPrice={currentBtcPrice}
-          />
-
-          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
-          <PriceHeatmap 
-            orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
 
