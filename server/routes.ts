@@ -279,15 +279,23 @@ class OrderGenerator {
         const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
         const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
         
-        // Check if an active order with same details already exists in storage
+        // Check if order already exists (prevent duplicates)
+        // Check against BOTH active orders AND recently filled orders (last 5 minutes)
+        // This prevents re-creating the same order when a whale re-places immediately after fill
         const existingOrders = await storage.getOrders();
-        const isDuplicate = existingOrders.some(existing => 
-          existing.exchange === exchange &&
-          existing.type === type &&
-          Math.abs(existing.price - roundedPrice) < 0.01 && // Price within 1 cent
-          Math.abs(existing.size - roundedSize) < 0.01 && // Size within 0.01 BTC
-          existing.status === 'active' // Only check against active orders
-        );
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const isDuplicate = existingOrders.some(existing => {
+          const isRecentlyFilled = existing.status === 'filled' && 
+                                   existing.filledAt && 
+                                   new Date(existing.filledAt) > fiveMinutesAgo;
+          const isActive = existing.status === 'active';
+          
+          return existing.exchange === exchange &&
+                 existing.type === type &&
+                 Math.abs(existing.price - roundedPrice) < 0.01 && // Price within 1 cent
+                 Math.abs(existing.size - roundedSize) < 0.01 && // Size within 0.01 BTC
+                 (isActive || isRecentlyFilled); // Check active OR recently filled (last 5 min)
+        });
         
         // Skip if duplicate found
         if (isDuplicate) {
