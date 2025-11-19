@@ -142,7 +142,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
         </p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1 max-h-[1000px] overflow-y-auto" data-testid="heatmap-container">
+        <div className="space-y-1" data-testid="heatmap-container">
           {patterns.map((pattern, idx) => {
             const priceRange = 1000;
             const minPrice = pattern.price - priceRange / 2;
