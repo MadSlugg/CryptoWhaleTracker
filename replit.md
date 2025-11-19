@@ -120,7 +120,11 @@ Preferred communication style: Simple, everyday language.
 
 **Runtime**: Node.js with Express.js server
 
-**Data Storage**: In-memory storage (MemStorage class) - no persistent database currently implemented, though Drizzle ORM is configured for potential PostgreSQL integration
+**Data Storage**: PostgreSQL database with persistent storage using Drizzle ORM
+- All whale tracking data (orders, whale movements, long/short ratios, correlations) persists across application restarts
+- Neon serverless PostgreSQL database with WebSocket connection pooling
+- Automated cleanup of orders older than 7 days
+- Database tables: bitcoin_orders, whale_movements, long_short_ratios, whale_correlations
 
 **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates to connected clients
 
@@ -175,10 +179,10 @@ Preferred communication style: Simple, everyday language.
 - Lucide React for icons
 - date-fns for timestamp formatting
 
-**Database (Configured but Not Active)**:
-- Drizzle ORM configured with PostgreSQL dialect
-- Neon Database serverless driver (@neondatabase/serverless)
-- Schema defined but storage currently uses in-memory implementation
+**Database**:
+- Drizzle ORM with PostgreSQL dialect
+- Neon Database serverless driver (@neondatabase/serverless) with WebSocket support
+- Active persistent storage for all whale tracking data
 
 **Development Tools**:
 - Vite for fast development and optimized production builds
