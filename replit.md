@@ -39,7 +39,7 @@ Preferred communication style: Simple, everyday language.
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - Major Whales Box: Top 10 largest orders (100+ BTC)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
-  - Row 1 (Two-column): Entry Signals | Price Clusters
+  - Price Clusters: Liquidation heatmap showing long/short breakdown (no height limit)
   - Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
@@ -61,14 +61,16 @@ Preferred communication style: Simple, everyday language.
   - Displays total BTC volume for each side
   - Philosophy: "Not every trade is equal" - bigger trades have proper weight
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
-  - **Price Clusters**: Multiple large orders concentrated at similar price levels
+  - **Price Clusters**: Liquidation heatmap showing whale concentration at price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
     - Groups orders within $1000 price ranges
-    - Shows top 10 clusters (3+ orders or 50+ BTC threshold)
-    - Displays long/short breakdown with counts and BTC amounts
-    - Badge indicates dominant type based on BTC volume (LONG/SHORT/Balanced)
+    - Shows all clusters (3+ orders or 50+ BTC threshold) with no height limit
+    - Horizontal bar visualization with color gradients (green for longs, red for shorts, blue for mixed)
+    - Bar width indicates volume intensity relative to maximum cluster
+    - Displays long/short breakdown as "L:X S:Y" format on each bar
+    - Badge indicates dominant type based on BTC volume (LONG/SHORT/MIX)
     - Dominance threshold: >20% more volume than average
-    - Scrollable container with 500px max height
+    - Hover tooltips show detailed breakdown with price range and intensity percentage
 - **Order Book Imbalance**: Real-time supply/demand pressure indicator
   - Description: "Real-time supply and demand pressure from active whale orders. Shows market depth imbalance."
   - Shows bid (buy) vs ask (sell) liquidity
@@ -78,17 +80,6 @@ Preferred communication style: Simple, everyday language.
   - Detailed metrics: BTC volume, USD notional value, order counts for both sides
   - Total active liquidity display
   - Respects user's filter selections for time range, type, exchange, and status
-- **Price Entry Signals**: Intelligent entry point identification based on whale positioning
-  - Analyzes active whale orders to find support/resistance levels
-  - Groups orders into $500 price buckets for precise analysis
-  - **LONG signals**: Strong buy support below current price (potential entry for long positions)
-  - **SHORT signals**: Strong sell resistance above current price (potential entry for short positions)
-  - Strength levels: STRONG (>150 BTC), MODERATE (>75 BTC), WEAK (<75 BTC)
-  - Identifies trapped traders (recently filled counter-positions) indicating potential squeezes/dumps
-  - Only shows entries within ±15% of current price (realistic entry range)
-  - Displays top 5 signals sorted by strength and whale volume
-  - Shows detailed reasoning for each signal with whale volume and order counts
-  - Uses side-specific counts (only long orders for long signals, only short orders for short signals)
 - **Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders only)
   - Description: "Visual map of whale concentration across price levels. Brighter colors indicate higher volume clusters."
   - **Internal 50+ BTC Filter**: Only shows orders >= 50 BTC, works in combination with user's selected filters

@@ -8,7 +8,6 @@ import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
-import { EntrySignals } from "@/components/entry-signals";
 import { SummaryStats } from "@/components/summary-stats";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
@@ -213,20 +212,11 @@ export default function Dashboard() {
             currentPrice={currentBtcPrice}
           />
 
-          {/* Two-column grid: Entry Signals and Price Clusters */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {/* Price Entry Signals - Good entry points based on whale positioning */}
-            <EntrySignals 
-              orders={filteredOrders} 
-              currentPrice={currentBtcPrice}
-            />
-
-            {/* Price Clusters - Pattern detection and accumulation zones */}
-            <PriceClusters 
-              orders={filteredOrders}
-              currentPrice={currentBtcPrice}
-            />
-          </div>
+          {/* Price Clusters - Pattern detection and accumulation zones */}
+          <PriceClusters 
+            orders={filteredOrders}
+            currentPrice={currentBtcPrice}
+          />
 
           {/* Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
