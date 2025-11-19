@@ -1,7 +1,8 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool } from '@neondatabase/serverless';
+import { Pool, neonConfig } from '@neondatabase/serverless';
 import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import ws from 'ws';
 import {
   bitcoinOrders,
   whaleMovements,
@@ -14,6 +15,9 @@ import {
   type WhaleCorrelation,
 } from '@shared/schema';
 import type { IStorage, OrderFilters } from './storage';
+
+// Configure WebSocket for Neon serverless in Node.js environment
+neonConfig.webSocketConstructor = ws;
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 const db = drizzle(pool);
