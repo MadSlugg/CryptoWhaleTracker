@@ -6,6 +6,7 @@ import type { InsertBitcoinOrder, BitcoinOrder, Exchange } from "@shared/schema"
 import { calculateProfitLoss } from "@shared/schema";
 import { binanceService, type OrderBookEntry } from "./binance";
 import { krakenService, coinbaseService, okxService } from "./exchange-services";
+import { blockchainService } from "./blockchain-service";
 // import { whaleCorrelationService } from "./whale-correlation-service";
 
 // Real whale order tracker from multiple exchanges
@@ -237,6 +238,11 @@ class OrderGenerator {
       console.error('Failed to update Bitcoin price:', error);
       // Keep using last known valid price
     }
+  }
+
+  // Public getter for current BTC price
+  getCurrentBtcPrice(): number {
+    return this.currentBtcPrice;
   }
 
   private async fetchWhaleOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx') {
@@ -639,6 +645,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching whale correlations:', error);
       res.status(500).json({ error: 'Failed to fetch whale correlations' });
+    }
+  });
+
+  // API endpoint for blockchain whale transactions
+  // This endpoint is INDEPENDENT of filter settings - always shows recent blockchain activity
+  app.get("/api/blockchain-transactions", async (req, res) => {
+    try {
+      const minBTC = req.query.minBTC ? parseFloat(req.query.minBTC as string) : 100;
+      
+      // Get current BTC price for USD calculations
+      const btcPrice = orderGenerator.getCurrentBtcPrice();
+      
+      // Fetch recent unconfirmed whale transactions from blockchain
+      const transactions = await blockchainService.fetchUnconfirmedWhaleTransactions(minBTC, btcPrice);
+      
+      // Calculate exchange flow statistics
+      const flowStats = blockchainService.calculateExchangeFlow(transactions);
+      
+      res.json({
+        transactions,
+        flowStats,
+        btcPrice,
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error fetching blockchain transactions:', error);
+      res.status(500).json({ error: 'Failed to fetch blockchain transactions' });
     }
   });
 
