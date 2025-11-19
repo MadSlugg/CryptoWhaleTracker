@@ -5,7 +5,6 @@ import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
-import { OrderFlow } from "@/components/order-flow";
 import { PriceClusters } from "@/components/price-clusters";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
@@ -208,19 +207,11 @@ export default function Dashboard() {
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
 
-          {/* Two-column grid: Order Book Imbalance and Order Flow */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {/* Order Book Imbalance - Supply/Demand pressure */}
-            <OrderBookImbalance 
-              orders={filteredOrders} 
-              currentPrice={currentBtcPrice}
-            />
-
-            {/* Order Flow - Buying vs selling pressure */}
-            <OrderFlow 
-              orders={filteredOrders} 
-            />
-          </div>
+          {/* Order Book Imbalance - Supply/Demand pressure */}
+          <OrderBookImbalance 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
+          />
 
           {/* Two-column grid: Entry Signals and Price Clusters */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">

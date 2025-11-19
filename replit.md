@@ -38,8 +38,8 @@ Preferred communication style: Simple, everyday language.
   - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - Major Whales Box: Top 10 largest orders (100+ BTC)
-  - Row 1 (Two-column): Order Book Imbalance | Order Flow
-  - Row 2 (Two-column): Entry Signals | Price Clusters
+  - Order Book Imbalance: Supply/demand pressure from active whale orders
+  - Row 1 (Two-column): Entry Signals | Price Clusters
   - Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Depth Chart: Real-time order book visualization
   - Active/Filled Orders: Real-time feeds (5 most recent each)
@@ -61,11 +61,6 @@ Preferred communication style: Simple, everyday language.
   - Displays total BTC volume for each side
   - Philosophy: "Not every trade is equal" - bigger trades have proper weight
 - **Whale Analytics System**: Comprehensive analysis tools with explanatory descriptions
-  - **Order Flow Indicator**: Real-time buying vs selling pressure from whale orders with progress bars
-    - Description: "Real-time buying vs selling pressure from whale orders. Shows market sentiment and directional bias."
-    - Shows long/short percentages weighted by BTC volume
-    - Displays volumes and pressure level (balanced/moderate/strong)
-    - Handles neutral state when long and short volumes are equal
   - **Price Clusters**: Multiple large orders concentrated at similar price levels
     - Description: "Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones."
     - Groups orders within $1000 price ranges
