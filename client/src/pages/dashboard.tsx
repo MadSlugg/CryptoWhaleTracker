@@ -5,7 +5,6 @@ import { OrderFeed } from "@/components/order-feed";
 import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
-import { BlockchainFlow } from "@/components/blockchain-flow";
 import { PriceClusters } from "@/components/price-clusters";
 import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
@@ -199,9 +198,6 @@ export default function Dashboard() {
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
-
-          {/* Blockchain Whale Flow - BTC movements to/from exchanges (independent of filters) */}
-          <BlockchainFlow />
 
           {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
