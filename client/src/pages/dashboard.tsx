@@ -232,7 +232,8 @@ export default function Dashboard() {
 
             {/* Price Clusters - Pattern detection and accumulation zones */}
             <PriceClusters 
-              orders={filteredOrders} 
+              orders={filteredOrders}
+              currentPrice={currentBtcPrice}
             />
           </div>
 
