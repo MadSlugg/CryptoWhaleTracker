@@ -199,6 +199,12 @@ export default function Dashboard() {
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
 
+          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
+          <PriceHeatmap 
+            orders={filteredOrders} 
+            currentPrice={currentBtcPrice}
+          />
+
           {/* Summary Stats - Long vs Short ratio based on active orders only */}
           <SummaryStats 
             longCount={filteredOrders.filter(o => o.status === 'active' && o.type === 'long').length}
@@ -212,12 +218,6 @@ export default function Dashboard() {
             timeRange={timeRange}
             minSize={minSize}
             exchange={exchange}
-          />
-
-          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
-          <PriceHeatmap 
-            orders={filteredOrders} 
-            currentPrice={currentBtcPrice}
           />
 
           {/* Order Book Imbalance - Supply/Demand pressure */}

@@ -37,9 +37,9 @@ Preferred communication style: Simple, everyday language.
   - Header: BTC price, long/short counts, refresh controls
   - Filter Controls: Set filters before viewing analytics (minSize, orderType, exchange, timeRange, status)
   - **Major Whales Box**: Top 10 largest orders (100+ BTC) - positioned prominently at top
+  - **Large Price Level Heatmap**: Visual concentration map (50+ BTC orders, volume-weighted)
   - Summary Stats: Volume-weighted long/short ratio and total BTC volumes
   - **Filled Order Flow**: Price direction prediction based on whale execution patterns with time-decay weighting
-  - Large Price Level Heatmap: Visual concentration map (50+ BTC orders, volume-weighted)
   - Order Book Imbalance: Supply/demand pressure from active whale orders
   - Price Clusters: Liquidation heatmap showing long/short breakdown (no height limit)
   - Depth Chart: Real-time order book visualization
