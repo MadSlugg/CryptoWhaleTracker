@@ -112,6 +112,10 @@ class BlockchainService {
   /**
    * Fetch recent unconfirmed whale transactions (100+ BTC)
    * These are transactions that haven't been confirmed yet but are in the mempool
+   * 
+   * IMPORTANT: Correctly calculates amounts by analyzing each input/output separately
+   * - For deposits: sums only outputs going TO exchange addresses
+   * - For withdrawals: sums only outputs going FROM exchange addresses (excluding change)
    */
   async fetchUnconfirmedWhaleTransactions(minBTC: number = 100, btcPrice: number = 93000): Promise<BlockchainTransaction[]> {
     try {
@@ -127,43 +131,97 @@ class BlockchainService {
       const whaleTransactions: BlockchainTransaction[] = [];
 
       for (const tx of data.txs) {
-        // Calculate total output in satoshis
-        const totalOutput = tx.out.reduce((sum: number, output: any) => sum + output.value, 0);
+        // Analyze inputs to determine source
+        let totalFromExchange = 0;
+        let fromExchangeName: string | null = null;
+        const fromAddresses = new Set<string>();
         
-        // Filter for whale-sized transactions
-        if (totalOutput >= minSatoshis) {
-          const amountBTC = totalOutput / 100000000;
-          const amountUSD = amountBTC * btcPrice;
-          
-          // Get addresses
-          const fromAddress = tx.inputs[0]?.prev_out?.addr || 'Unknown';
-          const toAddress = tx.out[0]?.addr || 'Unknown';
-          
-          // Check if addresses belong to exchanges
-          const fromCheck = this.checkExchangeAddress(fromAddress);
-          const toCheck = this.checkExchangeAddress(toAddress);
-          
-          // Determine signal type
-          let signal: 'deposit' | 'withdrawal' | 'transfer' = 'transfer';
-          let sentiment: 'bearish' | 'bullish' | 'neutral' = 'neutral';
-          
-          if (toCheck.isExchange && !fromCheck.isExchange) {
-            signal = 'deposit';
-            sentiment = 'bearish'; // Deposit to exchange = potential sell pressure
-          } else if (fromCheck.isExchange && !toCheck.isExchange) {
-            signal = 'withdrawal';
-            sentiment = 'bullish'; // Withdrawal from exchange = accumulation/holding
+        for (const input of tx.inputs) {
+          const addr = input.prev_out?.addr;
+          if (addr) {
+            fromAddresses.add(addr);
+            const check = this.checkExchangeAddress(addr);
+            if (check.isExchange) {
+              totalFromExchange += input.prev_out.value;
+              fromExchangeName = check.exchange;
+            }
           }
+        }
+
+        // Analyze outputs to determine destinations
+        let totalToExchange = 0;
+        let toExchangeName: string | null = null;
+        let totalToNonExchange = 0;
+        const toAddresses = new Set<string>();
+        
+        for (const output of tx.out) {
+          const addr = output.addr;
+          if (addr) {
+            toAddresses.add(addr);
+            const check = this.checkExchangeAddress(addr);
+            if (check.isExchange) {
+              totalToExchange += output.value;
+              toExchangeName = check.exchange;
+            } else {
+              totalToNonExchange += output.value;
+            }
+          }
+        }
+
+        // Determine transaction type and amount
+        let signal: 'deposit' | 'withdrawal' | 'transfer' = 'transfer';
+        let sentiment: 'bearish' | 'bullish' | 'neutral' = 'neutral';
+        let amountSatoshis = 0;
+        let primaryFromAddress = 'Unknown';
+        let primaryToAddress = 'Unknown';
+
+        // DEPOSIT: Non-exchange → Exchange (whale depositing to exchange)
+        if (totalToExchange > 0 && totalFromExchange === 0) {
+          signal = 'deposit';
+          sentiment = 'bearish';
+          amountSatoshis = totalToExchange; // Only count what goes TO exchange
+          fromExchangeName = null;
+          primaryFromAddress = Array.from(fromAddresses)[0] || 'Unknown';
+          primaryToAddress = Array.from(toAddresses).find(addr => 
+            this.checkExchangeAddress(addr).isExchange
+          ) || 'Unknown';
+        }
+        // WITHDRAWAL: Exchange → Non-exchange (whale withdrawing from exchange)
+        else if (totalFromExchange > 0 && totalToNonExchange > 0) {
+          signal = 'withdrawal';
+          sentiment = 'bullish';
+          amountSatoshis = totalToNonExchange; // Only count what goes to NON-exchange (exclude change to exchange)
+          toExchangeName = null;
+          primaryFromAddress = Array.from(fromAddresses).find(addr => 
+            this.checkExchangeAddress(addr).isExchange
+          ) || 'Unknown';
+          primaryToAddress = Array.from(toAddresses).find(addr => 
+            !this.checkExchangeAddress(addr).isExchange
+          ) || 'Unknown';
+        }
+        // TRANSFER: Whale to whale (or internal exchange movements)
+        else {
+          signal = 'transfer';
+          sentiment = 'neutral';
+          amountSatoshis = tx.out.reduce((sum: number, output: any) => sum + output.value, 0);
+          primaryFromAddress = Array.from(fromAddresses)[0] || 'Unknown';
+          primaryToAddress = Array.from(toAddresses)[0] || 'Unknown';
+        }
+
+        // Only track if amount meets whale threshold
+        if (amountSatoshis >= minSatoshis) {
+          const amountBTC = amountSatoshis / 100000000;
+          const amountUSD = amountBTC * btcPrice;
           
           whaleTransactions.push({
             hash: tx.hash,
             timestamp: tx.time * 1000, // Convert to milliseconds
             amountBTC,
             amountUSD,
-            fromAddress,
-            toAddress,
-            fromExchange: fromCheck.exchange,
-            toExchange: toCheck.exchange,
+            fromAddress: primaryFromAddress,
+            toAddress: primaryToAddress,
+            fromExchange: fromExchangeName,
+            toExchange: toExchangeName,
             signal,
             sentiment
           });
