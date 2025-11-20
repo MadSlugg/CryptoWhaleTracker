@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, varchar, doublePrecision, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, varchar, doublePrecision, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
 export const bitcoinOrderSchema = z.object({
@@ -109,6 +109,17 @@ export const bitcoinOrders = pgTable("bitcoin_orders", {
   status: varchar("status", { length: 10 }).notNull(),
   filledAt: timestamp("filled_at"),
   fillPrice: doublePrecision("fill_price"),
+}, (table) => {
+  return {
+    // Composite index for timestamp-based queries (most common query pattern)
+    timestampIdx: index("bitcoin_orders_timestamp_idx").on(table.timestamp.desc()),
+    // Composite index for filtered queries (status + exchange + timestamp)
+    statusExchangeTimestampIdx: index("bitcoin_orders_status_exchange_timestamp_idx").on(
+      table.status, 
+      table.exchange, 
+      table.timestamp.desc()
+    ),
+  };
 });
 
 export const whaleMovements = pgTable("whale_movements", {

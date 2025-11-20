@@ -338,7 +338,149 @@ class OrderGenerator {
 
 const orderGenerator = new OrderGenerator();
 
+// Simple in-memory cache for dashboard data (8s TTL)
+interface DashboardCache {
+  data: {
+    baseOrders: BitcoinOrder[];
+  };
+  timestamp: number;
+  filterKey: string;
+}
+
+const dashboardCache = new Map<string, DashboardCache>();
+const CACHE_TTL = 8000; // 8 seconds
+
+function getDashboardCacheKey(filters: {
+  minSize: number;
+  orderType: string;
+  exchange: string;
+  timeRange: string;
+  status: string;
+}): string {
+  return JSON.stringify(filters);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Consolidated dashboard API endpoint (replaces multiple /api/orders calls)
+  app.get("/api/dashboard", async (req, res) => {
+    try {
+      // Parse filters (same as /api/orders)
+      let minSize = 0;
+      let orderType: 'long' | 'short' | 'all' = 'all';
+      let exchange: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all' = 'all';
+      let timeRange: '1h' | '4h' | '24h' | '7d' = '24h';
+      let status: 'active' | 'filled' | 'all' = 'all';
+      
+      if (req.query.minSize) {
+        const parsed = parseFloat(req.query.minSize as string);
+        if (isNaN(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'Invalid minSize parameter' });
+        }
+        minSize = parsed;
+      }
+      
+      if (req.query.orderType) {
+        const type = req.query.orderType as string;
+        if (!['long', 'short', 'all'].includes(type)) {
+          return res.status(400).json({ error: 'Invalid orderType parameter' });
+        }
+        orderType = type as 'long' | 'short' | 'all';
+      }
+      
+      if (req.query.exchange) {
+        const exch = req.query.exchange as string;
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(exch)) {
+          return res.status(400).json({ error: 'Invalid exchange parameter' });
+        }
+        exchange = exch as 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
+      }
+      
+      if (req.query.timeRange) {
+        const range = req.query.timeRange as string;
+        if (!['1h', '4h', '24h', '7d'].includes(range)) {
+          return res.status(400).json({ error: 'Invalid timeRange parameter' });
+        }
+        timeRange = range as '1h' | '4h' | '24h' | '7d';
+      }
+
+      if (req.query.status) {
+        const st = req.query.status as string;
+        if (!['active', 'filled', 'all'].includes(st)) {
+          return res.status(400).json({ error: 'Invalid status parameter' });
+        }
+        status = st as 'active' | 'filled' | 'all';
+      }
+      
+      // Cache key based only on exchange + timeRange (the base dataset filters)
+      // This allows sharing cached data across different minSize/orderType/status filters
+      const baseCacheKey = JSON.stringify({ exchange, timeRange });
+      const cached = dashboardCache.get(baseCacheKey);
+      
+      let allOrders: BitcoinOrder[];
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        // Use cached base dataset
+        allOrders = cached.data.baseOrders;
+      } else {
+        // Fetch base dataset from DB (only exchange + timeRange filters)
+        allOrders = await storage.getFilteredOrders({
+          minSize: 0,
+          orderType: 'all',
+          exchange,
+          timeRange,
+          status: 'all',
+        });
+        
+        // Cache the base dataset
+        dashboardCache.set(baseCacheKey, {
+          data: { baseOrders: allOrders },
+          timestamp: Date.now(),
+          filterKey: baseCacheKey,
+        });
+        
+        // Clean old cache entries (keep last 10)
+        if (dashboardCache.size > 10) {
+          const entries = Array.from(dashboardCache.entries());
+          entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+          for (let i = 0; i < entries.length - 10; i++) {
+            dashboardCache.delete(entries[i][0]);
+          }
+        }
+      }
+      
+      // Derive filtered views from cached dataset (in-memory filtering is fast)
+      const filteredOrders = allOrders.filter(order => {
+        if (minSize > 0 && order.size < minSize) return false;
+        if (orderType !== 'all' && order.type !== orderType) return false;
+        if (status !== 'all' && order.status !== status) return false;
+        return true;
+      });
+      
+      // Calculate price snapshot from most recent order in base dataset
+      const sortedOrders = [...allOrders].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      const priceSnapshot = sortedOrders[0]?.price || 93000;
+      
+      // Get major whales (100+ BTC) from base dataset
+      const majorWhales = allOrders
+        .filter(order => order.size >= 100)
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 10);
+      
+      const result = {
+        filteredOrders,
+        priceSnapshot,
+        majorWhales,
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    }
+  });
+
   // API endpoint to fetch all orders with optional filtering
   app.get("/api/orders", async (req, res) => {
     try {

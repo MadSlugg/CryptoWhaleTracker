@@ -30,85 +30,49 @@ export default function Dashboard() {
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
-  // Fetch orders filtered by user's selections
-  // Always include exchange in query key to prevent stale cache when switching
-  const { data: orders = [], isLoading, refetch, error } = useQuery<BitcoinOrder[]>({
-    queryKey: ['/api/orders', minSize, orderType, exchange, timeRange, status],
+  // Fetch consolidated dashboard data (single API call replaces 3 separate calls)
+  const { data: dashboardData, isLoading, refetch, error } = useQuery<{
+    filteredOrders: BitcoinOrder[];
+    priceSnapshot: number;
+    majorWhales: BitcoinOrder[];
+  }>({
+    queryKey: ['/api/dashboard', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (minSize > 5) params.append('minSize', minSize.toString());
+      if (minSize > 0) params.append('minSize', minSize.toString());
       if (orderType !== 'all') params.append('orderType', orderType);
       if (exchange !== 'all') params.append('exchange', exchange);
       if (status !== 'all') params.append('status', status);
       params.append('timeRange', timeRange);
       
-      const response = await fetch(`/api/orders?${params.toString()}`);
+      const response = await fetch(`/api/dashboard?${params.toString()}`);
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch orders' }));
-        throw new Error(errorData.error || 'Failed to fetch orders');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch dashboard data' }));
+        throw new Error(errorData.error || 'Failed to fetch dashboard data');
       }
       return response.json();
     },
-    refetchInterval: autoRefresh ? 10000 : false,
+    refetchInterval: autoRefresh ? 20000 : false, // Increased from 10s to 20s
+    staleTime: 5000, // Data considered fresh for 5 seconds
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
   });
 
   // Show toast notification for errors (only once per error)
   useEffect(() => {
     if (error) {
       toast({
-        title: "Filter Error",
+        title: "Dashboard Error",
         description: error.message,
         variant: "destructive",
       });
     }
   }, [error?.message, toast]);
 
-  // Fetch time-range-only orders for accurate price calculation (separate cache key)
-  const { data: timeRangeOrders = [] } = useQuery<BitcoinOrder[]>({
-    queryKey: ['price-calculation-orders', timeRange],
-    queryFn: async () => {
-      // Fetch with ONLY timeRange filter (no size/type filters)
-      const params = new URLSearchParams();
-      params.append('timeRange', timeRange);
-      // Don't send minSize/orderType - backend defaults will not filter these
-      
-      const response = await fetch(`/api/orders?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
-      return response.json();
-    },
-    refetchInterval: autoRefresh ? 10000 : false,
-  });
-
-  // Fetch major whale orders (100+ BTC) - independent of user filters
-  const { data: majorWhaleOrders = [] } = useQuery<BitcoinOrder[]>({
-    queryKey: ['major-whales', timeRange],
-    queryFn: async () => {
-      // Always fetch 100+ BTC orders regardless of user's filter settings
-      const params = new URLSearchParams();
-      params.append('minSize', '100');
-      params.append('timeRange', timeRange);
-      params.append('status', 'all'); // Show both active AND filled major whales
-      // No orderType or exchange filters - show ALL major whales
-      
-      const response = await fetch(`/api/orders?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch major whale orders');
-      return response.json();
-    },
-    refetchInterval: autoRefresh ? 10000 : false,
-  });
-
-  // Orders are already filtered by the backend
-  const filteredOrders = orders;
-
-  // Calculate current BTC price from time-range-only orders
-  // Sort by timestamp to get newest order
-  const sortedTimeRangeOrders = [...timeRangeOrders].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
-  
-  // Current price: most recent order in the time range
-  const newestOrder = sortedTimeRangeOrders[0];
-  const currentBtcPrice = newestOrder ? newestOrder.price : 93000;
+  // Extract data from consolidated response (with defaults)
+  const filteredOrders = dashboardData?.filteredOrders || [];
+  const currentBtcPrice = dashboardData?.priceSnapshot || 93000;
+  const majorWhaleOrders = dashboardData?.majorWhales || [];
 
   const handleRefresh = async () => {
     await refetch();
