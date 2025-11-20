@@ -32,7 +32,7 @@ interface FilledOrderAnalysis {
 }
 
 export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
-  const { data, isLoading } = useQuery<FilledOrderAnalysis>({
+  const { data, isLoading, error } = useQuery<FilledOrderAnalysis>({
     queryKey: ['/api/filled-order-analysis', minSize, exchange],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -41,10 +41,16 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
         exchange,
       });
       const response = await fetch(`/api/filled-order-analysis?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch filled order analysis');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch filled order analysis:', errorText);
+        throw new Error(`Failed to fetch filled order analysis: ${response.status}`);
+      }
       return response.json();
     },
     refetchInterval: 10000, // Refresh every 10 seconds
+    staleTime: 5000, // Consider data fresh for 5 seconds
+    retry: 3, // Retry failed requests 3 times
   });
 
   if (isLoading || !data) {
@@ -61,7 +67,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
         </CardHeader>
         <CardContent>
           <div className="h-32 flex items-center justify-center text-muted-foreground">
-            Loading filled order analysis...
+            {error ? `Error: ${error.message}` : 'Loading filled order analysis...'}
           </div>
         </CardContent>
       </Card>
