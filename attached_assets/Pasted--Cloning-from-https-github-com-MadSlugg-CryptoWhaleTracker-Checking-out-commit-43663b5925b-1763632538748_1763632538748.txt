@@ -1,0 +1,66 @@
+==> Cloning from https://github.com/MadSlugg/CryptoWhaleTracker
+==> Checking out commit 43663b5925b60479637cafa4457a59d461b40ab7 in branch main
+==> Using Node.js version 22.16.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Running build command 'npm install && npm run build'...
+added 476 packages, and audited 477 packages in 9s
+60 packages are looking for funding
+  run `npm fund` for details
+6 vulnerabilities (3 low, 2 moderate, 1 high)
+To address all issues, run:
+  npm audit fix
+Run `npm audit` for details.
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+vite v5.4.20 building for production...
+transforming...
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 2593 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                   1.06 kB │ gzip:   0.56 kB
+../dist/public/assets/index-E1tlK9Ci.css   76.94 kB │ gzip:  12.41 kB
+../dist/public/assets/index-D-LH0Smx.js   442.53 kB │ gzip: 139.67 kB
+✓ built in 5.29s
+  dist/index.js  53.0kb
+⚡ Done in 7ms
+==> Uploading build...
+==> Uploaded in 6.6s. Compression took 3.4s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'npm start'
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.js
+9:55:10 AM [express] serving on port 10000
+Failed to initialize active orders cache: error: relation "bitcoin_orders" does not exist
+    at file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async NeonPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+    at async DatabaseStorage.getOrders (file:///opt/render/project/src/dist/index.js:155:20)
+    at async OrderGenerator.initializeActiveOrdersCache (file:///opt/render/project/src/dist/index.js:771:25)
+    at async OrderGenerator.start (file:///opt/render/project/src/dist/index.js:744:5) {
+  length: 114,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '105',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+==> Your service is live 🎉
+==> 
+==> ///////////////////////////////////////////////////////////
+==> 
+==> Available at your primary URL https://cryptowhaletracker.onrender.com
+==> 
+==> ///////////////////////////////////////////////////////////
