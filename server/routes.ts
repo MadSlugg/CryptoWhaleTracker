@@ -780,9 +780,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
+      // Guard against divide-by-zero and NaN
       const totalFilledVolume = totalLongVolume + totalShortVolume;
       const longPercentage = totalFilledVolume > 0 ? (totalLongVolume / totalFilledVolume) * 100 : 50;
-      const flowDifference = longPercentage - 50;
+      const flowDifference = isNaN(longPercentage) ? 0 : longPercentage - 50;
 
       // Fetch active orders for support/resistance analysis
       const activeOrders = await storage.getFilteredOrders({
@@ -834,10 +835,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
+      // Calculate order book imbalance with proper guards
       const totalLiquidity = totalLongLiquidity + totalShortLiquidity;
-      const imbalance = totalLiquidity > 0
-        ? ((totalLongLiquidity - totalShortLiquidity) / totalLiquidity) * 100
-        : 0;
+      let imbalance = 0;
+      if (totalLiquidity > 0) {
+        imbalance = ((totalLongLiquidity - totalShortLiquidity) / totalLiquidity) * 100;
+        // Guard against NaN
+        if (isNaN(imbalance)) imbalance = 0;
+      }
 
       // Get current BTC price from most recent order
       const allOrders = await storage.getFilteredOrders({
@@ -873,72 +878,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const nearestResistance = clustersAbove.length > 0 ? clustersAbove[clustersAbove.length - 1] : null;
       const nearestSupport = clustersBelow.length > 0 ? clustersBelow[0] : null;
 
-      // Calculate composite signal score (-100 to +100)
-      // Flow weight: 50%, Imbalance weight: 50%
-      const compositeScore = (signals.flow * 0.5) + (signals.imbalance * 0.5);
+      // VOLUME-WEIGHTED composite signal score (-100 to +100)
+      // "Not every trade is equal" - weight by BTC volume
+      // Use log scale to avoid extreme values: log10(1 + volume)
+      // Example: 10 BTC = 1.04x, 100 BTC = 2.0x, 1000 BTC = 3.0x
+      const volumeMultiplier = totalFilledVolume > 0 
+        ? Math.log10(1 + totalFilledVolume) / 2 // Divide by 2 to keep multiplier reasonable (0.5x to 1.5x typical range)
+        : 0.5;
+      
+      // Flow weight: 50%, Imbalance weight: 50%, scaled by volume
+      const flowScore = isNaN(signals.flow) ? 0 : signals.flow;
+      const imbalanceScore = isNaN(signals.imbalance) ? 0 : signals.imbalance;
+      
+      // Apply volume weighting to amplify/reduce signal strength
+      const rawComposite = (flowScore * 0.5) + (imbalanceScore * 0.5);
+      const volumeWeightedScore = rawComposite * Math.min(1.5, Math.max(0.5, volumeMultiplier));
+      
+      // Clamp to -100 to +100 range to prevent volume weighting from creating extreme values
+      const compositeScore = Math.max(-100, Math.min(100, volumeWeightedScore));
+      
+      // Guard against NaN composite score
+      if (isNaN(compositeScore)) {
+        return res.json({
+          recommendation: 'neutral',
+          confidence: 30,
+          currentPrice,
+          entry: { price: currentPrice, type: 'WAIT' },
+          stopLoss: Math.floor(currentPrice * 0.98),
+          takeProfit: Math.floor(currentPrice * 1.02),
+          riskReward: 1.0,
+          reasoning: ['Insufficient data for analysis', 'Wait for more whale activity'],
+          signals: {
+            filledOrderFlow: { score: 0, signal: 'neutral' },
+            orderBookImbalance: { score: 0, signal: 'balanced' },
+          },
+          keyLevels: {
+            nearestSupport: nearestSupport ? nearestSupport.price : null,
+            nearestResistance: nearestResistance ? nearestResistance.price : null,
+          },
+        });
+      }
 
       reasoning = [];
 
       if (compositeScore >= 30) {
-        // STRONG BUY SIGNAL
+        // LONG SIGNAL (BUY)
         recommendation = compositeScore >= 50 ? 'strong_buy' : 'buy';
-        confidence = Math.min(95, 50 + Math.abs(compositeScore));
         
-        // Entry: Buy at current price or slightly below near support
-        entryPrice = nearestSupport ? nearestSupport.price : Math.floor(currentPrice * 0.995);
+        // Reduce confidence if insufficient data
+        let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
+        if (isNaN(baseConfidence)) baseConfidence = 50;
+        if (totalFilledVolume < 10) baseConfidence *= 0.8; // Reduce confidence if low volume
+        if (activeOrders.length < 5) baseConfidence *= 0.9; // Reduce confidence if few orders
+        confidence = Math.floor(baseConfidence);
         
-        // Stop loss: Below nearest support or -2%
-        stopLoss = nearestSupport 
-          ? Math.floor(nearestSupport.price * 0.98)
-          : Math.floor(entryPrice * 0.98);
+        // Entry: Buy at current price or near support
+        entryPrice = nearestSupport && nearestSupport.price < currentPrice
+          ? nearestSupport.price 
+          : Math.floor(currentPrice * 0.995);
         
-        // Take profit: Near resistance or +4%
-        takeProfit = nearestResistance
-          ? Math.floor(nearestResistance.price * 0.99)
-          : Math.floor(entryPrice * 1.04);
+        // LONG position: Stop loss MUST be BELOW entry
+        const defaultStop = Math.floor(entryPrice * 0.98);
+        if (nearestSupport && nearestSupport.price < entryPrice) {
+          stopLoss = Math.min(defaultStop, Math.floor(nearestSupport.price * 0.98));
+        } else {
+          stopLoss = defaultStop;
+        }
+        
+        // LONG position: Take profit MUST be ABOVE entry
+        const defaultTarget = Math.floor(entryPrice * 1.04);
+        if (nearestResistance && nearestResistance.price > entryPrice) {
+          takeProfit = Math.max(defaultTarget, Math.floor(nearestResistance.price * 0.99));
+        } else {
+          takeProfit = defaultTarget;
+        }
+        
+        // Validate: ensure stop < entry < target for LONG
+        if (stopLoss >= entryPrice) stopLoss = Math.floor(entryPrice * 0.98);
+        if (takeProfit <= entryPrice) takeProfit = Math.floor(entryPrice * 1.04);
 
-        if (signals.flow > 20) reasoning.push(`Whales accumulating (+${signals.flow.toFixed(1)}% buying)`);
-        if (signals.imbalance > 15) reasoning.push(`Strong buy pressure (${signals.imbalance.toFixed(1)}% imbalance)`);
+        if (flowScore > 20) reasoning.push(`Whales accumulating (+${flowScore.toFixed(1)}% buying)`);
+        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure (${imbalanceScore.toFixed(1)}% imbalance)`);
         if (nearestSupport) reasoning.push(`Strong support at $${nearestSupport.price.toLocaleString()}`);
         
       } else if (compositeScore <= -30) {
-        // STRONG SELL SIGNAL
+        // SHORT SIGNAL (SELL)
         recommendation = compositeScore <= -50 ? 'strong_sell' : 'sell';
-        confidence = Math.min(95, 50 + Math.abs(compositeScore));
         
-        // Entry: Sell at current price or slightly above near resistance
-        entryPrice = nearestResistance ? nearestResistance.price : Math.floor(currentPrice * 1.005);
+        // Reduce confidence if insufficient data
+        let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
+        if (isNaN(baseConfidence)) baseConfidence = 50;
+        if (totalFilledVolume < 10) baseConfidence *= 0.8;
+        if (activeOrders.length < 5) baseConfidence *= 0.9;
+        confidence = Math.floor(baseConfidence);
         
-        // Stop loss: Above nearest resistance or +2%
-        stopLoss = nearestResistance
-          ? Math.floor(nearestResistance.price * 1.02)
-          : Math.floor(entryPrice * 1.02);
+        // Entry: Sell at current price or near resistance
+        entryPrice = nearestResistance && nearestResistance.price > currentPrice
+          ? nearestResistance.price 
+          : Math.floor(currentPrice * 1.005);
         
-        // Take profit: Near support or -4%
-        takeProfit = nearestSupport
-          ? Math.floor(nearestSupport.price * 1.01)
-          : Math.floor(entryPrice * 0.96);
+        // SHORT position: Calculate stop and target with defaults
+        let tempStop = Math.floor(entryPrice * 1.02);
+        let tempTarget = Math.floor(entryPrice * 0.96);
+        
+        // Adjust based on support/resistance if available
+        if (nearestResistance && nearestResistance.price > entryPrice) {
+          tempStop = Math.max(tempStop, Math.floor(nearestResistance.price * 1.02));
+        }
+        if (nearestSupport && nearestSupport.price < entryPrice) {
+          tempTarget = Math.min(tempTarget, Math.floor(nearestSupport.price * 1.01));
+        }
+        
+        // STRICT validation for SHORT: target < entry < stop
+        if (tempTarget >= entryPrice) tempTarget = Math.floor(entryPrice * 0.96);
+        if (tempStop <= entryPrice) tempStop = Math.floor(entryPrice * 1.02);
+        
+        // Final verification
+        if (tempTarget >= entryPrice || tempStop <= entryPrice || tempTarget >= tempStop) {
+          // Fallback to safe defaults if any validation fails
+          tempStop = Math.floor(entryPrice * 1.02);
+          tempTarget = Math.floor(entryPrice * 0.96);
+        }
+        
+        stopLoss = tempStop;
+        takeProfit = tempTarget;
 
-        if (signals.flow < -20) reasoning.push(`Whales distributing (${Math.abs(signals.flow).toFixed(1)}% selling)`);
-        if (signals.imbalance < -15) reasoning.push(`Strong sell pressure (${Math.abs(signals.imbalance).toFixed(1)}% imbalance)`);
+        if (flowScore < -20) reasoning.push(`Whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
+        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure (${Math.abs(imbalanceScore).toFixed(1)}% imbalance)`);
         if (nearestResistance) reasoning.push(`Strong resistance at $${nearestResistance.price.toLocaleString()}`);
         
       } else {
         // NEUTRAL - NO CLEAR ENTRY
         recommendation = 'neutral';
-        confidence = 50 - Math.abs(compositeScore);
+        let neutralConfidence = 50 - Math.abs(compositeScore);
+        if (isNaN(neutralConfidence)) neutralConfidence = 30;
+        confidence = Math.max(30, Math.floor(neutralConfidence));
+        
         entryPrice = currentPrice;
         stopLoss = Math.floor(currentPrice * 0.98);
         takeProfit = Math.floor(currentPrice * 1.02);
         
         reasoning.push('Mixed signals - whales not showing clear direction');
-        reasoning.push('Wait for clearer accumulation/distribution pattern');
+        if (totalFilledVolume < 10) reasoning.push('Low filled order volume - wait for more whale activity');
+        if (activeOrders.length < 5) reasoning.push('Insufficient active orders for reliable support/resistance');
       }
 
+      // Calculate risk/reward with comprehensive guards
+      const risk = Math.abs(entryPrice - stopLoss);
+      const reward = Math.abs(takeProfit - entryPrice);
+      
+      let riskReward = 1.0; // Default for WAIT/neutral
+      if (risk > 0 && reward > 0) {
+        riskReward = reward / risk;
+      } else if (risk === 0 || reward === 0) {
+        // WAIT state or invalid configuration - default to 1:1
+        riskReward = 1.0;
+      }
+      
       // Response with actionable recommendations
       res.json({
         recommendation,
-        confidence,
+        confidence: isNaN(confidence) ? 50 : confidence,
         currentPrice,
         entry: {
           price: entryPrice,
@@ -946,16 +1046,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         stopLoss,
         takeProfit,
-        riskReward: Math.abs((takeProfit - entryPrice) / (entryPrice - stopLoss)),
+        riskReward: isNaN(riskReward) ? 1.0 : riskReward,
         reasoning,
         signals: {
           filledOrderFlow: {
-            score: signals.flow,
-            signal: signals.flow > 20 ? 'bullish' : signals.flow < -20 ? 'bearish' : 'neutral',
+            score: flowScore,
+            signal: flowScore > 20 ? 'bullish' : flowScore < -20 ? 'bearish' : 'neutral',
           },
           orderBookImbalance: {
-            score: signals.imbalance,
-            signal: signals.imbalance > 15 ? 'buy_pressure' : signals.imbalance < -15 ? 'sell_pressure' : 'balanced',
+            score: imbalanceScore,
+            signal: imbalanceScore > 15 ? 'buy_pressure' : imbalanceScore < -15 ? 'sell_pressure' : 'balanced',
           },
         },
         keyLevels: {

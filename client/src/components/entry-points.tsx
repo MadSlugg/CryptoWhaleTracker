@@ -148,7 +148,7 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
           {/* Left Column - Entry Details */}
           <div className="space-y-4">
             <div>
@@ -205,11 +205,11 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
                     <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
                       <div 
                         className="h-full bg-primary transition-all"
-                        style={{ width: `${data.confidence}%` }}
+                        style={{ width: `${isNaN(data.confidence) ? 50 : Math.max(0, Math.min(100, data.confidence))}%` }}
                       />
                     </div>
                     <span className="font-mono font-bold text-primary" data-testid="text-confidence">
-                      {data.confidence.toFixed(0)}%
+                      {isNaN(data.confidence) ? '50' : data.confidence.toFixed(0)}%
                     </span>
                   </div>
                 </div>
