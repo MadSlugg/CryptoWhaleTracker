@@ -740,6 +740,235 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint for intelligent entry point recommendations
+  app.get("/api/entry-points", async (req, res) => {
+    try {
+      // Get exchange filter (default all)
+      let exchange: Exchange = 'all';
+      if (req.query.exchange) {
+        const ex = req.query.exchange as string;
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(ex)) {
+          return res.status(400).json({ error: 'Invalid exchange parameter' });
+        }
+        exchange = ex as Exchange;
+      }
+
+      // Fetch filled order flow analysis (last 30m for most relevant signals)
+      const filledOrders = await storage.getFilteredOrders({
+        minSize: 5,
+        orderType: 'all',
+        exchange,
+        timeRange: '30m',
+        status: 'filled',
+      });
+
+      // Calculate time-weighted filled order flow
+      let totalLongVolume = 0;
+      let totalShortVolume = 0;
+      const now = Date.now();
+      
+      filledOrders.forEach(order => {
+        const filledTime = order.filledAt ? new Date(order.filledAt).getTime() : new Date(order.timestamp).getTime();
+        const ageInHours = (now - filledTime) / (1000 * 60 * 60);
+        const timeWeight = Math.exp(-2.0 * ageInHours);
+        const weightedVolume = order.size * timeWeight;
+        
+        if (order.type === 'long') {
+          totalLongVolume += weightedVolume;
+        } else {
+          totalShortVolume += weightedVolume;
+        }
+      });
+
+      const totalFilledVolume = totalLongVolume + totalShortVolume;
+      const longPercentage = totalFilledVolume > 0 ? (totalLongVolume / totalFilledVolume) * 100 : 50;
+      const flowDifference = longPercentage - 50;
+
+      // Fetch active orders for support/resistance analysis
+      const activeOrders = await storage.getFilteredOrders({
+        minSize: 10,
+        orderType: 'all',
+        exchange,
+        timeRange: '24h',
+        status: 'active',
+      });
+
+      // Find price clusters (support/resistance zones) - group within $2000 buckets
+      const priceClusters: Record<string, { price: number; longVolume: number; shortVolume: number; orderCount: number }> = {};
+      
+      activeOrders.forEach(order => {
+        const priceLevel = Math.floor(order.price / 2000) * 2000;
+        const levelKey = priceLevel.toString();
+
+        if (!priceClusters[levelKey]) {
+          priceClusters[levelKey] = {
+            price: priceLevel,
+            longVolume: 0,
+            shortVolume: 0,
+            orderCount: 0,
+          };
+        }
+
+        if (order.type === 'long') {
+          priceClusters[levelKey].longVolume += order.size;
+        } else {
+          priceClusters[levelKey].shortVolume += order.size;
+        }
+        priceClusters[levelKey].orderCount++;
+      });
+
+      // Filter for significant clusters only (2+ orders OR 50+ BTC)
+      const significantClusters = Object.values(priceClusters)
+        .filter(cluster => cluster.orderCount >= 2 || (cluster.longVolume + cluster.shortVolume) >= 50)
+        .sort((a, b) => b.price - a.price);
+
+      // Calculate order book imbalance
+      let totalLongLiquidity = 0;
+      let totalShortLiquidity = 0;
+
+      activeOrders.forEach(order => {
+        if (order.type === 'long') {
+          totalLongLiquidity += order.size;
+        } else {
+          totalShortLiquidity += order.size;
+        }
+      });
+
+      const totalLiquidity = totalLongLiquidity + totalShortLiquidity;
+      const imbalance = totalLiquidity > 0
+        ? ((totalLongLiquidity - totalShortLiquidity) / totalLiquidity) * 100
+        : 0;
+
+      // Get current BTC price from most recent order
+      const allOrders = await storage.getFilteredOrders({
+        minSize: 0,
+        orderType: 'all',
+        exchange,
+        timeRange: '24h',
+        status: 'all',
+      });
+      const currentPrice = allOrders.length > 0 
+        ? allOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0].price
+        : 92000;
+
+      // ENTRY POINT ALGORITHM
+      // Combine signals to generate recommendations
+      let recommendation: 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell';
+      let confidence: number;
+      let entryPrice: number;
+      let stopLoss: number;
+      let takeProfit: number;
+      let reasoning: string[];
+
+      const signals = {
+        flow: flowDifference, // Positive = bullish, Negative = bearish
+        imbalance: imbalance, // Positive = buy pressure, Negative = sell pressure
+        clusterCount: significantClusters.length,
+      };
+
+      // Find nearest support/resistance
+      const clustersAbove = significantClusters.filter(c => c.price > currentPrice);
+      const clustersBelow = significantClusters.filter(c => c.price < currentPrice);
+      
+      const nearestResistance = clustersAbove.length > 0 ? clustersAbove[clustersAbove.length - 1] : null;
+      const nearestSupport = clustersBelow.length > 0 ? clustersBelow[0] : null;
+
+      // Calculate composite signal score (-100 to +100)
+      // Flow weight: 50%, Imbalance weight: 50%
+      const compositeScore = (signals.flow * 0.5) + (signals.imbalance * 0.5);
+
+      reasoning = [];
+
+      if (compositeScore >= 30) {
+        // STRONG BUY SIGNAL
+        recommendation = compositeScore >= 50 ? 'strong_buy' : 'buy';
+        confidence = Math.min(95, 50 + Math.abs(compositeScore));
+        
+        // Entry: Buy at current price or slightly below near support
+        entryPrice = nearestSupport ? nearestSupport.price : Math.floor(currentPrice * 0.995);
+        
+        // Stop loss: Below nearest support or -2%
+        stopLoss = nearestSupport 
+          ? Math.floor(nearestSupport.price * 0.98)
+          : Math.floor(entryPrice * 0.98);
+        
+        // Take profit: Near resistance or +4%
+        takeProfit = nearestResistance
+          ? Math.floor(nearestResistance.price * 0.99)
+          : Math.floor(entryPrice * 1.04);
+
+        if (signals.flow > 20) reasoning.push(`Whales accumulating (+${signals.flow.toFixed(1)}% buying)`);
+        if (signals.imbalance > 15) reasoning.push(`Strong buy pressure (${signals.imbalance.toFixed(1)}% imbalance)`);
+        if (nearestSupport) reasoning.push(`Strong support at $${nearestSupport.price.toLocaleString()}`);
+        
+      } else if (compositeScore <= -30) {
+        // STRONG SELL SIGNAL
+        recommendation = compositeScore <= -50 ? 'strong_sell' : 'sell';
+        confidence = Math.min(95, 50 + Math.abs(compositeScore));
+        
+        // Entry: Sell at current price or slightly above near resistance
+        entryPrice = nearestResistance ? nearestResistance.price : Math.floor(currentPrice * 1.005);
+        
+        // Stop loss: Above nearest resistance or +2%
+        stopLoss = nearestResistance
+          ? Math.floor(nearestResistance.price * 1.02)
+          : Math.floor(entryPrice * 1.02);
+        
+        // Take profit: Near support or -4%
+        takeProfit = nearestSupport
+          ? Math.floor(nearestSupport.price * 1.01)
+          : Math.floor(entryPrice * 0.96);
+
+        if (signals.flow < -20) reasoning.push(`Whales distributing (${Math.abs(signals.flow).toFixed(1)}% selling)`);
+        if (signals.imbalance < -15) reasoning.push(`Strong sell pressure (${Math.abs(signals.imbalance).toFixed(1)}% imbalance)`);
+        if (nearestResistance) reasoning.push(`Strong resistance at $${nearestResistance.price.toLocaleString()}`);
+        
+      } else {
+        // NEUTRAL - NO CLEAR ENTRY
+        recommendation = 'neutral';
+        confidence = 50 - Math.abs(compositeScore);
+        entryPrice = currentPrice;
+        stopLoss = Math.floor(currentPrice * 0.98);
+        takeProfit = Math.floor(currentPrice * 1.02);
+        
+        reasoning.push('Mixed signals - whales not showing clear direction');
+        reasoning.push('Wait for clearer accumulation/distribution pattern');
+      }
+
+      // Response with actionable recommendations
+      res.json({
+        recommendation,
+        confidence,
+        currentPrice,
+        entry: {
+          price: entryPrice,
+          type: recommendation.includes('buy') ? 'LONG' : recommendation.includes('sell') ? 'SHORT' : 'WAIT',
+        },
+        stopLoss,
+        takeProfit,
+        riskReward: Math.abs((takeProfit - entryPrice) / (entryPrice - stopLoss)),
+        reasoning,
+        signals: {
+          filledOrderFlow: {
+            score: signals.flow,
+            signal: signals.flow > 20 ? 'bullish' : signals.flow < -20 ? 'bearish' : 'neutral',
+          },
+          orderBookImbalance: {
+            score: signals.imbalance,
+            signal: signals.imbalance > 15 ? 'buy_pressure' : signals.imbalance < -15 ? 'sell_pressure' : 'balanced',
+          },
+        },
+        keyLevels: {
+          nearestSupport: nearestSupport ? nearestSupport.price : null,
+          nearestResistance: nearestResistance ? nearestResistance.price : null,
+        },
+      });
+    } catch (error) {
+      console.error('Error generating entry points:', error);
+      res.status(500).json({ error: 'Failed to generate entry point recommendations' });
+    }
+  });
+
   // API endpoint for whale movements
   app.get("/api/whale-movements", async (req, res) => {
     try {
