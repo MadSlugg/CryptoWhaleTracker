@@ -10,6 +10,7 @@ import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { SummaryStats } from "@/components/summary-stats";
 import { FilledOrderFlow } from "@/components/filled-order-flow";
+import { EntryPoints } from "@/components/entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -162,6 +163,9 @@ export default function Dashboard() {
 
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
+
+          {/* Smart Entry Points - AI-powered BUY/SELL recommendations */}
+          <EntryPoints exchange={exchange} />
 
           {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
           <PriceHeatmap 
