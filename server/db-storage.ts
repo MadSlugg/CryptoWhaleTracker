@@ -15,8 +15,10 @@
                          } from '@shared/schema';
                          import type { IStorage, OrderFilters } from './storage';
 
-                         // Create postgres client connection
-                         const client = postgres(process.env.DATABASE_URL!);
+                         // Create postgres client connection with SSL for Render PostgreSQL
+                         const client = postgres(process.env.DATABASE_URL!, {
+                           ssl: 'require', // Render PostgreSQL requires SSL/TLS connections
+                         });
                          const db = drizzle(client);
 
                          export class DatabaseStorage implements IStorage {
