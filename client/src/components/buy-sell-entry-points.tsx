@@ -307,11 +307,10 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
               </div>
             </div>
 
-            {/* Show confidence and reasoning if available (filter out support text for sell entries) */}
+            {/* Show only resistance-related reasoning for sell entries (no support/confidence text) */}
             {data.reasoning && data.reasoning.length > 0 && (() => {
               const resistanceReasons = data.reasoning.filter(r => 
-                r.toLowerCase().includes('resistance') || 
-                (!r.toLowerCase().includes('support') && !r.toLowerCase().includes('entry'))
+                r.toLowerCase().includes('resistance')
               );
               return resistanceReasons.length > 0 && (
                 <div>
