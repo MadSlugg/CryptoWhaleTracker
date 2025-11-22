@@ -22,8 +22,8 @@ interface GroupedWhale {
 export function MajorWhales({ orders }: MajorWhalesProps) {
   const [isFilledOpen, setIsFilledOpen] = useState(false);
   
-  // Filter for major whale orders (100+ BTC)
-  const majorWhales = orders.filter(order => order.size >= 100);
+  // Filter for major whale orders (1000+ BTC)
+  const majorWhales = orders.filter(order => order.size >= 1000);
   
   // Split into active and filled
   const activeWhales = majorWhales.filter(order => order.status === 'active');
@@ -44,13 +44,13 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-primary" data-testid="icon-activity" />
-            Major Whales (100+ BTC)
+            Major Whales (1000+ BTC)
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <p className="text-sm text-muted-foreground">
-              No major whale orders (100+ BTC) in current view
+              No major whale orders (1000+ BTC) in current view
             </p>
           </div>
         </CardContent>
@@ -67,7 +67,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" data-testid="icon-activity" />
-                Major Whales (100+ BTC)
+                Major Whales (1000+ BTC)
               </div>
               <Badge variant="secondary" data-testid="badge-major-whale-count">
                 {totalActive} active {totalActive === 1 ? 'order' : 'orders'}
@@ -93,7 +93,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Activity className="h-5 w-5 text-muted-foreground" />
-                    Filled Major Whales (100+ BTC)
+                    Filled Major Whales (1000+ BTC)
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" data-testid="badge-filled-whale-count">
