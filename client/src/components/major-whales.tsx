@@ -16,6 +16,7 @@ interface GroupedWhale {
   orders: BitcoinOrder[];
   longCount: number;
   shortCount: number;
+  mostRecentFilledAt?: number; // Timestamp for filled whale sorting
 }
 
 export function MajorWhales({ orders }: MajorWhalesProps) {
@@ -28,11 +29,11 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
   const activeWhales = majorWhales.filter(order => order.status === 'active');
   const filledWhales = majorWhales.filter(order => order.status === 'filled');
 
-  // Group active whales by price
+  // Group active whales by price (sorted by total BTC size)
   const activeGroups = groupOrdersByPrice(activeWhales).slice(0, 10);
   
-  // Group filled whales by price
-  const filledGroups = groupOrdersByPrice(filledWhales).slice(0, 10);
+  // Group filled whales by price (sorted by most recent filled time)
+  const filledGroups = groupOrdersByPriceByFilledTime(filledWhales).slice(0, 10);
 
   const totalActive = activeGroups.reduce((sum, g) => sum + g.orders.length, 0);
   const totalFilled = filledGroups.reduce((sum, g) => sum + g.orders.length, 0);
@@ -139,6 +140,39 @@ function groupOrdersByPrice(orders: BitcoinOrder[]): GroupedWhale[] {
       shortCount: orders.filter(o => o.type === 'short').length,
     }))
     .sort((a, b) => b.totalSize - a.totalSize);
+}
+
+function groupOrdersByPriceByFilledTime(orders: BitcoinOrder[]): GroupedWhale[] {
+  const priceGroups = new Map<number, BitcoinOrder[]>();
+  orders.forEach(order => {
+    const existing = priceGroups.get(order.price) || [];
+    priceGroups.set(order.price, [...existing, order]);
+  });
+
+  return Array.from(priceGroups.entries())
+    .map(([price, orders]) => {
+      // Find most recent filled time in this group
+      const mostRecentFilledAt = orders.reduce((latest, order) => {
+        if (!order.filledAt) return latest;
+        const orderTime = new Date(order.filledAt).getTime();
+        return orderTime > latest ? orderTime : latest;
+      }, 0);
+
+      return {
+        price,
+        totalSize: orders.reduce((sum, o) => sum + o.size, 0),
+        orders: orders.sort((a, b) => {
+          // Sort orders within group by filled time (most recent first)
+          const aTime = a.filledAt ? new Date(a.filledAt).getTime() : 0;
+          const bTime = b.filledAt ? new Date(b.filledAt).getTime() : 0;
+          return bTime - aTime;
+        }),
+        longCount: orders.filter(o => o.type === 'long').length,
+        shortCount: orders.filter(o => o.type === 'short').length,
+        mostRecentFilledAt,
+      };
+    })
+    .sort((a, b) => b.mostRecentFilledAt - a.mostRecentFilledAt);
 }
 
 function WhaleGroup({ group }: { group: GroupedWhale }) {
