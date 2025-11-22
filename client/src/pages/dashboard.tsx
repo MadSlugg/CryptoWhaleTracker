@@ -72,7 +72,7 @@ export default function Dashboard() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
-                  Bitcoin Whale Tracker
+                  Bitcoin Liquidity Monitor
                 </h1>
                 <div className="flex items-center gap-2">
                   <div 

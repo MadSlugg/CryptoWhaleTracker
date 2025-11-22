@@ -21,14 +21,14 @@ interface PriceCluster {
 
 export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   const detectPatterns = (): PriceCluster[] => {
-    // Filter to active whale positions
-    const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
+    // Filter to active large positions
+    const largeOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
     
     // Use $100 clusters for precise price zones
     const priceRange = 100;
     const clusters = new Map<number, { buys: BitcoinOrder[], sells: BitcoinOrder[] }>();
     
-    whaleOrders.forEach(order => {
+    largeOrders.forEach(order => {
       const clusterPrice = Math.round(order.price / priceRange) * priceRange;
       
       if (!clusters.has(clusterPrice)) {
@@ -50,7 +50,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
       const count = allOrders.length;
       
-      // Only show important clusters: 2+ whales OR 50+ BTC total
+      // Only show important clusters: 2+ orders OR 50+ BTC total
       if (count >= 2 || totalSize >= 50) {
         const buySize = cluster.buys.reduce((sum, o) => sum + o.size, 0);
         const sellSize = cluster.sells.reduce((sum, o) => sum + o.size, 0);
@@ -85,7 +85,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
             Support & Resistance Levels
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-2">
-            Key price zones where whales are positioned. Green = support below price, Red = resistance above price.
+            Key price zones where large positions are concentrated. Green = support below price, Red = resistance above price.
           </p>
         </CardHeader>
         <CardContent>
@@ -107,7 +107,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
           Support & Resistance Levels
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
-          Key price zones where whales are positioned. Green = support below price, Red = resistance above price.
+          Key price zones where large positions are concentrated. Green = support below price, Red = resistance above price.
         </p>
       </CardHeader>
       <CardContent>
@@ -154,20 +154,11 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
                     </div>
                   </div>
                   
-                  {/* Strength Metrics */}
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Strength</div>
-                      <div className="font-mono font-bold text-lg">
-                        {pattern.totalSize.toFixed(0)} BTC
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Whales</div>
-                      <div className="font-mono font-bold text-lg">
-                        {pattern.count}
-                      </div>
+                  {/* BTC Strength */}
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Liquidity</div>
+                    <div className="font-mono font-bold text-lg">
+                      {pattern.totalSize.toFixed(0)} BTC
                     </div>
                   </div>
                 </div>

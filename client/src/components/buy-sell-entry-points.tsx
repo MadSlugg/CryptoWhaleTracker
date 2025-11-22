@@ -56,7 +56,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
                 <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 Buy Entry Points
               </CardTitle>
-              <CardDescription>Buy signals from whale liquidity</CardDescription>
+              <CardDescription>Buy signals from market liquidity</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -82,7 +82,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
                 Buy Entry Points
               </CardTitle>
               <CardDescription>
-                Buy signals from whale liquidity
+                Buy signals from market liquidity
               </CardDescription>
             </div>
             <Badge 
@@ -95,7 +95,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm" data-testid="text-no-buy-signal">No strong buy signals detected. Wait for whale accumulation.</p>
+            <p className="text-sm" data-testid="text-no-buy-signal">No strong buy signals detected. Wait for accumulation.</p>
           </div>
         </CardContent>
       </Card>
@@ -126,7 +126,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
               Buy Entry Points
             </CardTitle>
             <CardDescription>
-              Buy signals from whale liquidity
+              Buy signals from market liquidity
             </CardDescription>
           </div>
           <Badge 
@@ -196,7 +196,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Whale Analysis</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Analysis</h3>
             <div className="space-y-2">
               {data.reasoning.map((reason, index) => (
                 <div 
@@ -243,7 +243,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                 <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
                 Sell Entry Points
               </CardTitle>
-              <CardDescription>Sell signals from whale liquidity</CardDescription>
+              <CardDescription>Sell signals from market liquidity</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -269,7 +269,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                 Sell Entry Points
               </CardTitle>
               <CardDescription>
-                Sell signals from whale liquidity
+                Sell signals from market liquidity
               </CardDescription>
             </div>
             <Badge 
@@ -282,7 +282,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm" data-testid="text-no-sell-signal">No strong sell signals detected. Wait for whale distribution.</p>
+            <p className="text-sm" data-testid="text-no-sell-signal">No strong sell signals detected. Wait for distribution.</p>
           </div>
         </CardContent>
       </Card>
@@ -313,7 +313,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
               Sell Entry Points
             </CardTitle>
             <CardDescription>
-              Sell signals from whale liquidity
+              Sell signals from market liquidity
             </CardDescription>
           </div>
           <Badge 
@@ -383,7 +383,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Whale Analysis</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Analysis</h3>
             <div className="space-y-2">
               {data.reasoning.map((reason, index) => (
                 <div 
