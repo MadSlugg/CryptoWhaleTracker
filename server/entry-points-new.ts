@@ -63,6 +63,25 @@ export async function handleEntryPoints(req: Request, res: Response) {
     const bestLongEntry = confidenceEngine.getBestEntryPoint(confidenceScores, 'long');
     const bestShortEntry = confidenceEngine.getBestEntryPoint(confidenceScores, 'short');
 
+    // Find 1st and 2nd resistance levels (above current price)
+    const MIN_SIGNIFICANT_LIQUIDITY = 50;
+    const resistanceLevels = filteredLevels
+      .filter(level => level.price > currentPrice && level.sellLiquidity >= MIN_SIGNIFICANT_LIQUIDITY)
+      .sort((a, b) => a.price - b.price)
+      .slice(0, 2);
+    
+    const firstResistance = resistanceLevels[0] ? { price: resistanceLevels[0].price, btc: resistanceLevels[0].sellLiquidity } : null;
+    const secondResistance = resistanceLevels[1] ? { price: resistanceLevels[1].price, btc: resistanceLevels[1].sellLiquidity } : null;
+
+    // Find 1st and 2nd support levels (below current price)
+    const supportLevels = filteredLevels
+      .filter(level => level.price < currentPrice && level.buyLiquidity >= MIN_SIGNIFICANT_LIQUIDITY)
+      .sort((a, b) => b.price - a.price)
+      .slice(0, 2);
+    
+    const firstSupport = supportLevels[0] ? { price: supportLevels[0].price, btc: supportLevels[0].buyLiquidity } : null;
+    const secondSupport = supportLevels[1] ? { price: supportLevels[1].price, btc: supportLevels[1].buyLiquidity } : null;
+
     let recommendation: 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell' = 'neutral';
     let confidence = 50;
     let entryPrice = currentPrice;
@@ -118,6 +137,10 @@ export async function handleEntryPoints(req: Request, res: Response) {
       },
       support,
       resistance,
+      firstSupport,
+      secondSupport,
+      firstResistance,
+      secondResistance,
       futuresData: {
         longOpenInterest: futuresData.totalLongOI,
         shortOpenInterest: futuresData.totalShortOI,
