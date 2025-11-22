@@ -36,7 +36,7 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
     queryKey: ['/api/filled-order-analysis', minSize, exchange],
     queryFn: async () => {
       const params = new URLSearchParams({
-        timeRange: '30m', // Fixed 30-minute window for most relevant signals
+        timeRange: '10m', // 10-minute window - cleaner signal for 100+ BTC orders only
         minSize: minSize.toString(),
         exchange,
       });
@@ -127,10 +127,10 @@ export function FilledOrderFlow({ minSize, exchange }: FilledOrderFlowProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Activity className="w-5 h-5" />
-          Filled Order Flow (Last 30 Minutes)
+          Filled Order Flow (Last 10 Minutes)
         </CardTitle>
         <CardDescription>
-          Time-weighted analysis of whale executions in the last 30 minutes. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
+          Time-weighted analysis of 100+ BTC whale executions in the last 10 minutes. Recent fills matter more. More longs = accumulation (bullish), more shorts = distribution (bearish).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
