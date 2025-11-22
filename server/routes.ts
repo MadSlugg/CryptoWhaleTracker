@@ -575,10 +575,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .filter(order => order.size >= 100)
         .sort((a, b) => b.size - a.size);
       
+      // Get all active orders for Price Clusters (unaffected by user filters)
+      // This ensures accurate support/resistance zones
+      const allActiveOrders = allOrders.filter(order => order.status === 'active');
+      
       const result = {
         filteredOrders,
         priceSnapshot,
         majorWhales,
+        allActiveOrders,
       };
       
       res.json(result);

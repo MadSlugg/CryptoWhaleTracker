@@ -33,6 +33,7 @@ export default function Dashboard() {
     filteredOrders: BitcoinOrder[];
     priceSnapshot: number;
     majorWhales: BitcoinOrder[];
+    allActiveOrders: BitcoinOrder[];
   }>({
     queryKey: ['/api/dashboard', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const filteredOrders = dashboardData?.filteredOrders || [];
   const currentBtcPrice = dashboardData?.priceSnapshot || 93000;
   const majorWhaleOrders = dashboardData?.majorWhales || [];
+  const allActiveOrders = dashboardData?.allActiveOrders || [];
 
   const handleRefresh = async () => {
     await refetch();
@@ -175,7 +177,7 @@ export default function Dashboard() {
 
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
-            orders={filteredOrders}
+            orders={allActiveOrders}
             currentPrice={currentBtcPrice}
           />
 
