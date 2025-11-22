@@ -107,23 +107,23 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
     const intensity = volume / maxVolume;
     
     if (type === 'long') {
-      if (intensity < 0.2) return 'rgba(34, 197, 94, 0.15)';
-      if (intensity < 0.4) return 'rgba(34, 197, 94, 0.3)';
+      if (intensity < 0.2) return 'rgba(34, 197, 94, 0.1)';
+      if (intensity < 0.4) return 'rgba(34, 197, 94, 0.25)';
       if (intensity < 0.6) return 'rgba(34, 197, 94, 0.5)';
-      if (intensity < 0.8) return 'rgba(74, 222, 128, 0.65)';
-      return 'rgba(134, 239, 172, 0.8)';
+      if (intensity < 0.8) return 'rgba(74, 222, 128, 0.75)';
+      return 'rgba(134, 239, 172, 0.95)';
     } else if (type === 'short') {
-      if (intensity < 0.2) return 'rgba(239, 68, 68, 0.15)';
-      if (intensity < 0.4) return 'rgba(239, 68, 68, 0.3)';
+      if (intensity < 0.2) return 'rgba(239, 68, 68, 0.1)';
+      if (intensity < 0.4) return 'rgba(239, 68, 68, 0.25)';
       if (intensity < 0.6) return 'rgba(239, 68, 68, 0.5)';
-      if (intensity < 0.8) return 'rgba(248, 113, 113, 0.65)';
-      return 'rgba(252, 165, 165, 0.8)';
+      if (intensity < 0.8) return 'rgba(248, 113, 113, 0.75)';
+      return 'rgba(252, 165, 165, 0.95)';
     } else {
-      if (intensity < 0.2) return 'rgba(59, 130, 246, 0.15)';
-      if (intensity < 0.4) return 'rgba(59, 130, 246, 0.3)';
+      if (intensity < 0.2) return 'rgba(59, 130, 246, 0.1)';
+      if (intensity < 0.4) return 'rgba(59, 130, 246, 0.25)';
       if (intensity < 0.6) return 'rgba(59, 130, 246, 0.5)';
-      if (intensity < 0.8) return 'rgba(96, 165, 250, 0.65)';
-      return 'rgba(147, 197, 253, 0.8)';
+      if (intensity < 0.8) return 'rgba(96, 165, 250, 0.75)';
+      return 'rgba(147, 197, 253, 0.95)';
     }
   };
 
