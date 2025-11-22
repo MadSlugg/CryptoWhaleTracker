@@ -884,8 +884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // "Not every trade is equal" - weight by BTC volume
       // Use log scale to avoid extreme values: log10(1 + volume)
       // Example: 10 BTC = 1.04x, 100 BTC = 2.0x, 1000 BTC = 3.0x
-      const volumeMultiplier = totalFilledVolume > 0 
-        ? Math.log10(1 + totalFilledVolume) / 2 // Divide by 2 to keep multiplier reasonable (0.5x to 1.5x typical range)
+      // Use TOTAL whale activity (both active and filled) for multiplier
+      const totalWhaleVolume = totalFilledVolume + totalLongLiquidity + totalShortLiquidity;
+      const volumeMultiplier = totalWhaleVolume > 0 
+        ? Math.log10(1 + totalWhaleVolume) / 2 // Divide by 2 to keep multiplier reasonable (0.5x to 1.5x typical range)
         : 0.5;
       
       // Flow weight: 50%, Imbalance weight: 50%, scaled by volume
