@@ -281,8 +281,58 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm" data-testid="text-no-sell-signal">No strong sell signals detected. Wait for distribution.</p>
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground" data-testid="text-no-sell-signal">No strong sell signals detected</p>
+            </div>
+
+            {/* Show resistance levels even without sell signal */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Key Price Levels</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
+                  <span className="text-muted-foreground">Current Price</span>
+                  <span className="font-mono font-semibold" data-testid="text-current-price">
+                    ${Math.round(data.currentPrice).toLocaleString()}
+                  </span>
+                </div>
+                {data.resistance && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                    <span className="text-red-700 dark:text-red-300 font-medium">Nearest Resistance</span>
+                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
+                      ${Math.round(data.resistance).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {data.support && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Nearest Support</span>
+                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
+                      ${Math.round(data.support).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Show confidence and reasoning if available */}
+            {data.reasoning && data.reasoning.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Status</h3>
+                <div className="space-y-2">
+                  {data.reasoning.slice(0, 3).map((reason, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-sm"
+                      data-testid={`text-reasoning-${index}`}
+                    >
+                      <span className="text-muted-foreground mt-0.5">•</span>
+                      <span className="text-muted-foreground">{reason}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
