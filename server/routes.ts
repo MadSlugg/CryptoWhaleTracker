@@ -787,16 +787,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const flowDifference = isNaN(longPercentage) ? 0 : longPercentage - 50;
 
       // Fetch active orders for support/resistance analysis
-      // Get ALL active orders to detect price clusters, but track big orders separately
-      const allActiveOrders = await storage.getFilteredOrders({
-        minSize: 5,
-        orderType: 'all',
-        exchange,
-        timeRange: '24h',
-        status: 'active',
-      });
-
-      // Also get big orders (50+ BTC) for liquidity calculation
+      // Focus on BIG whale orders only (50+ BTC) - these are the real whales
       const activeOrders = await storage.getFilteredOrders({
         minSize: 50,
         orderType: 'all',
@@ -805,10 +796,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'active',
       });
 
-      // Find price clusters (support/resistance zones) - group within $2000 buckets using ALL orders
+      // Find price clusters (support/resistance zones) - group within $2000 buckets using 50+ BTC orders only
       const priceClusters: Record<string, { price: number; longVolume: number; shortVolume: number; orderCount: number }> = {};
       
-      allActiveOrders.forEach(order => {
+      activeOrders.forEach(order => {
         const priceLevel = Math.floor(order.price / 2000) * 2000;
         const levelKey = priceLevel.toString();
 
@@ -829,9 +820,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceClusters[levelKey].orderCount++;
       });
 
-      // Filter for significant clusters (2+ orders OR 30+ BTC total to catch whale clusters)
+      // Filter for significant clusters (2+ 50+ BTC orders OR 100+ BTC total)
       const significantClusters = Object.values(priceClusters)
-        .filter(cluster => cluster.orderCount >= 2 || (cluster.longVolume + cluster.shortVolume) >= 30)
+        .filter(cluster => cluster.orderCount >= 2 || (cluster.longVolume + cluster.shortVolume) >= 100)
         .sort((a, b) => b.price - a.price);
 
       // Calculate order book imbalance using BIG orders only (50+ BTC)
