@@ -141,7 +141,8 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-          {/* Left Column - Entry & Confidence */}
+          {/* Left Column - Entry & Confidence (hidden if NEUTRAL) */}
+          {data.recommendation !== 'neutral' && (
           <div className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Details</h3>
@@ -198,9 +199,10 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
               </div>
             </div>
           </div>
+          )}
 
-          {/* Right Column - Analysis */}
-          <div className="space-y-4">
+          {/* Right Column - Analysis (full width if NEUTRAL) */}
+          <div className={`space-y-4 ${data.recommendation === 'neutral' ? 'lg:col-span-2' : ''}`}>
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Whale Analysis</h3>
               <div className="space-y-2">
