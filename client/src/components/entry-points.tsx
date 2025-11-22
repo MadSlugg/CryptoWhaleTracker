@@ -141,9 +141,8 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className={isNeutral ? "space-y-4" : "grid gap-6 grid-cols-1 lg:grid-cols-2"}>
-          {!isNeutral && (
-            <div className="space-y-4">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+          <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Details</h3>
                 <div className="space-y-3">
@@ -199,7 +198,6 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
                 </div>
               </div>
             </div>
-          )}
 
           <div className="space-y-4">
             <div>
