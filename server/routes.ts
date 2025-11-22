@@ -796,11 +796,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'active',
       });
 
-      // Find price clusters (support/resistance zones) - group within $2000 buckets using 50+ BTC orders only
+      // Find price clusters (support/resistance zones) - group within $5000 buckets using 50+ BTC orders only
       const priceClusters: Record<string, { price: number; longVolume: number; shortVolume: number; orderCount: number }> = {};
       
       activeOrders.forEach(order => {
-        const priceLevel = Math.floor(order.price / 2000) * 2000;
+        const priceLevel = Math.floor(order.price / 5000) * 5000;
         const levelKey = priceLevel.toString();
 
         if (!priceClusters[levelKey]) {
