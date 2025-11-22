@@ -5,7 +5,7 @@ export class BybitService implements ExchangeService {
   private readonly API_BASE = 'https://api.bybit.com';
   private readonly SYMBOL = 'BTCUSDT';
 
-  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 8400000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       // Fetch both spot and futures order books in parallel
       const [spotOrders, futuresOrders] = await Promise.all([

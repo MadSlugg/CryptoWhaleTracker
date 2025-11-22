@@ -7,7 +7,7 @@ export class HTXService implements ExchangeService {
   private readonly SPOT_SYMBOL = 'btcusdt';
   private readonly FUTURES_SYMBOL = 'BTC-USDT';
 
-  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 8400000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       // Fetch both spot and futures order books in parallel
       const [spotOrders, futuresOrders] = await Promise.all([

@@ -17,7 +17,7 @@ import { SiBitcoin } from "react-icons/si";
 import { format } from "date-fns";
 
 export default function Dashboard() {
-  const [minSize, setMinSize] = useState<number>(10);
+  const [minSize, setMinSize] = useState<number>(100);
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [exchange, setExchange] = useState<Exchange>('all');
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');

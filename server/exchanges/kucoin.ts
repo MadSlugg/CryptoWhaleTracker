@@ -7,7 +7,7 @@ export class KuCoinService implements ExchangeService {
   private readonly SPOT_SYMBOL = 'BTC-USDT';
   private readonly FUTURES_SYMBOL = 'XBTUSDTM';
 
-  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 8400000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       // Fetch both spot and futures order books in parallel
       const [spotOrders, futuresOrders] = await Promise.all([
