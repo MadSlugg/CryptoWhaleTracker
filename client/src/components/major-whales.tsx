@@ -2,7 +2,7 @@ import type { BitcoinOrder } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp, Clock } from "lucide-react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 
@@ -329,12 +329,12 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                   <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      <span>Placed: {format(new Date(order.timestamp), 'MMM d, h:mm a')}</span>
+                      <span>Placed: {format(new Date(order.timestamp), 'MMM d, yyyy')}</span>
                     </div>
                     {order.status === 'filled' && order.filledAt && (
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>Filled: {format(new Date(order.filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(order.filledAt), { addSuffix: true })})</span>
+                        <span>Filled: {format(new Date(order.filledAt), 'MMM d, yyyy')}</span>
                       </div>
                     )}
                   </div>
@@ -366,12 +366,12 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
             <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, h:mm a')}</span>
+                <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, yyyy')}</span>
               </div>
               {group.orders[0].status === 'filled' && group.orders[0].filledAt && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  <span>Filled: {format(new Date(group.orders[0].filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(group.orders[0].filledAt), { addSuffix: true })})</span>
+                  <span>Filled: {format(new Date(group.orders[0].filledAt), 'MMM d, yyyy')}</span>
                 </div>
               )}
             </div>

@@ -2,7 +2,7 @@ import type { BitcoinOrder } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Clock, DollarSign, ArrowRight } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
 interface OrderCardProps {
   order: BitcoinOrder;
@@ -12,13 +12,9 @@ export function OrderCard({ order }: OrderCardProps) {
   const isLong = order.type === 'long';
   const isFilled = order.status === 'filled';
   
-  const formattedTime = formatDistanceToNow(new Date(order.timestamp), {
-    addSuffix: true,
-  });
+  const formattedDate = format(new Date(order.timestamp), 'MMM d, yyyy');
 
-  const formattedFillTime = order.filledAt ? formatDistanceToNow(new Date(order.filledAt), {
-    addSuffix: true,
-  }) : null;
+  const formattedFillDate = order.filledAt ? format(new Date(order.filledAt), 'MMM d, yyyy') : null;
 
   return (
     <Card 
@@ -88,7 +84,7 @@ export function OrderCard({ order }: OrderCardProps) {
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span data-testid={`text-time-${order.id}`}>
-                    {isFilled && formattedFillTime ? `Filled ${formattedFillTime}` : `Opened ${formattedTime}`}
+                    {isFilled && formattedFillDate ? `Filled ${formattedFillDate}` : `Opened ${formattedDate}`}
                   </span>
                 </div>
               </div>
