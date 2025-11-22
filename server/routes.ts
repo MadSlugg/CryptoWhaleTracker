@@ -46,9 +46,11 @@ class OrderGenerator {
   private orderLastSeen: Map<string, number> = new Map(); // orderId -> timestamp
   // MEMORY LEAK FIX: Per-exchange cache of active orders to avoid full-table scans
   private activeOrdersByExchange: Map<string, Map<string, BitcoinOrder>> = new Map(); // exchange -> (orderId -> order)
-  // NEW FIX: Track which orders are currently missing from exchange order books (candidates for fill detection)
-  // Key: orderId, Value: true if confirmed missing from current book
-  private ordersMissingFromBook: Set<string> = new Set();
+  // NEW FIX: Track which orders are missing from exchange order books
+  // Key: orderId, Value: number of consecutive polls where order was missing
+  // Orders only become "confirmed missing" after 2+ consecutive polls (prevents false positives from API hiccups)
+  private ordersMissingCount: Map<string, number> = new Map();
+  private readonly MISSING_CONFIRMATION_POLLS = 2; // Require 2 consecutive polls to confirm missing
   
   // Exchange polling configuration - staggered intervals to avoid rate limits
   private readonly exchangeConfigs: ExchangeConfig[] = [
@@ -232,12 +234,13 @@ class OrderGenerator {
       // Check each active order for fill conditions
       // CRITICAL FIX: Orders are ONLY marked filled when BOTH conditions are met:
       // 1. Price has crossed the order level (matching market condition)
-      // 2. Order is confirmed missing from exchange order book (detected by fetchWhaleOrders)
+      // 2. Order confirmed missing from exchange order book for 2+ consecutive polls
+      //    (prevents false positives from temporary API hiccups)
       let filledCount = 0;
       let longCount = 0;
       let shortCount = 0;
       let priceCrossCount = 0;
-      let confirmedFillCount = 0;
+      let confirmedMissingCount = 0;
       
       for (const [orderId, order] of Array.from(orderMap.entries())) {
         if (order.type === 'long') longCount++;
@@ -253,19 +256,23 @@ class OrderGenerator {
           priceCrossCount++;
         }
 
-        // Check condition 2: Order is confirmed missing from exchange order book
-        const isConfirmedMissing = this.ordersMissingFromBook.has(order.id);
+        // Check condition 2: Order confirmed missing from book for 2+ consecutive polls
+        const missingPollCount = this.ordersMissingCount.get(order.id) || 0;
+        const isConfirmedMissing = missingPollCount >= this.MISSING_CONFIRMATION_POLLS;
+        
+        if (isConfirmedMissing) {
+          confirmedMissingCount++;
+        }
 
-        // FILL ONLY if BOTH conditions are true: price crossed AND order disappeared from book
+        // FILL ONLY if BOTH conditions are true: price crossed AND order confirmed missing
         if (priceCrossed && isConfirmedMissing) {
-          confirmedFillCount++;
           
           // Mark order as filled - use the returned updated order
           const updatedOrder = await storage.updateOrderStatus(order.id, 'filled', this.currentBtcPrice);
 
           // Remove from active orders cache
           this.activeOrderIds.delete(order.id);
-          this.ordersMissingFromBook.delete(order.id);
+          this.ordersMissingCount.delete(order.id);
           filledCount++;
           
           // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
@@ -295,7 +302,7 @@ class OrderGenerator {
       }
       
       const elapsed = Date.now() - startTime;
-      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Price crosses: ${priceCrossCount}, Confirmed missing: ${this.ordersMissingFromBook.size}, Filled: ${filledCount}`);
+      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Price crosses: ${priceCrossCount}, Confirmed missing (2+ polls): ${confirmedMissingCount}, Filled: ${filledCount}`);
     } catch (error) {
       console.error('Failed to check filled orders:', error);
     }
@@ -463,17 +470,17 @@ class OrderGenerator {
         });
         
         if (stillExists) {
-          // Order still exists - update last seen timestamp and remove from "missing" set
+          // Order still exists on exchange book - reset missing counter
           this.orderLastSeen.set(existingOrder.id, now);
-          this.ordersMissingFromBook.delete(existingOrder.id); // Still on book = not missing
+          this.ordersMissingCount.delete(existingOrder.id); // Reset counter - order is back on book
         } else {
-          // Order not found in current poll - check grace period before deleting
+          // Order not found in current poll - track consecutive missing polls
           const lastSeen = this.orderLastSeen.get(existingOrder.id);
           
           if (!lastSeen) {
-            // First time missing - record current time as "last seen" and mark as missing from book
+            // First time missing - record current time and start missing counter
             this.orderLastSeen.set(existingOrder.id, now);
-            this.ordersMissingFromBook.add(existingOrder.id); // Confirmed missing from current book
+            this.ordersMissingCount.set(existingOrder.id, 1); // First poll where it's missing
           } else if (now - lastSeen > GRACE_PERIOD_MS) {
             // Missing for more than grace period - mark as deleted (unless already filled)
             const order = await storage.getOrder(existingOrder.id);
@@ -482,7 +489,7 @@ class OrderGenerator {
               await storage.updateOrderStatus(existingOrder.id, 'deleted');
               this.activeOrderIds.delete(existingOrder.id);
               this.orderLastSeen.delete(existingOrder.id);
-              this.ordersMissingFromBook.delete(existingOrder.id);
+              this.ordersMissingCount.delete(existingOrder.id);
               
               // MEMORY LEAK FIX: Remove from per-exchange cache
               exchangeCache.delete(existingOrder.id);
@@ -490,8 +497,9 @@ class OrderGenerator {
               console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
             }
           } else {
-            // Still within grace period - confirm missing status
-            this.ordersMissingFromBook.add(existingOrder.id);
+            // Still within grace period - increment missing counter for this poll
+            const currentMissingCount = this.ordersMissingCount.get(existingOrder.id) || 0;
+            this.ordersMissingCount.set(existingOrder.id, currentMissingCount + 1);
           }
         }
       }

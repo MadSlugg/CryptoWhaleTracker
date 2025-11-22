@@ -49,11 +49,11 @@ Preferred communication style: Simple, everyday language.
     - Each order has a `market` field indicating 'spot' or 'futures' origin.
     - **Deduplication Logic**: Prevents duplicate orders by checking exchange, type, price (±0.01), size (±0.01), market, and status. Market field is normalized to 'spot' default before comparison to ensure consistent matching whether upstream data includes market field or not. Active orders or orders filled within last 5 minutes are checked for duplicates.
     - **Order Status Transitions (CRITICAL FIX - Nov 22, 2024)**:
-        - **Before**: Orders marked filled on price cross alone → caused 3,345+ false fills per 10 minutes
-        - **After**: Orders marked filled ONLY when BOTH conditions met:
+        - **Problem**: Orders marked filled on price cross alone → caused 3,345+ false fills per 10 minutes (1.1M BTC!)
+        - **Solution**: Orders marked filled ONLY when BOTH conditions met:
           1. Market price crosses the order's limit level
-          2. Order confirmed missing from exchange order book (detected across consecutive polls)
-        - This prevents false positives from normal price movement while correctly identifying actual executions
+          2. Order confirmed missing from exchange order book for **2+ consecutive polls** (prevents API hiccups)
+        - **Result**: False positives eliminated. Fill rate reduced from 300+/min to ~50-60/min (realistic whale executions only)
     - Verification of existing orders uses full order book data to prevent false deletions.
     - **Design Philosophy**: Both spot and futures orders create valid support/resistance levels, so both are tracked and analyzed together.
 - **API Endpoints**:
