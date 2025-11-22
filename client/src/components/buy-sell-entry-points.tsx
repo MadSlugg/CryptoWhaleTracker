@@ -304,35 +304,33 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                     </span>
                   </div>
                 )}
-                {data.support && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Nearest Support</span>
-                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                      ${Math.round(data.support).toLocaleString()}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Show confidence and reasoning if available */}
-            {data.reasoning && data.reasoning.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Status</h3>
-                <div className="space-y-2">
-                  {data.reasoning.slice(0, 3).map((reason, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-sm"
-                      data-testid={`text-reasoning-${index}`}
-                    >
-                      <span className="text-muted-foreground mt-0.5">•</span>
-                      <span className="text-muted-foreground">{reason}</span>
-                    </div>
-                  ))}
+            {/* Show confidence and reasoning if available (filter out support text for sell entries) */}
+            {data.reasoning && data.reasoning.length > 0 && (() => {
+              const resistanceReasons = data.reasoning.filter(r => 
+                r.toLowerCase().includes('resistance') || 
+                (!r.toLowerCase().includes('support') && !r.toLowerCase().includes('entry'))
+              );
+              return resistanceReasons.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Status</h3>
+                  <div className="space-y-2">
+                    {resistanceReasons.slice(0, 3).map((reason, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-sm"
+                        data-testid={`text-reasoning-${index}`}
+                      >
+                        <span className="text-muted-foreground mt-0.5">•</span>
+                        <span className="text-muted-foreground">{reason}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </CardContent>
       </Card>
@@ -413,14 +411,6 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                   ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
-              {data.support && Math.round(data.support) !== Math.round(data.entryPrice) && (
-                <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                  <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
-                  <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                    ${Math.round(data.support).toLocaleString()}
-                  </span>
-                </div>
-              )}
               {data.resistance && Math.round(data.resistance) !== Math.round(data.entryPrice) && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
                   <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
