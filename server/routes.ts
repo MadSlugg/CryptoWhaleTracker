@@ -284,12 +284,19 @@ class OrderGenerator {
                                    new Date(existing.filledAt) > fiveMinutesAgo;
           const isActive = existing.status === 'active';
           
-          return existing.exchange === exchangeId &&
+          const matches = existing.exchange === exchangeId &&
                  existing.type === type &&
                  existing.market === market && // Use normalized market value
                  Math.abs(existing.price - roundedPrice) < 0.01 &&
                  Math.abs(existing.size - roundedSize) < 0.01 &&
                  (isActive || isRecentlyFilled);
+          
+          // Log when we detect and skip a duplicate
+          if (matches) {
+            console.log(`[DuplicateSkipped] ${exchangeId} ${type} ${market} ${roundedSize} BTC @ $${roundedPrice}`);
+          }
+          
+          return matches;
         });
         
         if (isDuplicate) continue;
