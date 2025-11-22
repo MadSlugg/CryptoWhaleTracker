@@ -23,7 +23,7 @@ Preferred communication style: Simple, everyday language.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total).
         - **Order Book Imbalance**: Real-time indicator of supply/demand pressure from active whale orders.
         - **Large Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders, grouped in $2k buckets, color-coded by volume intensity).
-        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance, and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Shows entry price and key price levels only (no stop loss or take profit).
+        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance, and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence, neutral shows for <50% confidence or weak signals. Entry prices align with recommendations: buy signals use whale support levels, sell signals use resistance levels, neutral uses mid-range or current price.
 - **Routing**: Wouter for client-side routing.
 
 ### Backend
