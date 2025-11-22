@@ -12,6 +12,7 @@
                            type WhaleMovement,
                            type LongShortRatio,
                            type WhaleCorrelation,
+                           type Exchange,
                          } from '@shared/schema';
                          import type { IStorage, OrderFilters } from './storage';
 
@@ -162,7 +163,7 @@
                            }
 
                            async getActiveOrdersByExchange(
-                             exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'
+                             exchange: Exclude<Exchange, 'all'>
                            ): Promise<BitcoinOrder[]> {
                              const orders = await db
                                .select()

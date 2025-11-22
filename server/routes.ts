@@ -4,22 +4,70 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import type { InsertBitcoinOrder, BitcoinOrder, Exchange } from "@shared/schema";
 import { calculateProfitLoss } from "@shared/schema";
-import { binanceService, type OrderBookEntry } from "./binance";
-import { krakenService, coinbaseService, okxService } from "./exchange-services";
-// import { whaleCorrelationService } from "./whale-correlation-service";
+import { binanceService as binancePriceService } from "./binance";
+import {
+  binanceService,
+  krakenService,
+  coinbaseService,
+  okxService,
+  bybitService,
+  bitfinexService,
+  geminiService,
+  bitstampService,
+  htxService,
+  kucoinService,
+  type ExchangeService,
+  type OrderBookEntry
+} from "./exchanges";
 
-// Real whale order tracker from multiple exchanges
+// Circuit breaker for handling exchange failures
+interface CircuitBreakerState {
+  failureCount: number;
+  lastSuccess: number;
+  isOpen: boolean;
+}
+
+// Exchange configuration for polling
+interface ExchangeConfig {
+  id: Exclude<Exchange, 'all'>;
+  service: ExchangeService;
+  baseIntervalMs: number;
+  jitterMs: number;
+}
+
+// Real whale order tracker from multiple exchanges with circuit breaker pattern
 class OrderGenerator {
-  private binanceIntervalId: NodeJS.Timeout | null = null;
-  private krakenIntervalId: NodeJS.Timeout | null = null;
-  private coinbaseIntervalId: NodeJS.Timeout | null = null;
-  private okxIntervalId: NodeJS.Timeout | null = null;
+  private intervals: Map<string, NodeJS.Timeout> = new Map();
+  private circuitBreakers: Map<string, CircuitBreakerState> = new Map();
   private wss: WebSocketServer | null = null;
-  private currentBtcPrice: number = 93000; // Cache current price
-  private activeOrderIds: Set<string> = new Set(); // Cache of active order IDs for fast lookup
+  private currentBtcPrice: number = 93000;
+  private activeOrderIds: Set<string> = new Set();
+  
+  // Exchange polling configuration - staggered intervals to avoid rate limits
+  private readonly exchangeConfigs: ExchangeConfig[] = [
+    { id: 'binance', service: binanceService, baseIntervalMs: 10000, jitterMs: 3000 },
+    { id: 'bybit', service: bybitService, baseIntervalMs: 12000, jitterMs: 3000 },
+    { id: 'kraken', service: krakenService, baseIntervalMs: 14000, jitterMs: 3000 },
+    { id: 'bitfinex', service: bitfinexService, baseIntervalMs: 16000, jitterMs: 3000 },
+    { id: 'coinbase', service: coinbaseService, baseIntervalMs: 18000, jitterMs: 3000 },
+    { id: 'okx', service: okxService, baseIntervalMs: 20000, jitterMs: 3000 },
+    { id: 'gemini', service: geminiService, baseIntervalMs: 22000, jitterMs: 3000 },
+    { id: 'bitstamp', service: bitstampService, baseIntervalMs: 24000, jitterMs: 3000 },
+    { id: 'kucoin', service: kucoinService, baseIntervalMs: 26000, jitterMs: 3000 },
+    { id: 'htx', service: htxService, baseIntervalMs: 28000, jitterMs: 3000 },
+  ];
 
   async start(wss: WebSocketServer) {
     this.wss = wss;
+    
+    // Initialize circuit breakers for all exchanges
+    for (const config of this.exchangeConfigs) {
+      this.circuitBreakers.set(config.id, {
+        failureCount: 0,
+        lastSuccess: Date.now(),
+        isOpen: false,
+      });
+    }
     
     // Initialize activeOrderIds cache with existing active orders
     await this.initializeActiveOrdersCache();
@@ -27,25 +75,14 @@ class OrderGenerator {
     // Fetch initial Bitcoin price
     this.updateBitcoinPrice();
 
-    // Fetch whale orders from Binance every ~10 seconds
-    this.binanceIntervalId = setInterval(() => {
-      this.fetchWhaleOrders('binance');
-    }, Math.random() * 4000 + 8000);
-
-    // Fetch whale orders from Kraken every ~12 seconds (stagger to avoid spikes)
-    this.krakenIntervalId = setInterval(() => {
-      this.fetchWhaleOrders('kraken');
-    }, Math.random() * 4000 + 10000);
-
-    // Fetch whale orders from Coinbase every ~14 seconds
-    this.coinbaseIntervalId = setInterval(() => {
-      this.fetchWhaleOrders('coinbase');
-    }, Math.random() * 4000 + 12000);
-
-    // Fetch whale orders from OKX every ~16 seconds
-    this.okxIntervalId = setInterval(() => {
-      this.fetchWhaleOrders('okx');
-    }, Math.random() * 4000 + 14000);
+    // Start polling for each exchange with staggered intervals
+    for (const config of this.exchangeConfigs) {
+      const interval = setInterval(() => {
+        this.fetchWhaleOrders(config.id);
+      }, config.baseIntervalMs + Math.random() * config.jitterMs);
+      
+      this.intervals.set(config.id, interval);
+    }
 
     // Update Bitcoin price every 5 seconds
     setInterval(() => {
@@ -55,7 +92,6 @@ class OrderGenerator {
     // Clean old orders every hour and sync cache (keep for 7 days)
     setInterval(async () => {
       const deletedIds = await storage.clearOldOrders(168); // 7 days
-      // Remove deleted order IDs from active cache
       deletedIds.forEach(id => this.activeOrderIds.delete(id));
     }, 60 * 60 * 1000);
 
@@ -63,6 +99,52 @@ class OrderGenerator {
     setInterval(() => {
       this.checkFilledOrders();
     }, 10000);
+
+    console.log(`[OrderGenerator] Started polling ${this.exchangeConfigs.length} exchanges`);
+  }
+  
+  // Circuit breaker: check if exchange should be polled
+  private canPollExchange(exchangeId: string): boolean {
+    const breaker = this.circuitBreakers.get(exchangeId);
+    if (!breaker) return true;
+    
+    // If circuit is open and it's been more than 2 minutes, try again
+    if (breaker.isOpen) {
+      const twoMinutes = 2 * 60 * 1000;
+      if (Date.now() - breaker.lastSuccess > twoMinutes) {
+        console.log(`[CircuitBreaker] Attempting to close circuit for ${exchangeId}`);
+        breaker.isOpen = false;
+        breaker.failureCount = 0;
+        return true;
+      }
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // Record exchange poll success
+  private recordSuccess(exchangeId: string) {
+    const breaker = this.circuitBreakers.get(exchangeId);
+    if (breaker) {
+      breaker.failureCount = 0;
+      breaker.lastSuccess = Date.now();
+      breaker.isOpen = false;
+    }
+  }
+  
+  // Record exchange poll failure
+  private recordFailure(exchangeId: string) {
+    const breaker = this.circuitBreakers.get(exchangeId);
+    if (breaker) {
+      breaker.failureCount++;
+      
+      // Open circuit after 3 consecutive failures
+      if (breaker.failureCount >= 3) {
+        breaker.isOpen = true;
+        console.error(`[CircuitBreaker] Opened circuit for ${exchangeId} after ${breaker.failureCount} failures. Will retry in 2 minutes.`);
+      }
+    }
   }
 
   private async initializeActiveOrdersCache() {
@@ -138,97 +220,18 @@ class OrderGenerator {
   }
 
   stop() {
-    if (this.binanceIntervalId) clearInterval(this.binanceIntervalId);
-    if (this.krakenIntervalId) clearInterval(this.krakenIntervalId);
-    if (this.coinbaseIntervalId) clearInterval(this.coinbaseIntervalId);
-    if (this.okxIntervalId) clearInterval(this.okxIntervalId);
-    this.binanceIntervalId = null;
-    this.krakenIntervalId = null;
-    this.coinbaseIntervalId = null;
-    this.okxIntervalId = null;
-  }
-
-  private async verifyActiveOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx') {
-    try {
-      // Get only active orders for this specific exchange (efficient - no full scan or sort)
-      const activeOrdersForExchange = await storage.getActiveOrdersByExchange(exchange);
-
-      // Fetch FULL order book (not filtered) to verify if orders still exist
-      let fullOrderBook: { bids: [string, string][]; asks: [string, string][] } | null = null;
-      
-      try {
-        switch (exchange) {
-          case 'binance':
-            fullOrderBook = await binanceService.getOrderBook(100);
-            break;
-          case 'kraken':
-            const krakenData = await krakenService.getOrderBook();
-            // Kraken returns [price, volume, timestamp] but we only need [price, volume]
-            fullOrderBook = {
-              bids: krakenData.bids.map(([price, volume]) => [price, volume]),
-              asks: krakenData.asks.map(([price, volume]) => [price, volume])
-            };
-            break;
-          case 'coinbase':
-            const coinbaseData = await coinbaseService.getOrderBook();
-            fullOrderBook = { bids: coinbaseData.bids, asks: coinbaseData.asks };
-            break;
-          case 'okx':
-            const okxData = await okxService.getOrderBook();
-            fullOrderBook = { bids: okxData.bids, asks: okxData.asks };
-            break;
-        }
-      } catch (error) {
-        console.error(`Failed to fetch full order book from ${exchange}:`, error);
-        return; // Skip verification if we can't fetch order book
-      }
-
-      if (!fullOrderBook) return;
-
-      // Check each active order to see if it still exists in the FULL order book
-      for (const existingOrder of activeOrdersForExchange) {
-        const orderBookSide = existingOrder.type === 'long' ? fullOrderBook.bids : fullOrderBook.asks;
-        
-        const stillExists = orderBookSide.some(([priceStr, quantityStr]) => {
-          const price = parseFloat(priceStr);
-          const quantity = parseFloat(quantityStr);
-          const roundedSize = Math.round(quantity * 100) / 100;
-          const roundedPrice = Math.round(price * 100) / 100;
-          
-          return (
-            Math.abs(roundedPrice - existingOrder.price) < 0.01 && // Price within 1 cent
-            Math.abs(roundedSize - existingOrder.size) < 0.01 // Size within 0.01 BTC
-          );
-        });
-
-        // If order vanished from the order book, delete it
-        if (!stillExists) {
-          await storage.deleteOrder(existingOrder.id);
-          this.activeOrderIds.delete(existingOrder.id);
-
-          // Broadcast deletion to WebSocket clients
-          if (this.wss) {
-            const message = JSON.stringify({
-              type: 'order_deleted',
-              orderId: existingOrder.id,
-            });
-
-            this.wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-              }
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error(`Failed to verify active orders for ${exchange}:`, error);
+    // Clear all exchange polling intervals
+    for (const [exchangeId, interval] of Array.from(this.intervals.entries())) {
+      clearInterval(interval);
+      console.log(`[OrderGenerator] Stopped polling ${exchangeId}`);
     }
+    this.intervals.clear();
   }
+
 
   private async updateBitcoinPrice() {
     try {
-      const newPrice = await binanceService.getCurrentPrice();
+      const newPrice = await binancePriceService.getCurrentPrice();
       // Only update if we got a valid price
       if (typeof newPrice === 'number' && newPrice > 0 && !isNaN(newPrice)) {
         this.currentBtcPrice = newPrice;
@@ -239,49 +242,39 @@ class OrderGenerator {
     }
   }
 
-  private async fetchWhaleOrders(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx') {
+  private async fetchWhaleOrders(exchangeId: Exclude<Exchange, 'all'>) {
+    // Check circuit breaker
+    if (!this.canPollExchange(exchangeId)) {
+      return;
+    }
+    
     try {
-      // Fetch orders with $450k+ notional value from the specified exchange
-      // Use current BTC price as reference to filter out stale/outlier prices
-      let whaleOrders: OrderBookEntry[] = [];
+      // Find exchange config
+      const config = this.exchangeConfigs.find(c => c.id === exchangeId);
+      if (!config) {
+        console.error(`[OrderGenerator] No config found for ${exchangeId}`);
+        return;
+      }
       
-      // Validate currentBtcPrice is a valid number, fallback to default if not
+      // Validate currentBtcPrice
       const validReferencePrice = (typeof this.currentBtcPrice === 'number' && 
                                    this.currentBtcPrice > 0 && 
                                    !isNaN(this.currentBtcPrice)) 
                                    ? this.currentBtcPrice 
                                    : 90000;
       
-      switch (exchange) {
-        case 'binance':
-          whaleOrders = await binanceService.getWhaleOrders(450000, validReferencePrice);
-          break;
-        case 'kraken':
-          whaleOrders = await krakenService.getWhaleOrders(450000, validReferencePrice);
-          break;
-        case 'coinbase':
-          whaleOrders = await coinbaseService.getWhaleOrders(450000, validReferencePrice);
-          break;
-        case 'okx':
-          whaleOrders = await okxService.getWhaleOrders(450000, validReferencePrice);
-          break;
-      }
+      // Fetch whale orders from exchange
+      const whaleOrders = await config.service.getWhaleOrders(450000, validReferencePrice);
       
-      // Verify existing active orders from this exchange still exist in the FULL order book
-      // Note: This is separate from whaleOrders filtering - we check the complete order book
-      await this.verifyActiveOrders(exchange);
+      // Record success
+      this.recordSuccess(exchangeId);
       
       for (const whaleOrder of whaleOrders) {
-        // Convert order book entry to our format
-        // bid = buy order = someone going long
-        // ask = sell order = someone going short
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
         const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
         const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
         
-        // Check if order already exists (prevent duplicates)
-        // Check against BOTH active orders AND recently filled orders (last 5 minutes)
-        // This prevents re-creating the same order when a whale re-places immediately after fill
+        // Check for duplicates (active or recently filled in last 5 minutes)
         const existingOrders = await storage.getOrders();
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         const isDuplicate = existingOrders.some(existing => {
@@ -290,30 +283,25 @@ class OrderGenerator {
                                    new Date(existing.filledAt) > fiveMinutesAgo;
           const isActive = existing.status === 'active';
           
-          return existing.exchange === exchange &&
+          return existing.exchange === exchangeId &&
                  existing.type === type &&
-                 Math.abs(existing.price - roundedPrice) < 0.01 && // Price within 1 cent
-                 Math.abs(existing.size - roundedSize) < 0.01 && // Size within 0.01 BTC
-                 (isActive || isRecentlyFilled); // Check active OR recently filled (last 5 min)
+                 Math.abs(existing.price - roundedPrice) < 0.01 &&
+                 Math.abs(existing.size - roundedSize) < 0.01 &&
+                 (isActive || isRecentlyFilled);
         });
         
-        // Skip if duplicate found
-        if (isDuplicate) {
-          continue;
-        }
+        if (isDuplicate) continue;
         
         const order: InsertBitcoinOrder = {
           type,
           size: roundedSize,
           price: roundedPrice,
-          exchange,
+          exchange: exchangeId,
           timestamp: new Date().toISOString(),
           status: 'active',
         };
         
         const createdOrder = await storage.createOrder(order);
-        
-        // Add to active orders cache
         this.activeOrderIds.add(createdOrder.id);
         
         // Broadcast to WebSocket clients
@@ -331,7 +319,8 @@ class OrderGenerator {
         }
       }
     } catch (error) {
-      console.error(`Failed to fetch whale orders from ${exchange}:`, error);
+      console.error(`Failed to fetch whale orders from ${exchangeId}:`, error);
+      this.recordFailure(exchangeId);
     }
   }
 }
@@ -600,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let exchange: Exchange = 'all';
       if (req.query.exchange) {
         const ex = req.query.exchange as string;
-        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(ex)) {
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'bybit', 'bitfinex', 'gemini', 'bitstamp', 'htx', 'kucoin', 'all'].includes(ex)) {
           return res.status(400).json({ error: 'Invalid exchange parameter' });
         }
         exchange = ex as Exchange;
@@ -748,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let exchange: Exchange = 'all';
       if (req.query.exchange) {
         const ex = req.query.exchange as string;
-        if (!['binance', 'kraken', 'coinbase', 'okx', 'all'].includes(ex)) {
+        if (!['binance', 'kraken', 'coinbase', 'okx', 'bybit', 'bitfinex', 'gemini', 'bitstamp', 'htx', 'kucoin', 'all'].includes(ex)) {
           return res.status(400).json({ error: 'Invalid exchange parameter' });
         }
         exchange = ex as Exchange;

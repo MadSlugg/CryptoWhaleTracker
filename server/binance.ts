@@ -169,7 +169,7 @@ export class BinanceService {
       return whaleOrders;
     } catch (error) {
       console.error('Error fetching whale orders:', error);
-      return [];
+      throw error; // Propagate error for circuit breaker
     }
   }
   

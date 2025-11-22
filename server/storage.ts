@@ -3,14 +3,15 @@ import {
   type InsertBitcoinOrder, 
   type WhaleMovement,
   type LongShortRatio,
-  type WhaleCorrelation
+  type WhaleCorrelation,
+  type Exchange
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface OrderFilters {
   minSize?: number;
   orderType?: 'long' | 'short' | 'all';
-  exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'all';
+  exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'bybit' | 'bitfinex' | 'gemini' | 'bitstamp' | 'htx' | 'kucoin' | 'all';
   timeRange?: '30m' | '1h' | '4h' | '24h' | '7d';
   status?: 'active' | 'filled' | 'all';
   minPrice?: number;
@@ -26,7 +27,7 @@ export interface IStorage {
   updateOrderStatus(id: string, status: 'active' | 'filled', fillPrice?: number): Promise<BitcoinOrder | undefined>;
   deleteOrder(id: string): Promise<BitcoinOrder | undefined>;
   getOpenOrders(): Promise<BitcoinOrder[]>;
-  getActiveOrdersByExchange(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'): Promise<BitcoinOrder[]>;
+  getActiveOrdersByExchange(exchange: Exclude<Exchange, 'all'>): Promise<BitcoinOrder[]>;
   clearOldOrders(hoursAgo: number): Promise<string[]>;
   
   // Whale movements
@@ -166,7 +167,7 @@ export class MemStorage implements IStorage {
     return allOrders.filter(order => order.status === 'active');
   }
 
-  async getActiveOrdersByExchange(exchange: 'binance' | 'kraken' | 'coinbase' | 'okx'): Promise<BitcoinOrder[]> {
+  async getActiveOrdersByExchange(exchange: Exclude<Exchange, 'all'>): Promise<BitcoinOrder[]> {
     // Efficient direct iteration without sorting - only returns active orders for specific exchange
     const result: BitcoinOrder[] = [];
     for (const order of Array.from(this.orders.values())) {

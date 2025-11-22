@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX**: Shadcn/ui components (Radix UI based) with Tailwind CSS, "new-york" style. Focus on information density, real-time data clarity, high-contrast indicators, minimal animations. Uses Inter for text and JetBrains Mono for numerical data.
 - **State Management**: React Query for server state, WebSockets for real-time updates, local React state for UI filters.
 - **Key Features**:
-    - Real-time whale order feed from Binance, Kraken, Coinbase, and OKX (orders >= $450k).
+    - Real-time whale order feed from 10 exchanges: Binance, Bybit, Kraken, Bitfinex, Coinbase, OKX, Gemini, Bitstamp, KuCoin, and HTX (orders >= $450k).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
     - **Dashboard Layout**: Header (BTC price, long/short counts), Filter Controls, Major Whales Box (top 10 orders >100 BTC, independent of filters except time range), Large Price Level Heatmap (50+ BTC orders), Summary Stats (volume-weighted long/short ratio), Filled Order Flow (price direction prediction), Price Clusters (liquidation heatmap), Order Book Imbalance, Depth Chart, Active/Filled Orders (5 most recent each).
@@ -30,7 +30,12 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js.
 - **Data Storage**: PostgreSQL with Drizzle ORM. Uses Render PostgreSQL with SSL/TLS connection (oregon-postgres.render.com). Orders older than 7 days are automatically cleaned.
 - **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates.
-- **Multi-Exchange Integration**: Polls Binance, Kraken, Coinbase, and OKX for order book data at staggered intervals (10-16 seconds) using public APIs.
+- **Multi-Exchange Integration**: 
+    - Modular architecture with unified ExchangeService interface in `server/exchanges/` folder
+    - Polls 10 exchanges for order book data at staggered intervals (10-28 seconds) using public APIs
+    - Exchanges: Binance (10s), Bybit (12s), Kraken (14s), Bitfinex (16s), Coinbase (18s), OKX (20s), Gemini (22s), Bitstamp (24s), KuCoin (26s), HTX (28s)
+    - Circuit breaker pattern for resilience: opens after 3 consecutive failures, 2-minute cooldown before retry
+    - Shared validation utilities (price range, total sanity, calculation accuracy) across all exchanges
 - **Order Tracking**:
     - Extracts real whale orders ($450k+ notional value) from public order books.
     - **Order Status Transitions**: Active orders become "Filled" when market price crosses their limit, or "Deleted" if they vanish from exchange order books.

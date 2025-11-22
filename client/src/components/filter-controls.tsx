@@ -70,9 +70,15 @@ export function FilterControls({
               <SelectContent>
                 <SelectItem value="all">All Exchanges</SelectItem>
                 <SelectItem value="binance">Binance</SelectItem>
+                <SelectItem value="bybit">Bybit</SelectItem>
                 <SelectItem value="kraken">Kraken</SelectItem>
+                <SelectItem value="bitfinex">Bitfinex</SelectItem>
                 <SelectItem value="coinbase">Coinbase</SelectItem>
                 <SelectItem value="okx">OKX</SelectItem>
+                <SelectItem value="gemini">Gemini</SelectItem>
+                <SelectItem value="bitstamp">Bitstamp</SelectItem>
+                <SelectItem value="kucoin">KuCoin</SelectItem>
+                <SelectItem value="htx">HTX</SelectItem>
               </SelectContent>
             </Select>
           </div>
