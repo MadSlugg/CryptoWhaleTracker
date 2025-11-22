@@ -924,58 +924,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
       reasoning = [];
 
       if (compositeScore >= 30) {
-        // LONG SIGNAL (BUY)
-        recommendation = compositeScore >= 70 ? 'strong_buy' : 'buy';
-        
-        // Reduce confidence if insufficient data
+        // BULLISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
         if (totalFilledVolume < 50) baseConfidence *= 0.85; // Reduce confidence if low whale volume
         if (activeOrders.length < 3) baseConfidence *= 0.9; // Reduce confidence if few big orders
         baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
         confidence = Math.floor(baseConfidence);
-        
-        // Entry: Always use nearest support for BUY (where whales are bidding)
-        // Round to $5000 price level
-        entryPrice = nearestSupport 
-          ? nearestSupport.price 
-          : Math.floor((currentPrice * 0.95) / 5000) * 5000; // If no support, dip 5% below current and round to $5k
 
-        if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
-        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
-        if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
+        // Determine recommendation based on final confidence level
+        // Strong buy requires 80%+ confidence, regular buy requires 50%+
+        if (confidence >= 80) {
+          recommendation = 'strong_buy';
+          // Entry: Use nearest support for strong buy
+          entryPrice = nearestSupport 
+            ? nearestSupport.price 
+            : Math.floor((currentPrice * 0.95) / 5000) * 5000;
+          
+          if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
+          if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
+          if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
+          
+        } else if (confidence >= 50) {
+          recommendation = 'buy';
+          // Entry: Use nearest support for buy
+          entryPrice = nearestSupport 
+            ? nearestSupport.price 
+            : Math.floor((currentPrice * 0.95) / 5000) * 5000;
+          
+          if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
+          if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
+          if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
+          
+        } else {
+          // Low confidence - downgrade to neutral with mid-range entry
+          recommendation = 'neutral';
+          confidence = Math.max(30, confidence);
+          
+          // Neutral entry: mid-range between support and resistance, or current price
+          if (nearestSupport && nearestResistance) {
+            entryPrice = Math.round(((nearestSupport.price + nearestResistance.price) / 2) / 5000) * 5000;
+          } else {
+            entryPrice = Math.round(currentPrice / 5000) * 5000;
+          }
+          
+          reasoning.push('Weak bullish signal - insufficient confidence for buy recommendation');
+          if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
+          if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
+        }
         
       } else if (compositeScore <= -30) {
-        // SHORT SIGNAL (SELL)
-        recommendation = compositeScore <= -70 ? 'strong_sell' : 'sell';
-        
-        // Reduce confidence if insufficient data
+        // BEARISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
         if (totalFilledVolume < 50) baseConfidence *= 0.85;
         if (activeOrders.length < 3) baseConfidence *= 0.9;
-        baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
+        baseConfidence *= persistenceFactor;
         confidence = Math.floor(baseConfidence);
-        
-        // Entry: Always use nearest resistance for SELL (where whales are asking)
-        // Round to $5000 price level
-        entryPrice = nearestResistance 
-          ? nearestResistance.price 
-          : Math.floor((currentPrice * 1.05) / 5000) * 5000; // If no resistance, rise 5% above current and round to $5k
 
-        if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
-        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
-        if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
+        // Determine recommendation based on final confidence level
+        // Strong sell requires 80%+ confidence, regular sell requires 50%+
+        if (confidence >= 80) {
+          recommendation = 'strong_sell';
+          // Entry: Use nearest resistance for strong sell
+          entryPrice = nearestResistance 
+            ? nearestResistance.price 
+            : Math.floor((currentPrice * 1.05) / 5000) * 5000;
+          
+          if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
+          if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
+          if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
+          
+        } else if (confidence >= 50) {
+          recommendation = 'sell';
+          // Entry: Use nearest resistance for sell
+          entryPrice = nearestResistance 
+            ? nearestResistance.price 
+            : Math.floor((currentPrice * 1.05) / 5000) * 5000;
+          
+          if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
+          if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
+          if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
+          
+        } else {
+          // Low confidence - downgrade to neutral with mid-range entry
+          recommendation = 'neutral';
+          confidence = Math.max(30, confidence);
+          
+          // Neutral entry: mid-range between support and resistance, or current price
+          if (nearestSupport && nearestResistance) {
+            entryPrice = Math.round(((nearestSupport.price + nearestResistance.price) / 2) / 5000) * 5000;
+          } else {
+            entryPrice = Math.round(currentPrice / 5000) * 5000;
+          }
+          
+          reasoning.push('Weak bearish signal - insufficient confidence for sell recommendation');
+          if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
+          if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
+        }
         
       } else {
-        // NEUTRAL - NO CLEAR ENTRY
+        // NEUTRAL - NO CLEAR SIGNAL from the start
         recommendation = 'neutral';
-        let neutralConfidence = 50 - Math.abs(compositeScore);
-        if (isNaN(neutralConfidence)) neutralConfidence = 30;
-        confidence = Math.max(30, Math.floor(neutralConfidence));
+        confidence = Math.max(30, Math.min(60, Math.floor(50 - Math.abs(compositeScore))));
         
         // Use weighted average of nearest support and resistance as entry point
-        // Round to $5000 price level
         if (nearestSupport && nearestResistance) {
           entryPrice = Math.round(((nearestSupport.price + nearestResistance.price) / 2) / 5000) * 5000;
         } else if (nearestSupport) {
