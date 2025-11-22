@@ -63,6 +63,24 @@ export async function handleEntryPoints(req: Request, res: Response) {
     const bestLongEntry = confidenceEngine.getBestEntryPoint(confidenceScores, 'long');
     const bestShortEntry = confidenceEngine.getBestEntryPoint(confidenceScores, 'short');
 
+    // Helper functions to calculate strength based on ratio
+    const calculateSupportStrength = (supportBTC: number, resistanceBTC: number): string => {
+      if (resistanceBTC === 0) return 'MASSIVE';
+      const ratio = supportBTC / resistanceBTC;
+      if (ratio > 10) return 'MASSIVE';
+      if (ratio >= 5) return 'STRONG';
+      if (ratio >= 2) return 'MODERATE';
+      return 'WEAK';
+    };
+
+    const calculateResistanceStrength = (supportBTC: number, resistanceBTC: number): string => {
+      if (supportBTC === 0) return 'MASSIVE';
+      const ratio = supportBTC / resistanceBTC;
+      if (ratio > 5) return 'WEAK';
+      if (ratio >= 2) return 'MODERATE';
+      return 'STRONG';
+    };
+
     // Find 1st and 2nd resistance levels (above current price)
     const MIN_SIGNIFICANT_LIQUIDITY = 50;
     const resistanceLevels = filteredLevels
@@ -70,17 +88,39 @@ export async function handleEntryPoints(req: Request, res: Response) {
       .sort((a, b) => a.price - b.price)
       .slice(0, 2);
     
-    const firstResistance = resistanceLevels[0] ? { price: resistanceLevels[0].price, btc: resistanceLevels[0].sellLiquidity } : null;
-    const secondResistance = resistanceLevels[1] ? { price: resistanceLevels[1].price, btc: resistanceLevels[1].sellLiquidity } : null;
-
     // Find 1st and 2nd support levels (below current price)
     const supportLevels = filteredLevels
       .filter(level => level.price < currentPrice && level.buyLiquidity >= MIN_SIGNIFICANT_LIQUIDITY)
       .sort((a, b) => b.price - a.price)
       .slice(0, 2);
     
-    const firstSupport = supportLevels[0] ? { price: supportLevels[0].price, btc: supportLevels[0].buyLiquidity } : null;
-    const secondSupport = supportLevels[1] ? { price: supportLevels[1].price, btc: supportLevels[1].buyLiquidity } : null;
+    // Calculate total support and resistance for ratio analysis
+    const totalSupportBTC = supportLevels.reduce((sum, level) => sum + level.buyLiquidity, 0);
+    const totalResistanceBTC = resistanceLevels.reduce((sum, level) => sum + level.sellLiquidity, 0);
+
+    const firstResistance = resistanceLevels[0] ? { 
+      price: resistanceLevels[0].price, 
+      btc: resistanceLevels[0].sellLiquidity,
+      strength: calculateResistanceStrength(totalSupportBTC, resistanceLevels[0].sellLiquidity)
+    } : null;
+    
+    const secondResistance = resistanceLevels[1] ? { 
+      price: resistanceLevels[1].price, 
+      btc: resistanceLevels[1].sellLiquidity,
+      strength: calculateResistanceStrength(totalSupportBTC, resistanceLevels[1].sellLiquidity)
+    } : null;
+
+    const firstSupport = supportLevels[0] ? { 
+      price: supportLevels[0].price, 
+      btc: supportLevels[0].buyLiquidity,
+      strength: calculateSupportStrength(supportLevels[0].buyLiquidity, totalResistanceBTC)
+    } : null;
+    
+    const secondSupport = supportLevels[1] ? { 
+      price: supportLevels[1].price, 
+      btc: supportLevels[1].buyLiquidity,
+      strength: calculateSupportStrength(supportLevels[1].buyLiquidity, totalResistanceBTC)
+    } : null;
 
     let recommendation: 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell' = 'neutral';
     let confidence = 50;
