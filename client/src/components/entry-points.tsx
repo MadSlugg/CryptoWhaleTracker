@@ -42,7 +42,7 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
       }
       return response.json();
     },
-    refetchInterval: 20000, // Refetch every 20 seconds
+    refetchInterval: 20000,
     staleTime: 5000,
   });
 
@@ -116,6 +116,7 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
 
   const config = getRecommendationConfig(data.recommendation);
   const Icon = config.icon;
+  const isNeutral = data.recommendation === 'neutral';
 
   return (
     <Card className={`border-2 ${config.borderColor}`} data-testid="card-entry-points">
@@ -140,69 +141,67 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-          {/* Left Column - Entry & Confidence (hidden if NEUTRAL) */}
-          {data.recommendation !== 'neutral' && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Details</h3>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                  <span className="text-sm text-muted-foreground">Entry Price</span>
-                  <span className="font-mono font-bold text-lg" data-testid="text-entry-price">
-                    ${data.entryPrice.toLocaleString()}
-                  </span>
-                </div>
+        <div className={isNeutral ? "space-y-4" : "grid gap-6 grid-cols-1 lg:grid-cols-2"}>
+          {!isNeutral && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Details</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+                    <span className="text-sm text-muted-foreground">Entry Price</span>
+                    <span className="font-mono font-bold text-lg" data-testid="text-entry-price">
+                      ${data.entryPrice.toLocaleString()}
+                    </span>
+                  </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <span className="text-sm font-semibold">Confidence</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
-                      <div 
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${isNaN(data.confidence) ? 50 : Math.max(0, Math.min(100, data.confidence))}%` }}
-                      />
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="text-sm font-semibold">Confidence</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all"
+                          style={{ width: `${isNaN(data.confidence) ? 50 : Math.max(0, Math.min(100, data.confidence))}%` }}
+                        />
+                      </div>
+                      <span className="font-mono font-bold text-primary" data-testid="text-confidence">
+                        {isNaN(data.confidence) ? '50' : data.confidence.toFixed(0)}%
+                      </span>
                     </div>
-                    <span className="font-mono font-bold text-primary" data-testid="text-confidence">
-                      {isNaN(data.confidence) ? '50' : data.confidence.toFixed(0)}%
-                    </span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Key Price Levels</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">Current Price</span>
-                  <span className="font-mono font-semibold" data-testid="text-current-price">
-                    ${data.currentPrice.toLocaleString()}
-                  </span>
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3">Key Price Levels</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
+                    <span className="text-muted-foreground">Current Price</span>
+                    <span className="font-mono font-semibold" data-testid="text-current-price">
+                      ${data.currentPrice.toLocaleString()}
+                    </span>
+                  </div>
+                  {data.support && (
+                    <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
+                      <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
+                      <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
+                        ${data.support.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  {data.resistance && (
+                    <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                      <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
+                      <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
+                        ${data.resistance.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {data.support && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
-                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                      ${data.support.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {data.resistance && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                    <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
-                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                      ${data.resistance.toLocaleString()}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
-          </div>
           )}
 
-          {/* Right Column - Analysis (full width if NEUTRAL) */}
-          <div className={`space-y-4 ${data.recommendation === 'neutral' ? 'lg:col-span-2' : ''}`}>
+          <div className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">Whale Analysis</h3>
               <div className="space-y-2">
