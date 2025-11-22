@@ -46,6 +46,9 @@ class OrderGenerator {
   private orderLastSeen: Map<string, number> = new Map(); // orderId -> timestamp
   // MEMORY LEAK FIX: Per-exchange cache of active orders to avoid full-table scans
   private activeOrdersByExchange: Map<string, Map<string, BitcoinOrder>> = new Map(); // exchange -> (orderId -> order)
+  // NEW FIX: Track which orders are currently missing from exchange order books (candidates for fill detection)
+  // Key: orderId, Value: true if confirmed missing from current book
+  private ordersMissingFromBook: Set<string> = new Set();
   
   // Exchange polling configuration - staggered intervals to avoid rate limits
   private readonly exchangeConfigs: ExchangeConfig[] = [
@@ -227,33 +230,42 @@ class OrderGenerator {
       }
 
       // Check each active order for fill conditions
+      // CRITICAL FIX: Orders are ONLY marked filled when BOTH conditions are met:
+      // 1. Price has crossed the order level (matching market condition)
+      // 2. Order is confirmed missing from exchange order book (detected by fetchWhaleOrders)
       let filledCount = 0;
       let longCount = 0;
       let shortCount = 0;
-      let shouldFillCount = 0;
+      let priceCrossCount = 0;
+      let confirmedFillCount = 0;
       
       for (const [orderId, order] of Array.from(orderMap.entries())) {
         if (order.type === 'long') longCount++;
         else if (order.type === 'short') shortCount++;
         
-        let isFilled = false;
-
-        // For long orders (buy orders): filled if current price dropped to or below the limit price
-        // For short orders (sell orders): filled if current price rose to or above the limit price
+        // Check condition 1: Price has crossed the order level
+        let priceCrossed = false;
         if (order.type === 'long' && this.currentBtcPrice <= order.price) {
-          isFilled = true;
-          shouldFillCount++;
+          priceCrossed = true;
+          priceCrossCount++;
         } else if (order.type === 'short' && this.currentBtcPrice >= order.price) {
-          isFilled = true;
-          shouldFillCount++;
+          priceCrossed = true;
+          priceCrossCount++;
         }
 
-        if (isFilled) {
+        // Check condition 2: Order is confirmed missing from exchange order book
+        const isConfirmedMissing = this.ordersMissingFromBook.has(order.id);
+
+        // FILL ONLY if BOTH conditions are true: price crossed AND order disappeared from book
+        if (priceCrossed && isConfirmedMissing) {
+          confirmedFillCount++;
+          
           // Mark order as filled - use the returned updated order
           const updatedOrder = await storage.updateOrderStatus(order.id, 'filled', this.currentBtcPrice);
 
           // Remove from active orders cache
           this.activeOrderIds.delete(order.id);
+          this.ordersMissingFromBook.delete(order.id);
           filledCount++;
           
           // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
@@ -283,7 +295,7 @@ class OrderGenerator {
       }
       
       const elapsed = Date.now() - startTime;
-      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Should fill: ${shouldFillCount}, Actually filled: ${filledCount}`);
+      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Price crosses: ${priceCrossCount}, Confirmed missing: ${this.ordersMissingFromBook.size}, Filled: ${filledCount}`);
     } catch (error) {
       console.error('Failed to check filled orders:', error);
     }
@@ -451,27 +463,36 @@ class OrderGenerator {
         });
         
         if (stillExists) {
-          // Order still exists - update last seen timestamp
+          // Order still exists - update last seen timestamp and remove from "missing" set
           this.orderLastSeen.set(existingOrder.id, now);
+          this.ordersMissingFromBook.delete(existingOrder.id); // Still on book = not missing
         } else {
           // Order not found in current poll - check grace period before deleting
           const lastSeen = this.orderLastSeen.get(existingOrder.id);
           
           if (!lastSeen) {
-            // First time missing - record current time as "last seen"
+            // First time missing - record current time as "last seen" and mark as missing from book
             this.orderLastSeen.set(existingOrder.id, now);
+            this.ordersMissingFromBook.add(existingOrder.id); // Confirmed missing from current book
           } else if (now - lastSeen > GRACE_PERIOD_MS) {
-            // Missing for more than grace period - mark as deleted
-            await storage.updateOrderStatus(existingOrder.id, 'deleted');
-            this.activeOrderIds.delete(existingOrder.id);
-            this.orderLastSeen.delete(existingOrder.id);
-            
-            // MEMORY LEAK FIX: Remove from per-exchange cache
-            exchangeCache.delete(existingOrder.id);
-            
-            console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
+            // Missing for more than grace period - mark as deleted (unless already filled)
+            const order = await storage.getOrder(existingOrder.id);
+            if (order && order.status === 'active') {
+              // Only mark as deleted if still active (checkFilledOrders might have filled it)
+              await storage.updateOrderStatus(existingOrder.id, 'deleted');
+              this.activeOrderIds.delete(existingOrder.id);
+              this.orderLastSeen.delete(existingOrder.id);
+              this.ordersMissingFromBook.delete(existingOrder.id);
+              
+              // MEMORY LEAK FIX: Remove from per-exchange cache
+              exchangeCache.delete(existingOrder.id);
+              
+              console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
+            }
+          } else {
+            // Still within grace period - confirm missing status
+            this.ordersMissingFromBook.add(existingOrder.id);
           }
-          // If within grace period, do nothing - wait for next poll
         }
       }
     } catch (error) {
