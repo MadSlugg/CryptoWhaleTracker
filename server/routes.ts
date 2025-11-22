@@ -44,6 +44,8 @@ class OrderGenerator {
   private activeOrderIds: Set<string> = new Set();
   // Track when each order was last seen on exchange (prevents false deletions from API hiccups)
   private orderLastSeen: Map<string, number> = new Map(); // orderId -> timestamp
+  // MEMORY LEAK FIX: Per-exchange cache of active orders to avoid full-table scans
+  private activeOrdersByExchange: Map<string, Map<string, BitcoinOrder>> = new Map(); // exchange -> (orderId -> order)
   
   // Exchange polling configuration - staggered intervals to avoid rate limits
   private readonly exchangeConfigs: ExchangeConfig[] = [
@@ -171,9 +173,27 @@ class OrderGenerator {
       const allOrders = await storage.getOrders();
       const activeOrders = allOrders.filter(o => o.status === 'active');
       this.activeOrderIds = new Set(activeOrders.map(o => o.id));
+      
+      // MEMORY LEAK FIX: Initialize per-exchange cache
+      for (const config of this.exchangeConfigs) {
+        this.activeOrdersByExchange.set(config.id, new Map());
+      }
+      
+      // Populate per-exchange cache
+      for (const order of activeOrders) {
+        const exchangeCache = this.activeOrdersByExchange.get(order.exchange);
+        if (exchangeCache) {
+          exchangeCache.set(order.id, order);
+        }
+      }
+      
       console.log(`[OrderGenerator] Initialized with ${this.activeOrderIds.size} active orders`);
     } catch (error) {
       console.error('Failed to initialize active orders cache:', error);
+      // Initialize empty cache on error
+      for (const config of this.exchangeConfigs) {
+        this.activeOrdersByExchange.set(config.id, new Map());
+      }
     }
   }
 
@@ -219,6 +239,12 @@ class OrderGenerator {
           
           // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
           this.orderLastSeen.delete(order.id);
+          
+          // MEMORY LEAK FIX: Remove from per-exchange cache
+          const exchangeCache = this.activeOrdersByExchange.get(order.exchange);
+          if (exchangeCache) {
+            exchangeCache.delete(order.id);
+          }
 
           // Broadcast the updated order (with fillPrice and filledAt) to WebSocket clients
           // Also trigger cache invalidation
@@ -291,9 +317,14 @@ class OrderGenerator {
       // Record success
       this.recordSuccess(exchangeId);
       
-      // Get existing orders from database (will be used for both duplicate check and verification)
-      const existingOrders = await storage.getOrders();
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      // MEMORY LEAK FIX: Use per-exchange cache instead of loading all 2,361 orders
+      const exchangeCache = this.activeOrdersByExchange.get(exchangeId);
+      if (!exchangeCache) {
+        console.error(`[OrderGenerator] No cache found for ${exchangeId}`);
+        return;
+      }
+      
+      const existingOrdersForExchange = Array.from(exchangeCache.values());
       
       for (const whaleOrder of whaleOrders) {
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
@@ -301,19 +332,12 @@ class OrderGenerator {
         const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
         const market = whaleOrder.market || 'spot'; // Normalize market value (default to spot)
         
-        // Check for duplicates (active or recently filled in last 5 minutes)
-        const isDuplicate = existingOrders.some(existing => {
-          const isRecentlyFilled = existing.status === 'filled' && 
-                                   existing.filledAt && 
-                                   new Date(existing.filledAt) > fiveMinutesAgo;
-          const isActive = existing.status === 'active';
-          
-          const matches = existing.exchange === exchangeId &&
-                 existing.type === type &&
+        // Check for duplicates in this exchange's active orders only
+        const isDuplicate = existingOrdersForExchange.some(existing => {
+          const matches = existing.type === type &&
                  existing.market === market && // Use normalized market value
                  Math.abs(existing.price - roundedPrice) < 0.01 &&
-                 Math.abs(existing.size - roundedSize) < 0.01 &&
-                 (isActive || isRecentlyFilled);
+                 Math.abs(existing.size - roundedSize) < 0.01;
           
           // Log when we detect and skip a duplicate
           if (matches) {
@@ -338,6 +362,9 @@ class OrderGenerator {
         try {
           const createdOrder = await storage.createOrder(order);
           this.activeOrderIds.add(createdOrder.id);
+          
+          // MEMORY LEAK FIX: Add to per-exchange cache
+          exchangeCache.set(createdOrder.id, createdOrder);
           
           // Broadcast to WebSocket clients
           if (this.wss) {
@@ -367,11 +394,9 @@ class OrderGenerator {
       const GRACE_PERIOD_MS = 60 * 1000;
       const now = Date.now();
       
-      // Refetch active orders AFTER creating new ones to include newly created orders
-      const freshActiveOrders = await storage.getOrders();
-      const activeOrdersForExchange = freshActiveOrders.filter(
-        order => order.exchange === exchangeId && order.status === 'active'
-      );
+      // MEMORY LEAK FIX: Use per-exchange cache instead of loading all orders
+      // Cache already includes newly created orders from the loop above
+      const activeOrdersForExchange = Array.from(exchangeCache.values());
       
       for (const existingOrder of activeOrdersForExchange) {
         // Check if this order still exists in the current whale orders from exchange
@@ -402,6 +427,10 @@ class OrderGenerator {
             await storage.updateOrderStatus(existingOrder.id, 'deleted');
             this.activeOrderIds.delete(existingOrder.id);
             this.orderLastSeen.delete(existingOrder.id);
+            
+            // MEMORY LEAK FIX: Remove from per-exchange cache
+            exchangeCache.delete(existingOrder.id);
+            
             console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
           }
           // If within grace period, do nothing - wait for next poll
