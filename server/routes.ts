@@ -452,12 +452,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       const priceSnapshot = sortedOrders[0]?.price || 93000;
       
-      // Get major whales (100+ BTC, active only) from base dataset
-      // Remove from display once filled to track only current whale positions
+      // Get major whales (100+ BTC, both active and filled) from base dataset
+      // Component will split them into active/filled sections on frontend
       const majorWhales = allOrders
-        .filter(order => order.size >= 100 && order.status === 'active')
-        .sort((a, b) => b.size - a.size)
-        .slice(0, 10);
+        .filter(order => order.size >= 100)
+        .sort((a, b) => b.size - a.size);
       
       const result = {
         filteredOrders,

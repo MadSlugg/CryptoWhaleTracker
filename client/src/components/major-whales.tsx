@@ -73,7 +73,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="pt-0 max-h-[600px] overflow-y-auto">
             <div className="space-y-2">
               {activeGroups.map((group) => (
                 <WhaleGroup key={group.price} group={group} />
