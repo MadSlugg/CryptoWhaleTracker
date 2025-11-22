@@ -903,13 +903,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         exchange = ex as Exchange;
       }
 
-      // Fetch filled order flow analysis (last 30m for most relevant signals)
+      // Fetch filled order flow analysis (last 10m for most relevant signals)
       // Focus on BIG whale orders only (100+ BTC)
       const filledOrders = await storage.getFilteredOrders({
         minSize: 100,
         orderType: 'all',
         exchange,
-        timeRange: '30m',
+        timeRange: '10m',
         status: 'filled',
       });
 
