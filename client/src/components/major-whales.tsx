@@ -90,6 +90,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
 function WhaleGroup({ group }: { group: GroupedWhale }) {
   const [isOpen, setIsOpen] = useState(false);
   const isSingleOrder = group.orders.length === 1;
+  const isMegaWhale = group.totalSize >= 1000;
 
   // Determine primary type for badge color
   const primaryType = group.longCount > group.shortCount ? 'long' : 
@@ -99,7 +100,11 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div
-        className="rounded-lg border bg-card"
+        className={`rounded-lg border ${
+          isMegaWhale 
+            ? 'border-2 border-orange-500 bg-gradient-to-r from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20' 
+            : 'border bg-card'
+        }`}
         data-testid={`whale-group-${group.price}`}
       >
         {/* Group Header - Always Visible */}
@@ -148,18 +153,20 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
 
               {/* Combined Size */}
               <div className="flex flex-col">
-                <span className="font-mono font-bold text-lg" data-testid={`text-total-size-${group.price}`}>
-                  {group.totalSize.toFixed(2)} BTC
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono font-bold ${isMegaWhale ? 'text-2xl text-orange-600 dark:text-orange-400' : 'text-lg'}`} data-testid={`text-total-size-${group.price}`}>
+                    {group.totalSize.toFixed(2)} BTC
+                  </span>
+                  {isMegaWhale && (
+                    <Badge variant="destructive" className="text-xs animate-pulse bg-orange-600 hover:bg-orange-700">
+                      MEGA WHALE
+                    </Badge>
+                  )}
+                </div>
                 {!isSingleOrder && (
                   <span className="text-xs text-muted-foreground">
                     {group.orders.length} orders
                   </span>
-                )}
-                {group.totalSize >= 1000 && (
-                  <Badge variant="destructive" className="text-xs w-fit">
-                    MEGA WHALE
-                  </Badge>
                 )}
               </div>
 
