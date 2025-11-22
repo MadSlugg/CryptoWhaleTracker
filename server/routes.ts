@@ -42,6 +42,8 @@ class OrderGenerator {
   private wss: WebSocketServer | null = null;
   private currentBtcPrice: number = 93000;
   private activeOrderIds: Set<string> = new Set();
+  // Track when each order was last seen on exchange (prevents false deletions from API hiccups)
+  private orderLastSeen: Map<string, number> = new Map(); // orderId -> timestamp
   
   // Exchange polling configuration - staggered intervals to avoid rate limits
   private readonly exchangeConfigs: ExchangeConfig[] = [
@@ -332,7 +334,11 @@ class OrderGenerator {
       }
       
       // VERIFY EXISTING ORDERS: Mark orders as "deleted" if they're no longer on the exchange books
-      // CRITICAL: Refetch active orders AFTER creating new ones to include newly created orders
+      // Grace period: 60 seconds (prevents false deletions from temporary API hiccups)
+      const GRACE_PERIOD_MS = 60 * 1000;
+      const now = Date.now();
+      
+      // Refetch active orders AFTER creating new ones to include newly created orders
       const freshActiveOrders = await storage.getOrders();
       const activeOrdersForExchange = freshActiveOrders.filter(
         order => order.exchange === exchangeId && order.status === 'active'
@@ -352,11 +358,24 @@ class OrderGenerator {
                  Math.abs(existingOrder.size - roundedSize) < 0.01;
         });
         
-        // If order doesn't exist in current order book, mark it as deleted
-        if (!stillExists) {
-          await storage.updateOrderStatus(existingOrder.id, 'deleted');
-          this.activeOrderIds.delete(existingOrder.id);
-          console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
+        if (stillExists) {
+          // Order still exists - update last seen timestamp
+          this.orderLastSeen.set(existingOrder.id, now);
+        } else {
+          // Order not found in current poll - check grace period before deleting
+          const lastSeen = this.orderLastSeen.get(existingOrder.id);
+          
+          if (!lastSeen) {
+            // First time missing - record current time as "last seen"
+            this.orderLastSeen.set(existingOrder.id, now);
+          } else if (now - lastSeen > GRACE_PERIOD_MS) {
+            // Missing for more than grace period - mark as deleted
+            await storage.updateOrderStatus(existingOrder.id, 'deleted');
+            this.activeOrderIds.delete(existingOrder.id);
+            this.orderLastSeen.delete(existingOrder.id);
+            console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
+          }
+          // If within grace period, do nothing - wait for next poll
         }
       }
     } catch (error) {
