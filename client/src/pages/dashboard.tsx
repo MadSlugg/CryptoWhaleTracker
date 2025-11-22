@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { BitcoinOrder, OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
-import { OrderFeed } from "@/components/order-feed";
+import type { OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
 import { FilterControls } from "@/components/filter-controls";
-import { DepthChart } from "@/components/depth-chart";
-import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
 import { LongEntryPoints, ShortEntryPoints } from "@/components/long-short-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -27,12 +24,10 @@ export default function Dashboard() {
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
-  // Fetch consolidated dashboard data (single API call replaces 3 separate calls)
+  // Fetch consolidated dashboard data
   const { data: dashboardData, isLoading, refetch, error } = useQuery<{
-    filteredOrders: BitcoinOrder[];
     priceSnapshot: number;
-    majorWhales: BitcoinOrder[];
-    allActiveOrders: BitcoinOrder[];
+    allActiveOrders: any[];
   }>({
     queryKey: ['/api/dashboard', minSize, orderType, exchange, timeRange, status],
     queryFn: async () => {
@@ -68,9 +63,7 @@ export default function Dashboard() {
   }, [error?.message, toast]);
 
   // Extract data from consolidated response (with defaults)
-  const filteredOrders = dashboardData?.filteredOrders || [];
   const currentBtcPrice = dashboardData?.priceSnapshot || 93000;
-  const majorWhaleOrders = dashboardData?.majorWhales || [];
   const allActiveOrders = dashboardData?.allActiveOrders || [];
 
   const handleRefresh = async () => {
@@ -159,9 +152,6 @@ export default function Dashboard() {
             setStatus={setStatus}
           />
 
-          {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
-          <MajorWhales orders={majorWhaleOrders} />
-
           {/* Smart Entry Points - Separate BUY and SELL recommendations */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
             <LongEntryPoints exchange={exchange} />
@@ -172,20 +162,6 @@ export default function Dashboard() {
           <PriceClusters 
             orders={allActiveOrders}
             currentPrice={currentBtcPrice}
-          />
-
-          {/* Depth Chart - Shows concentration of orders at different price levels */}
-          <DepthChart 
-            orders={filteredOrders.filter(o => o.status === 'active')} 
-            currentPrice={currentBtcPrice}
-            title="Order Book Depth - Active Whale Orders"
-          />
-
-          {/* Active Orders Feed */}
-          <OrderFeed 
-            orders={filteredOrders.filter(o => o.status === 'active')} 
-            isLoading={isLoading}
-            title="Active Orders (100+ BTC)"
           />
         </div>
       </main>
