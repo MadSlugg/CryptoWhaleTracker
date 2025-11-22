@@ -179,7 +179,6 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
   const [isOpen, setIsOpen] = useState(false);
   const isSingleOrder = group.orders.length === 1;
   const isMegaMegaWhale = group.totalSize >= 2000;
-  const isMegaWhale = group.totalSize >= 1000 && !isMegaMegaWhale;
 
   // Determine primary type for badge color
   const primaryType = group.longCount > group.shortCount ? 'long' : 
@@ -192,8 +191,6 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
         className={`rounded-lg border ${
           isMegaMegaWhale
             ? 'border-2 border-red-600 dark:border-red-500 bg-gradient-to-r from-red-600/10 to-red-600/5 shadow-lg shadow-red-600/20'
-            : isMegaWhale 
-            ? 'border-2 border-orange-500 bg-gradient-to-r from-orange-500/10 to-orange-500/5 shadow-lg shadow-orange-500/20' 
             : 'border bg-card'
         }`}
         data-testid={`whale-group-${group.price}`}
@@ -247,8 +244,6 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                 <span className={`font-mono font-bold ${
                   isMegaMegaWhale 
                     ? 'text-2xl text-red-600 dark:text-red-400' 
-                    : isMegaWhale 
-                    ? 'text-2xl text-orange-600 dark:text-orange-400' 
                     : 'text-lg'
                 }`} data-testid={`text-total-size-${group.price}`}>
                   {group.totalSize.toFixed(2)} BTC
