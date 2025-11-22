@@ -27,10 +27,40 @@ interface EntryPointData {
   };
   support: number | null;
   resistance: number | null;
-  firstSupport: { price: number; btc: number } | null;
-  secondSupport: { price: number; btc: number } | null;
-  firstResistance: { price: number; btc: number } | null;
-  secondResistance: { price: number; btc: number } | null;
+  firstSupport: { price: number; btc: number; strength: string } | null;
+  secondSupport: { price: number; btc: number; strength: string } | null;
+  firstResistance: { price: number; btc: number; strength: string } | null;
+  secondResistance: { price: number; btc: number; strength: string } | null;
+}
+
+function getSupportStrengthBadge(strength: string) {
+  switch (strength) {
+    case 'MASSIVE':
+      return 'bg-emerald-600 dark:bg-emerald-700 text-white';
+    case 'STRONG':
+      return 'bg-emerald-500 dark:bg-emerald-600 text-white';
+    case 'MODERATE':
+      return 'bg-yellow-500 dark:bg-yellow-600 text-white';
+    case 'WEAK':
+      return 'bg-red-500 dark:bg-red-600 text-white';
+    default:
+      return 'bg-muted text-muted-foreground';
+  }
+}
+
+function getResistanceStrengthBadge(strength: string) {
+  switch (strength) {
+    case 'WEAK':
+      return 'bg-emerald-500 dark:bg-emerald-600 text-white';
+    case 'MODERATE':
+      return 'bg-yellow-500 dark:bg-yellow-600 text-white';
+    case 'STRONG':
+      return 'bg-red-500 dark:bg-red-600 text-white';
+    case 'MASSIVE':
+      return 'bg-red-600 dark:bg-red-700 text-white';
+    default:
+      return 'bg-muted text-muted-foreground';
+  }
 }
 
 export function BuyEntryPoints({ exchange }: EntryPointsProps) {
@@ -181,16 +211,26 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
                 </span>
               </div>
               {data.firstSupport && (
-                <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                  <span className="text-emerald-700 dark:text-emerald-300 font-medium">1st Support</span>
+                <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">1st Support</span>
+                    <Badge className={`${getSupportStrengthBadge(data.firstSupport.strength)} text-xs px-2 py-0.5`}>
+                      {data.firstSupport.strength}
+                    </Badge>
+                  </div>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-first-support">
                     ${Math.round(data.firstSupport.price).toLocaleString()} ({Math.round(data.firstSupport.btc).toLocaleString()} BTC)
                   </span>
                 </div>
               )}
               {data.secondSupport && (
-                <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                  <span className="text-emerald-700 dark:text-emerald-300 font-medium">2nd Support</span>
+                <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">2nd Support</span>
+                    <Badge className={`${getSupportStrengthBadge(data.secondSupport.strength)} text-xs px-2 py-0.5`}>
+                      {data.secondSupport.strength}
+                    </Badge>
+                  </div>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-second-support">
                     ${Math.round(data.secondSupport.price).toLocaleString()} ({Math.round(data.secondSupport.btc).toLocaleString()} BTC)
                   </span>
