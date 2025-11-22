@@ -858,6 +858,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? allOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0].price
         : 92000;
 
+      // Calculate order persistence (how long big orders have been open)
+      // Reuse 'now' variable from filled order flow calculation
+      let totalOrderAge = 0; // Sum of order ages in hours
+      activeOrders.forEach(order => {
+        const orderAgeMs = now - new Date(order.timestamp).getTime();
+        const orderAgeHours = Math.max(0, orderAgeMs / (1000 * 60 * 60));
+        totalOrderAge += orderAgeHours;
+      });
+      // Average age of big whale orders (in hours). Longer = more established positions
+      const avgOrderAgeHours = activeOrders.length > 0 ? totalOrderAge / activeOrders.length : 0;
+      // Orders older than 6 hours are more credible (not just noise)
+      const persistenceFactor = Math.min(1.2, 0.8 + (Math.log10(1 + avgOrderAgeHours) * 0.1));
+
       // ENTRY POINT ALGORITHM
       // Combine signals to generate recommendations
       let recommendation: 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell';
@@ -929,6 +942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isNaN(baseConfidence)) baseConfidence = 50;
         if (totalFilledVolume < 50) baseConfidence *= 0.85; // Reduce confidence if low whale volume
         if (activeOrders.length < 3) baseConfidence *= 0.9; // Reduce confidence if few big orders
+        baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
         confidence = Math.floor(baseConfidence);
         
         // Entry: Always use nearest support for BUY (where whales are bidding)
@@ -950,6 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isNaN(baseConfidence)) baseConfidence = 50;
         if (totalFilledVolume < 50) baseConfidence *= 0.85;
         if (activeOrders.length < 3) baseConfidence *= 0.9;
+        baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
         confidence = Math.floor(baseConfidence);
         
         // Entry: Always use nearest resistance for SELL (where whales are asking)
