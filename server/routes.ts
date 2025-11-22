@@ -1012,12 +1012,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       reasoning = [];
 
-      if (compositeScore >= 50) {
+      if (compositeScore >= 20) {
         // BULLISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 100) baseConfidence *= 0.7; // Reduce confidence if low whale volume
-        if (activeOrders.length < 5) baseConfidence *= 0.8; // Reduce confidence if few big orders
+        if (totalFilledVolume < 100) baseConfidence *= 0.85; // Slightly reduce confidence if low whale volume
+        if (activeOrders.length < 5) baseConfidence *= 0.9; // Slightly reduce confidence if few big orders
         baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
         confidence = Math.floor(baseConfidence);
 
@@ -1057,17 +1057,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             entryPrice = Math.round(currentPrice / 5000) * 5000;
           }
           
-          reasoning.push('Weak bullish signal - insufficient confidence for buy recommendation');
-          if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
-          if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
+          reasoning.push('Weak bullish signal - whale activity favors longs but insufficient confidence');
+          if (imbalanceScore <= 5) reasoning.push('Moderate long pressure from 100+ BTC orders');
         }
         
-      } else if (compositeScore <= -50) {
+      } else if (compositeScore <= -20) {
         // BEARISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 100) baseConfidence *= 0.7;
-        if (activeOrders.length < 5) baseConfidence *= 0.8;
+        if (totalFilledVolume < 100) baseConfidence *= 0.85;
+        if (activeOrders.length < 5) baseConfidence *= 0.9;
         baseConfidence *= persistenceFactor;
         confidence = Math.floor(baseConfidence);
 
@@ -1107,15 +1106,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             entryPrice = Math.round(currentPrice / 5000) * 5000;
           }
           
-          reasoning.push('Weak bearish signal - insufficient confidence for sell recommendation');
-          if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
-          if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
+          reasoning.push('Weak bearish signal - whale activity favors shorts but insufficient confidence');
+          if (imbalanceScore >= -5) reasoning.push('Moderate short pressure from 100+ BTC orders');
         }
         
       } else {
-        // NEUTRAL - NO CLEAR SIGNAL from the start
+        // NEUTRAL - BALANCED MARKET
         recommendation = 'neutral';
-        confidence = Math.max(30, Math.min(60, Math.floor(50 - Math.abs(compositeScore))));
+        // Calculate confidence based on how close we are to a signal (higher when near ±20)
+        const distanceFromSignal = Math.min(20, Math.max(Math.abs(compositeScore), 5)); // 5-20 range
+        confidence = Math.floor(45 + (distanceFromSignal / 20) * 20); // 45-65% confidence when neutral
         
         // Use weighted average of nearest support and resistance as entry point
         if (nearestSupport && nearestResistance) {
@@ -1128,7 +1128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           entryPrice = Math.round(currentPrice / 5000) * 5000;
         }
         
-        reasoning.push('Mixed signals from big whale orders');
+        reasoning.push('Balanced whale activity - no clear directional signal');
+        reasoning.push(`Whale orders: ${totalLongLiquidity.toFixed(0)} BTC longs vs ${totalShortLiquidity.toFixed(0)} BTC shorts`);
         if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
         if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
       }
