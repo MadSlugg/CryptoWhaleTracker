@@ -24,8 +24,8 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
     // Filter to active orders 100+ BTC (whale orders only)
     const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
     
-    // Use $500 clusters for more accurate price zones (was $1000)
-    const priceRange = 500;
+    // Use $100 clusters for precise price zones (tighter grouping than $500)
+    const priceRange = 100;
     const clusters = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
     
     whaleOrders.forEach(order => {
