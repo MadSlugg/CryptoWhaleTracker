@@ -185,7 +185,7 @@ export default function Dashboard() {
           <OrderFeed 
             orders={filteredOrders.filter(o => o.status === 'active')} 
             isLoading={isLoading}
-            title="Active Orders"
+            title="Active Orders (100+ BTC)"
           />
         </div>
       </main>
