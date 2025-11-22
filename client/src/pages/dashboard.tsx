@@ -7,7 +7,7 @@ import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
 import { FilledOrderFlow } from "@/components/filled-order-flow";
-import { EntryPoints } from "@/components/entry-points";
+import { LongEntryPoints, ShortEntryPoints } from "@/components/long-short-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -161,8 +161,11 @@ export default function Dashboard() {
           {/* Major Whales Box - Highlight 100+ BTC orders (independent of filters) */}
           <MajorWhales orders={majorWhaleOrders} />
 
-          {/* Smart Entry Points - AI-powered BUY/SELL recommendations */}
-          <EntryPoints exchange={exchange} />
+          {/* Smart Entry Points - Separate BUY and SELL recommendations */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            <LongEntryPoints exchange={exchange} />
+            <ShortEntryPoints exchange={exchange} />
+          </div>
 
           {/* Filled Order Flow - Predicts price direction based on whale execution patterns (Last 30 Minutes) */}
           <FilledOrderFlow
