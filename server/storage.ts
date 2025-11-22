@@ -12,7 +12,7 @@ export interface OrderFilters {
   minSize?: number;
   orderType?: 'long' | 'short' | 'all';
   exchange?: 'binance' | 'kraken' | 'coinbase' | 'okx' | 'bybit' | 'bitfinex' | 'gemini' | 'bitstamp' | 'htx' | 'kucoin' | 'all';
-  timeRange?: '30m' | '1h' | '4h' | '24h' | '7d';
+  timeRange?: '10m' | '30m' | '1h' | '4h' | '24h' | '7d';
   status?: 'active' | 'filled' | 'all';
   minPrice?: number;
   maxPrice?: number;

@@ -725,11 +725,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for filled order flow analysis
   app.get("/api/filled-order-analysis", async (req, res) => {
     try {
-      // Get time range for analysis (default 30m for most relevant signals)
-      let timeRange: 'all' | '30m' | '1h' | '4h' | '24h' | '7d' = '30m';
+      // Get time range for analysis (default 10m for most relevant signals with 100+ BTC whales only)
+      let timeRange: 'all' | '10m' | '30m' | '1h' | '4h' | '24h' | '7d' = '10m';
       if (req.query.timeRange) {
         const tr = req.query.timeRange as string;
-        if (!['30m', '1h', '4h', '24h', '7d', 'all'].includes(tr)) {
+        if (!['10m', '30m', '1h', '4h', '24h', '7d', 'all'].includes(tr)) {
           return res.status(400).json({ error: 'Invalid timeRange parameter' });
         }
         timeRange = tr as typeof timeRange;
