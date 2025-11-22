@@ -1,11 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const { toast } = useToast();
 
   useEffect(() => {
     const connect = () => {
@@ -23,29 +21,6 @@ export function useWebSocket() {
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            
-            // Handle new order alerts - ONLY for MEGA ENTRY (1000+ BTC)
-            // Regular 100+ BTC orders appear frequently and would spam the user
-            if (data.type === 'new_order' && data.order) {
-              const order = data.order;
-              const orderSizeBTC = order.size;
-              
-              // Alert ONLY for 1000+ BTC new orders (MEGA ENTRY)
-              if (orderSizeBTC >= 1000) {
-                toast({
-                  title: "MEGA ENTRY ALERT",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()}`,
-                  variant: "destructive",
-                  duration: 10000,
-                });
-              }
-            }
-            
-            // Handle filled order alerts - DISABLED
-            // Filled orders are already visible in the dashboard's "Filled Order Flow" section
-            // 600+ orders per 10 minutes would cause excessive alert spam
-            // Only alert for NEW MEGA orders (1000+ BTC), not fills
-            // if (data.type === 'order_filled' && data.order) { ... }
             
             if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled' || data.type === 'order_deleted') {
               // Invalidate all /api/orders queries regardless of filter parameters
