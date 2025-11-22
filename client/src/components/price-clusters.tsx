@@ -50,8 +50,8 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
       const count = allOrders.length;
       
-      // Only show important clusters: 2+ orders OR 100+ BTC
-      if (count >= 2 || totalSize >= 100) {
+      // Only show important clusters: 3+ orders AND 300+ BTC (prevents excessive noise from tiny clusters)
+      if (count >= 3 && totalSize >= 300) {
         const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
         const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
         
