@@ -787,7 +787,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const flowDifference = isNaN(longPercentage) ? 0 : longPercentage - 50;
 
       // Fetch active orders for support/resistance analysis
-      // Focus on BIG whale orders only (50+ BTC)
+      // Get ALL active orders to detect price clusters, but track big orders separately
+      const allActiveOrders = await storage.getFilteredOrders({
+        minSize: 5,
+        orderType: 'all',
+        exchange,
+        timeRange: '24h',
+        status: 'active',
+      });
+
+      // Also get big orders (50+ BTC) for liquidity calculation
       const activeOrders = await storage.getFilteredOrders({
         minSize: 50,
         orderType: 'all',
@@ -796,10 +805,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'active',
       });
 
-      // Find price clusters (support/resistance zones) - group within $2000 buckets
+      // Find price clusters (support/resistance zones) - group within $2000 buckets using ALL orders
       const priceClusters: Record<string, { price: number; longVolume: number; shortVolume: number; orderCount: number }> = {};
       
-      activeOrders.forEach(order => {
+      allActiveOrders.forEach(order => {
         const priceLevel = Math.floor(order.price / 2000) * 2000;
         const levelKey = priceLevel.toString();
 
@@ -820,12 +829,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         priceClusters[levelKey].orderCount++;
       });
 
-      // Filter for significant clusters only (2+ orders OR 50+ BTC)
+      // Filter for significant clusters (2+ orders OR 30+ BTC total to catch whale clusters)
       const significantClusters = Object.values(priceClusters)
-        .filter(cluster => cluster.orderCount >= 2 || (cluster.longVolume + cluster.shortVolume) >= 50)
+        .filter(cluster => cluster.orderCount >= 2 || (cluster.longVolume + cluster.shortVolume) >= 30)
         .sort((a, b) => b.price - a.price);
 
-      // Calculate order book imbalance
+      // Calculate order book imbalance using BIG orders only (50+ BTC)
       let totalLongLiquidity = 0;
       let totalShortLiquidity = 0;
 
