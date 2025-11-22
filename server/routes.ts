@@ -344,9 +344,10 @@ class OrderGenerator {
         }
       }
       
-      // VERIFY EXISTING ORDERS: Mark orders as "deleted" if they're no longer on the exchange books
-      // Grace period: 60 seconds (prevents false deletions from temporary API hiccups)
-      const GRACE_PERIOD_MS = 60 * 1000;
+      // VERIFY EXISTING ORDERS: Delete orders if they're no longer on the exchange books
+      // Grace period: 5 minutes (prevents false deletions from temporary API hiccups, rate limiting, network delays)
+      // Orders must be missing for 2+ consecutive polls (~10-30 min depending on exchange) to be deleted
+      const GRACE_PERIOD_MS = 5 * 60 * 1000;
       const now = Date.now();
       
       // MEMORY LEAK FIX: Use per-exchange cache instead of loading all orders
