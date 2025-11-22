@@ -930,9 +930,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confidence = Math.floor(baseConfidence);
         
         // Entry: Always use nearest support for BUY (where whales are bidding)
+        // Round to $5000 price level
         entryPrice = nearestSupport 
           ? nearestSupport.price 
-          : Math.floor(currentPrice * 0.95); // If no support, dip 5% below current
+          : Math.floor((currentPrice * 0.95) / 5000) * 5000; // If no support, dip 5% below current and round to $5k
 
         if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
         if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${imbalanceScore.toFixed(1)}%)`);
@@ -950,9 +951,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confidence = Math.floor(baseConfidence);
         
         // Entry: Always use nearest resistance for SELL (where whales are asking)
+        // Round to $5000 price level
         entryPrice = nearestResistance 
           ? nearestResistance.price 
-          : Math.floor(currentPrice * 1.05); // If no resistance, rise 5% above current
+          : Math.floor((currentPrice * 1.05) / 5000) * 5000; // If no resistance, rise 5% above current and round to $5k
 
         if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
         if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${Math.abs(imbalanceScore).toFixed(1)}%)`);
@@ -966,14 +968,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confidence = Math.max(30, Math.floor(neutralConfidence));
         
         // Use weighted average of nearest support and resistance as entry point
+        // Round to $5000 price level
         if (nearestSupport && nearestResistance) {
-          entryPrice = Math.floor((nearestSupport.price + nearestResistance.price) / 2);
+          entryPrice = Math.round(((nearestSupport.price + nearestResistance.price) / 2) / 5000) * 5000;
         } else if (nearestSupport) {
           entryPrice = nearestSupport.price;
         } else if (nearestResistance) {
           entryPrice = nearestResistance.price;
         } else {
-          entryPrice = currentPrice;
+          entryPrice = Math.round(currentPrice / 5000) * 5000;
         }
         
         reasoning.push('Mixed signals from big whale orders');
