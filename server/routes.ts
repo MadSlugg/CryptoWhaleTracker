@@ -199,35 +199,53 @@ class OrderGenerator {
 
   private async checkFilledOrders() {
     try {
-      // Snapshot active IDs to avoid issues with concurrent modifications
-      const activeIdsSnapshot = Array.from(this.activeOrderIds);
+      const startTime = Date.now();
+      console.log(`[CheckFilled] Starting check for ${this.activeOrderIds.size} active orders at price $${this.currentBtcPrice.toFixed(2)}`);
       
-      // Fetch all orders in parallel
-      const orderPromises = activeIdsSnapshot.map(id => storage.getOrder(id));
-      const orders = await Promise.all(orderPromises);
+      // OPTIMIZATION: Fetch all active orders in ONE query instead of 3000+ individual queries
+      const allActiveOrders = await storage.getFilteredOrders({
+        minSize: 0,
+        orderType: 'all',
+        exchange: 'all',
+        timeRange: '7d',
+        status: 'active'
+      });
       
-      // Build map of ID -> order for easy lookup
+      // Build map of ID -> order for easy lookup and verify our cache
       const orderMap = new Map<string, BitcoinOrder>();
-      activeIdsSnapshot.forEach((id, index) => {
-        const order = orders[index];
-        if (order && order.status === 'active') {
-          orderMap.set(id, order);
-        } else {
-          // Order doesn't exist or is no longer active - remove from cache
+      for (const order of allActiveOrders) {
+        if (this.activeOrderIds.has(order.id)) {
+          orderMap.set(order.id, order);
+        }
+      }
+      
+      // Clean up activeOrderIds cache for orders that are no longer active
+      for (const id of Array.from(this.activeOrderIds)) {
+        if (!orderMap.has(id)) {
           this.activeOrderIds.delete(id);
         }
-      });
+      }
 
       // Check each active order for fill conditions
+      let filledCount = 0;
+      let longCount = 0;
+      let shortCount = 0;
+      let shouldFillCount = 0;
+      
       for (const [orderId, order] of Array.from(orderMap.entries())) {
+        if (order.type === 'long') longCount++;
+        else if (order.type === 'short') shortCount++;
+        
         let isFilled = false;
 
         // For long orders (buy orders): filled if current price dropped to or below the limit price
         // For short orders (sell orders): filled if current price rose to or above the limit price
         if (order.type === 'long' && this.currentBtcPrice <= order.price) {
           isFilled = true;
+          shouldFillCount++;
         } else if (order.type === 'short' && this.currentBtcPrice >= order.price) {
           isFilled = true;
+          shouldFillCount++;
         }
 
         if (isFilled) {
@@ -236,6 +254,7 @@ class OrderGenerator {
 
           // Remove from active orders cache
           this.activeOrderIds.delete(order.id);
+          filledCount++;
           
           // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
           this.orderLastSeen.delete(order.id);
@@ -262,6 +281,9 @@ class OrderGenerator {
           }
         }
       }
+      
+      const elapsed = Date.now() - startTime;
+      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Should fill: ${shouldFillCount}, Actually filled: ${filledCount}`);
     } catch (error) {
       console.error('Failed to check filled orders:', error);
     }
@@ -283,10 +305,25 @@ class OrderGenerator {
       // Only update if we got a valid price
       if (typeof newPrice === 'number' && newPrice > 0 && !isNaN(newPrice)) {
         this.currentBtcPrice = newPrice;
+        console.log(`[PriceUpdate] BTC price: $${newPrice.toFixed(2)} (source: Binance)`);
+        return;
       }
     } catch (error) {
-      console.error('Failed to update Bitcoin price:', error);
-      // Keep using last known valid price
+      // Binance failed, try Coinbase as backup
+      try {
+        const response = await fetch('https://api.coinbase.com/v2/prices/BTC-USD/spot');
+        const data = await response.json();
+        const coinbasePrice = parseFloat(data.data.amount);
+        
+        if (typeof coinbasePrice === 'number' && coinbasePrice > 0 && !isNaN(coinbasePrice)) {
+          this.currentBtcPrice = coinbasePrice;
+          console.log(`[PriceUpdate] BTC price: $${coinbasePrice.toFixed(2)} (source: Coinbase - Binance failed)`);
+          return;
+        }
+      } catch (coinbaseError) {
+        console.error('Failed to get price from both Binance and Coinbase:', coinbaseError);
+        console.log(`[PriceUpdate] Using cached price: $${this.currentBtcPrice.toFixed(2)}`);
+      }
     }
   }
 
@@ -396,9 +433,10 @@ class OrderGenerator {
       
       // MEMORY LEAK FIX: Use per-exchange cache instead of loading all orders
       // Cache already includes newly created orders from the loop above
-      const activeOrdersForExchange = Array.from(exchangeCache.values());
+      // Note: Re-fetch from cache after filled orders were removed
+      const remainingActiveOrders = Array.from(exchangeCache.values());
       
-      for (const existingOrder of activeOrdersForExchange) {
+      for (const existingOrder of remainingActiveOrders) {
         // Check if this order still exists in the current whale orders from exchange
         const stillExists = whaleOrders.some(whaleOrder => {
           const type = whaleOrder.type === 'bid' ? 'long' : 'short';
