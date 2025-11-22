@@ -6,7 +6,6 @@ import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
-import { FilledOrderFlow } from "@/components/filled-order-flow";
 import { LongEntryPoints, ShortEntryPoints } from "@/components/long-short-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
@@ -169,12 +168,6 @@ export default function Dashboard() {
             <ShortEntryPoints exchange={exchange} />
           </div>
 
-          {/* Filled Order Flow - Predicts price direction based on whale execution patterns (Last 30 Minutes) */}
-          <FilledOrderFlow
-            minSize={minSize}
-            exchange={exchange}
-          />
-
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
             orders={allActiveOrders}
@@ -188,22 +181,12 @@ export default function Dashboard() {
             title="Order Book Depth - Active Whale Orders"
           />
 
-          {/* Two-column layout: Active vs Filled Orders */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {/* Active Orders Column */}
-            <OrderFeed 
-              orders={filteredOrders.filter(o => o.status === 'active')} 
-              isLoading={isLoading}
-              title="Active Orders (Waiting)"
-            />
-
-            {/* Filled Orders Column */}
-            <OrderFeed 
-              orders={filteredOrders.filter(o => o.status === 'filled')} 
-              isLoading={isLoading}
-              title="Filled Orders (Executed)"
-            />
-          </div>
+          {/* Active Orders Feed */}
+          <OrderFeed 
+            orders={filteredOrders.filter(o => o.status === 'active')} 
+            isLoading={isLoading}
+            title="Active Orders"
+          />
         </div>
       </main>
     </div>

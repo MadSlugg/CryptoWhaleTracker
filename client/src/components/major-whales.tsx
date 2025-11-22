@@ -1,10 +1,10 @@
+import { useState } from "react";
 import type { BitcoinOrder } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
 
 interface MajorWhalesProps {
   orders: BitcoinOrder[];
@@ -20,25 +20,15 @@ interface GroupedWhale {
 }
 
 export function MajorWhales({ orders }: MajorWhalesProps) {
-  const [isFilledOpen, setIsFilledOpen] = useState(false);
-  
-  // Filter for major whale orders (1000+ BTC)
-  const majorWhales = orders.filter(order => order.size >= 1000);
-  
-  // Split into active and filled
-  const activeWhales = majorWhales.filter(order => order.status === 'active');
-  const filledWhales = majorWhales.filter(order => order.status === 'filled');
+  // Filter for major whale orders (1000+ BTC) - active only
+  const majorWhales = orders.filter(order => order.size >= 1000 && order.status === 'active');
 
   // Group active whales by price (sorted by total BTC size)
-  const activeGroups = groupOrdersByPrice(activeWhales).slice(0, 10);
-  
-  // Group filled whales by price (sorted by most recent filled time)
-  const filledGroups = groupOrdersByPriceByFilledTime(filledWhales).slice(0, 10);
+  const activeGroups = groupOrdersByPrice(majorWhales).slice(0, 10);
 
   const totalActive = activeGroups.reduce((sum, g) => sum + g.orders.length, 0);
-  const totalFilled = filledGroups.reduce((sum, g) => sum + g.orders.length, 0);
 
-  if (activeGroups.length === 0 && filledGroups.length === 0) {
+  if (activeGroups.length === 0) {
     return (
       <Card className="border-2">
         <CardHeader>
@@ -70,7 +60,7 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
                 Major Whales (1000+ BTC)
               </div>
               <Badge variant="secondary" data-testid="badge-major-whale-count">
-                {totalActive} active {totalActive === 1 ? 'order' : 'orders'}
+                {totalActive} {totalActive === 1 ? 'order' : 'orders'}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -81,43 +71,6 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
               ))}
             </div>
           </CardContent>
-        </Card>
-      )}
-
-      {/* Filled Major Whales - Collapsible */}
-      {filledGroups.length > 0 && (
-        <Card className="border-2 border-muted">
-          <Collapsible open={isFilledOpen} onOpenChange={setIsFilledOpen}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="pb-3 cursor-pointer hover-elevate" data-testid="button-filled-whales-toggle">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-muted-foreground" />
-                    Filled Major Whales (1000+ BTC)
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" data-testid="badge-filled-whale-count">
-                      {totalFilled} filled {totalFilled === 1 ? 'order' : 'orders'}
-                    </Badge>
-                    {isFilledOpen ? (
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </div>
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  {filledGroups.map((group) => (
-                    <WhaleGroup key={group.price} group={group} />
-                  ))}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
         </Card>
       )}
     </div>
@@ -140,39 +93,6 @@ function groupOrdersByPrice(orders: BitcoinOrder[]): GroupedWhale[] {
       shortCount: orders.filter(o => o.type === 'short').length,
     }))
     .sort((a, b) => b.totalSize - a.totalSize);
-}
-
-function groupOrdersByPriceByFilledTime(orders: BitcoinOrder[]): GroupedWhale[] {
-  const priceGroups = new Map<number, BitcoinOrder[]>();
-  orders.forEach(order => {
-    const existing = priceGroups.get(order.price) || [];
-    priceGroups.set(order.price, [...existing, order]);
-  });
-
-  return Array.from(priceGroups.entries())
-    .map(([price, orders]) => {
-      // Find most recent filled time in this group
-      const mostRecentFilledAt = orders.reduce((latest, order) => {
-        if (!order.filledAt) return latest;
-        const orderTime = new Date(order.filledAt).getTime();
-        return orderTime > latest ? orderTime : latest;
-      }, 0);
-
-      return {
-        price,
-        totalSize: orders.reduce((sum, o) => sum + o.size, 0),
-        orders: orders.sort((a, b) => {
-          // Sort orders within group by filled time (most recent first)
-          const aTime = a.filledAt ? new Date(a.filledAt).getTime() : 0;
-          const bTime = b.filledAt ? new Date(b.filledAt).getTime() : 0;
-          return bTime - aTime;
-        }),
-        longCount: orders.filter(o => o.type === 'long').length,
-        shortCount: orders.filter(o => o.type === 'short').length,
-        mostRecentFilledAt,
-      };
-    })
-    .sort((a, b) => b.mostRecentFilledAt - a.mostRecentFilledAt);
 }
 
 function WhaleGroup({ group }: { group: GroupedWhale }) {
@@ -329,18 +249,9 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                     </div>
                   </div>
                   
-                  {/* Timestamps for ALL orders */}
-                  <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>Placed: {format(new Date(order.timestamp), 'MMM d, yyyy')}</span>
-                    </div>
-                    {order.status === 'filled' && order.filledAt && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>Filled: {format(new Date(order.filledAt), 'MMM d, yyyy')}</span>
-                      </div>
-                    )}
+                  {/* Timestamp */}
+                  <div className="text-xs text-muted-foreground px-2">
+                    Placed: {format(new Date(order.timestamp), 'MMM d, yyyy')}
                   </div>
                 </div>
               ))}
@@ -366,18 +277,9 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
               </Badge>
             </div>
             
-            {/* Timestamps for single order */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, yyyy')}</span>
-              </div>
-              {group.orders[0].status === 'filled' && group.orders[0].filledAt && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>Filled: {format(new Date(group.orders[0].filledAt), 'MMM d, yyyy')}</span>
-                </div>
-              )}
+            {/* Timestamp */}
+            <div className="text-xs text-muted-foreground text-right">
+              Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, yyyy')}
             </div>
           </div>
         )}

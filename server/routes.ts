@@ -203,109 +203,8 @@ class OrderGenerator {
   }
 
   private async checkFilledOrders() {
-    try {
-      const startTime = Date.now();
-      console.log(`[CheckFilled] Starting check for ${this.activeOrderIds.size} active orders at price $${this.currentBtcPrice.toFixed(2)}`);
-      
-      // OPTIMIZATION: Fetch all active orders in ONE query instead of 3000+ individual queries
-      const allActiveOrders = await storage.getFilteredOrders({
-        minSize: 0,
-        orderType: 'all',
-        exchange: 'all',
-        timeRange: '7d',
-        status: 'active'
-      });
-      
-      // Build map of ID -> order for easy lookup and verify our cache
-      const orderMap = new Map<string, BitcoinOrder>();
-      for (const order of allActiveOrders) {
-        if (this.activeOrderIds.has(order.id)) {
-          orderMap.set(order.id, order);
-        }
-      }
-      
-      // Clean up activeOrderIds cache for orders that are no longer active
-      for (const id of Array.from(this.activeOrderIds)) {
-        if (!orderMap.has(id)) {
-          this.activeOrderIds.delete(id);
-        }
-      }
-
-      // Check each active order for fill conditions
-      // CRITICAL FIX: Orders are ONLY marked filled when BOTH conditions are met:
-      // 1. Price has crossed the order level (matching market condition)
-      // 2. Order confirmed missing from exchange order book for 2+ consecutive polls
-      //    (prevents false positives from temporary API hiccups)
-      let filledCount = 0;
-      let longCount = 0;
-      let shortCount = 0;
-      let priceCrossCount = 0;
-      let confirmedMissingCount = 0;
-      
-      for (const [orderId, order] of Array.from(orderMap.entries())) {
-        if (order.type === 'long') longCount++;
-        else if (order.type === 'short') shortCount++;
-        
-        // Check condition 1: Price has crossed the order level
-        let priceCrossed = false;
-        if (order.type === 'long' && this.currentBtcPrice <= order.price) {
-          priceCrossed = true;
-          priceCrossCount++;
-        } else if (order.type === 'short' && this.currentBtcPrice >= order.price) {
-          priceCrossed = true;
-          priceCrossCount++;
-        }
-
-        // Check condition 2: Order confirmed missing from book for 2+ consecutive polls
-        const missingPollCount = this.ordersMissingCount.get(order.id) || 0;
-        const isConfirmedMissing = missingPollCount >= this.MISSING_CONFIRMATION_POLLS;
-        
-        if (isConfirmedMissing) {
-          confirmedMissingCount++;
-        }
-
-        // FILL ONLY if BOTH conditions are true: price crossed AND order confirmed missing
-        if (priceCrossed && isConfirmedMissing) {
-          
-          // Mark order as filled - use the returned updated order
-          const updatedOrder = await storage.updateOrderStatus(order.id, 'filled', this.currentBtcPrice);
-
-          // Remove from active orders cache
-          this.activeOrderIds.delete(order.id);
-          this.ordersMissingCount.delete(order.id);
-          filledCount++;
-          
-          // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
-          this.orderLastSeen.delete(order.id);
-          
-          // MEMORY LEAK FIX: Remove from per-exchange cache
-          const exchangeCache = this.activeOrdersByExchange.get(order.exchange);
-          if (exchangeCache) {
-            exchangeCache.delete(order.id);
-          }
-
-          // Broadcast the updated order (with fillPrice and filledAt) to WebSocket clients
-          // Also trigger cache invalidation
-          if (this.wss && updatedOrder) {
-            const message = JSON.stringify({
-              type: 'order_filled',
-              order: updatedOrder,
-            });
-
-            this.wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-              }
-            });
-          }
-        }
-      }
-      
-      const elapsed = Date.now() - startTime;
-      console.log(`[CheckFilled] Processed ${orderMap.size} orders (${longCount} longs, ${shortCount} shorts) in ${elapsed}ms - Price crosses: ${priceCrossCount}, Confirmed missing (2+ polls): ${confirmedMissingCount}, Filled: ${filledCount}`);
-    } catch (error) {
-      console.error('Failed to check filled orders:', error);
-    }
+    // FILL DETECTION DISABLED - Show only open orders
+    // No longer tracking filled orders to avoid false positives
   }
 
   stop() {
@@ -482,11 +381,11 @@ class OrderGenerator {
             this.orderLastSeen.set(existingOrder.id, now);
             this.ordersMissingCount.set(existingOrder.id, 1); // First poll where it's missing
           } else if (now - lastSeen > GRACE_PERIOD_MS) {
-            // Missing for more than grace period - mark as deleted (unless already filled)
+            // Missing for more than grace period - DELETE from database (not just mark as deleted)
             const order = await storage.getOrder(existingOrder.id);
             if (order && order.status === 'active') {
-              // Only mark as deleted if still active (checkFilledOrders might have filled it)
-              await storage.updateOrderStatus(existingOrder.id, 'deleted');
+              // Delete the order completely from database
+              await storage.deleteOrder(existingOrder.id);
               this.activeOrderIds.delete(existingOrder.id);
               this.orderLastSeen.delete(existingOrder.id);
               this.ordersMissingCount.delete(existingOrder.id);
@@ -494,7 +393,7 @@ class OrderGenerator {
               // MEMORY LEAK FIX: Remove from per-exchange cache
               exchangeCache.delete(existingOrder.id);
               
-              console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
+              console.log(`[OrderRemoved] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
             }
           } else {
             // Still within grace period - increment missing counter for this poll
