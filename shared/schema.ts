@@ -160,8 +160,24 @@ export const whaleCorrelations = pgTable("whale_correlations", {
   confidence: varchar("confidence", { length: 10 }).notNull(),
 });
 
+export const openInterest = pgTable("open_interest", {
+  id: varchar("id").primaryKey(),
+  exchange: varchar("exchange", { length: 20 }).notNull(),
+  symbol: varchar("symbol", { length: 20 }).notNull(),
+  price: doublePrecision("price").notNull(),
+  longOpenInterest: doublePrecision("long_open_interest").notNull(),
+  shortOpenInterest: doublePrecision("short_open_interest").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+}, (table) => {
+  return {
+    timestampIdx: index("open_interest_timestamp_idx").on(table.timestamp.desc()),
+    priceExchangeIdx: index("open_interest_price_exchange_idx").on(table.price, table.exchange),
+  };
+});
+
 // Drizzle insert schemas
 export const insertBitcoinOrderSchemaDB = createInsertSchema(bitcoinOrders).omit({ id: true });
 export const insertWhaleMovementSchemaDB = createInsertSchema(whaleMovements).omit({ id: true });
 export const insertLongShortRatioSchemaDB = createInsertSchema(longShortRatios).omit({ id: true });
 export const insertWhaleCorrelationSchemaDB = createInsertSchema(whaleCorrelations).omit({ id: true });
+export const insertOpenInterestSchemaDB = createInsertSchema(openInterest).omit({ id: true });
