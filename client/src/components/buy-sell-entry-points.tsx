@@ -56,7 +56,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
                 <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 Buy Entry Points
               </CardTitle>
-              <CardDescription>Buy signals from 100+ BTC whale orders</CardDescription>
+              <CardDescription>Buy signals from whale liquidity</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -82,7 +82,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
                 Buy Entry Points
               </CardTitle>
               <CardDescription>
-                Buy signals from 100+ BTC whale orders
+                Buy signals from whale liquidity
               </CardDescription>
             </div>
             <Badge 
@@ -126,7 +126,7 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
               Buy Entry Points
             </CardTitle>
             <CardDescription>
-              Buy signals from 100+ BTC whale orders
+              Buy signals from whale liquidity
             </CardDescription>
           </div>
           <Badge 
@@ -243,7 +243,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                 <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
                 Sell Entry Points
               </CardTitle>
-              <CardDescription>Sell signals from 100+ BTC whale orders</CardDescription>
+              <CardDescription>Sell signals from whale liquidity</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -269,7 +269,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                 Sell Entry Points
               </CardTitle>
               <CardDescription>
-                Sell signals from 100+ BTC whale orders
+                Sell signals from whale liquidity
               </CardDescription>
             </div>
             <Badge 
@@ -313,7 +313,7 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
               Sell Entry Points
             </CardTitle>
             <CardDescription>
-              Sell signals from 100+ BTC whale orders
+              Sell signals from whale liquidity
             </CardDescription>
           </div>
           <Badge 

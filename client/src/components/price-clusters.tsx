@@ -1,7 +1,7 @@
 import type { BitcoinOrder } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Target } from "lucide-react";
+import { Target, TrendingUp, TrendingDown } from "lucide-react";
 
 interface PriceClustersProps {
   orders: BitcoinOrder[];
@@ -12,66 +12,61 @@ interface PriceCluster {
   price: number;
   count: number;
   totalSize: number;
-  type: 'long' | 'short' | 'mixed';
-  longCount: number;
-  shortCount: number;
-  longSize: number;
-  shortSize: number;
+  type: 'support' | 'resistance';
+  buyCount: number;
+  sellCount: number;
+  buySize: number;
+  sellSize: number;
 }
 
 export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   const detectPatterns = (): PriceCluster[] => {
-    // Filter to active orders 100+ BTC (whale orders only)
+    // Filter to active whale positions
     const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
     
-    // Use $100 clusters for precise price zones (tighter grouping than $500)
+    // Use $100 clusters for precise price zones
     const priceRange = 100;
-    const clusters = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
+    const clusters = new Map<number, { buys: BitcoinOrder[], sells: BitcoinOrder[] }>();
     
     whaleOrders.forEach(order => {
       const clusterPrice = Math.round(order.price / priceRange) * priceRange;
       
       if (!clusters.has(clusterPrice)) {
-        clusters.set(clusterPrice, { longs: [], shorts: [] });
+        clusters.set(clusterPrice, { buys: [], sells: [] });
       }
       
       const cluster = clusters.get(clusterPrice)!;
       if (order.type === 'long') {
-        cluster.longs.push(order);
+        cluster.buys.push(order);
       } else {
-        cluster.shorts.push(order);
+        cluster.sells.push(order);
       }
     });
     
     const significantClusters: PriceCluster[] = [];
     
     clusters.forEach((cluster, price) => {
-      const allOrders = [...cluster.longs, ...cluster.shorts];
+      const allOrders = [...cluster.buys, ...cluster.sells];
       const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
       const count = allOrders.length;
       
-      // Only show important clusters: 3+ orders AND 300+ BTC (prevents excessive noise from tiny clusters)
-      if (count >= 3 && totalSize >= 300) {
-        const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
-        const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
+      // Only show important clusters: 2+ whales OR 50+ BTC total
+      if (count >= 2 || totalSize >= 50) {
+        const buySize = cluster.buys.reduce((sum, o) => sum + o.size, 0);
+        const sellSize = cluster.sells.reduce((sum, o) => sum + o.size, 0);
         
-        let type: 'long' | 'short' | 'mixed' = 'mixed';
-        const volumeDifference = Math.abs(longSize - shortSize);
-        const averageVolume = (longSize + shortSize) / 2;
-        
-        if (volumeDifference > averageVolume * 0.2) {
-          type = longSize > shortSize ? 'long' : 'short';
-        }
+        // Determine if support (below price) or resistance (above price)
+        const type: 'support' | 'resistance' = price < currentPrice ? 'support' : 'resistance';
         
         significantClusters.push({
           price,
           count,
           totalSize,
           type,
-          longCount: cluster.longs.length,
-          shortCount: cluster.shorts.length,
-          longSize,
-          shortSize,
+          buyCount: cluster.buys.length,
+          sellCount: cluster.sells.length,
+          buySize,
+          sellSize,
         });
       }
     });
@@ -87,15 +82,15 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-4 w-4 text-primary" data-testid="icon-patterns" />
-            Price Clusters
+            Support & Resistance Levels
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-2">
-            Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones.
+            Key price zones where whales are positioned. Green = support below price, Red = resistance above price.
           </p>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground text-center py-4">
-            No significant clusters detected
+            No significant levels detected
           </p>
         </CardContent>
       </Card>
@@ -103,124 +98,76 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   }
 
   const maxVolume = Math.max(...patterns.map(p => p.totalSize));
-  
-  const getHeatColor = (volume: number, type: 'long' | 'short' | 'mixed') => {
-    const intensity = volume / maxVolume;
-    
-    if (type === 'long') {
-      if (intensity < 0.2) return 'rgba(34, 197, 94, 0.1)';
-      if (intensity < 0.4) return 'rgba(34, 197, 94, 0.25)';
-      if (intensity < 0.6) return 'rgba(34, 197, 94, 0.5)';
-      if (intensity < 0.8) return 'rgba(74, 222, 128, 0.75)';
-      return 'rgba(134, 239, 172, 0.95)';
-    } else if (type === 'short') {
-      if (intensity < 0.2) return 'rgba(239, 68, 68, 0.1)';
-      if (intensity < 0.4) return 'rgba(239, 68, 68, 0.25)';
-      if (intensity < 0.6) return 'rgba(239, 68, 68, 0.5)';
-      if (intensity < 0.8) return 'rgba(248, 113, 113, 0.75)';
-      return 'rgba(252, 165, 165, 0.95)';
-    } else {
-      if (intensity < 0.2) return 'rgba(59, 130, 246, 0.1)';
-      if (intensity < 0.4) return 'rgba(59, 130, 246, 0.25)';
-      if (intensity < 0.6) return 'rgba(59, 130, 246, 0.5)';
-      if (intensity < 0.8) return 'rgba(96, 165, 250, 0.75)';
-      return 'rgba(147, 197, 253, 0.95)';
-    }
-  };
-
-  const getBarWidth = (volume: number) => {
-    const minWidth = 30;
-    const maxWidth = 100;
-    const intensity = volume / maxVolume;
-    return minWidth + (intensity * (maxWidth - minWidth));
-  };
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Target className="h-4 w-4 text-primary" data-testid="icon-patterns" />
-          Price Clusters
+          Support & Resistance Levels
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
-          Whale orders (100+ BTC) concentrated at price levels. Shows support/resistance zones from active market makers.
+          Key price zones where whales are positioned. Green = support below price, Red = resistance above price.
         </p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1" data-testid="heatmap-container">
+        <div className="space-y-2" data-testid="heatmap-container">
           {patterns.map((pattern, idx) => {
-            const priceRange = 500;
-            const minPrice = pattern.price - priceRange / 2;
-            const maxPrice = pattern.price + priceRange / 2;
-            const isNearCurrent = Math.abs(pattern.price - currentPrice) < priceRange * 2;
-            const barWidth = getBarWidth(pattern.totalSize);
-            const heatColor = getHeatColor(pattern.totalSize, pattern.type);
+            const isSupport = pattern.type === 'support';
+            const percentFromPrice = ((pattern.price - currentPrice) / currentPrice * 100).toFixed(1);
+            const strength = ((pattern.totalSize / maxVolume) * 100).toFixed(0);
             
             return (
               <div 
                 key={idx} 
-                className="relative group"
+                className={`p-3 rounded-lg border-2 ${
+                  isSupport 
+                    ? 'bg-emerald-500/10 border-emerald-500/30' 
+                    : 'bg-red-500/10 border-red-500/30'
+                }`}
                 data-testid={`cluster-${idx}`}
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-28 flex-shrink-0">
-                    <div className="font-mono text-xs font-semibold">
-                      ${Math.round(pattern.price).toLocaleString()}
-                    </div>
-                    {isNearCurrent && (
-                      <div className="text-[10px] text-muted-foreground">
-                        {((pattern.price - currentPrice) / currentPrice * 100).toFixed(1)}%
+                <div className="flex items-center justify-between gap-3">
+                  {/* Price and Label */}
+                  <div className="flex items-center gap-3">
+                    <Badge 
+                      className={`${
+                        isSupport 
+                          ? 'bg-emerald-600 text-white dark:bg-emerald-500' 
+                          : 'bg-red-600 text-white dark:bg-red-500'
+                      } text-xs font-bold px-3`}
+                    >
+                      {isSupport ? (
+                        <><TrendingUp className="w-3 h-3 mr-1" /> SUPPORT</>
+                      ) : (
+                        <><TrendingDown className="w-3 h-3 mr-1" /> RESISTANCE</>
+                      )}
+                    </Badge>
+                    
+                    <div>
+                      <div className="font-mono font-bold text-base">
+                        ${Math.round(pattern.price).toLocaleString()}
                       </div>
-                    )}
+                      <div className="text-xs text-muted-foreground">
+                        {isSupport ? '↓' : '↑'} {Math.abs(parseFloat(percentFromPrice))}% from current
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="flex-1 relative h-7 flex items-center">
-                    <div
-                      className="absolute left-0 h-full rounded-sm transition-all duration-300"
-                      style={{
-                        width: `${barWidth}%`,
-                        backgroundColor: heatColor,
-                        boxShadow: `0 0 8px ${heatColor}`,
-                      }}
-                      data-testid={`heatbar-${idx}`}
-                    />
+                  {/* Strength Metrics */}
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Strength</div>
+                      <div className="font-mono font-bold text-lg">
+                        {pattern.totalSize.toFixed(0)} BTC
+                      </div>
+                    </div>
                     
-                    <div className="relative z-10 flex items-center gap-2 px-2 w-full pointer-events-none">
-                      <Badge 
-                        variant={pattern.type === 'long' ? 'default' : pattern.type === 'short' ? 'destructive' : 'secondary'}
-                        className="text-[10px] h-4 px-1.5"
-                      >
-                        {pattern.type === 'mixed' ? 'MIX' : pattern.type.toUpperCase()}
-                      </Badge>
-                      <span className="font-mono text-xs font-bold text-foreground">
-                        {pattern.totalSize.toFixed(1)} BTC
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        (L:{pattern.longCount} S:{pattern.shortCount})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div 
-                  className="absolute left-0 right-0 top-full mt-1 p-2 rounded-md border bg-card shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none"
-                  style={{ minWidth: '300px' }}
-                >
-                  <div className="text-xs space-y-1">
-                    <div className="font-semibold">
-                      Price Range: ${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}
-                    </div>
-                    <div className="flex items-center gap-3 text-[11px]">
-                      <span className="text-green-600 dark:text-green-400">
-                        ↑ {pattern.longCount} longs ({pattern.longSize.toFixed(1)} BTC)
-                      </span>
-                      <span className="text-muted-foreground">•</span>
-                      <span className="text-red-600 dark:text-red-400">
-                        ↓ {pattern.shortCount} shorts ({pattern.shortSize.toFixed(1)} BTC)
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      Intensity: {((pattern.totalSize / maxVolume) * 100).toFixed(0)}% of max volume
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Whales</div>
+                      <div className="font-mono font-bold text-lg">
+                        {pattern.count}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -229,14 +176,9 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
           })}
         </div>
         
-        <div className="mt-3 pt-3 border-t flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Showing {patterns.length} clusters</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Max volume:</span>
-            <span className="font-mono font-semibold">{maxVolume.toFixed(1)} BTC</span>
-          </div>
+        <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
+          <span>{patterns.length} key levels detected</span>
+          <span>Current Price: ${Math.round(currentPrice).toLocaleString()}</span>
         </div>
       </CardContent>
     </Card>
