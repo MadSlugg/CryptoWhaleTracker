@@ -123,7 +123,7 @@
 
                            async updateOrderStatus(
                              id: string,
-                             status: 'active' | 'filled',
+                             status: 'active' | 'filled' | 'deleted',
                              fillPrice?: number
                            ): Promise<BitcoinOrder | undefined> {
                              const updateData: any = {

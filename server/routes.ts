@@ -269,6 +269,10 @@ class OrderGenerator {
       // Record success
       this.recordSuccess(exchangeId);
       
+      // Get existing orders from database (will be used for both duplicate check and verification)
+      const existingOrders = await storage.getOrders();
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      
       for (const whaleOrder of whaleOrders) {
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
         const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
@@ -276,8 +280,6 @@ class OrderGenerator {
         const market = whaleOrder.market || 'spot'; // Normalize market value (default to spot)
         
         // Check for duplicates (active or recently filled in last 5 minutes)
-        const existingOrders = await storage.getOrders();
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
         const isDuplicate = existingOrders.some(existing => {
           const isRecentlyFilled = existing.status === 'filled' && 
                                    existing.filledAt && 
@@ -326,6 +328,35 @@ class OrderGenerator {
               client.send(message);
             }
           });
+        }
+      }
+      
+      // VERIFY EXISTING ORDERS: Mark orders as "deleted" if they're no longer on the exchange books
+      // CRITICAL: Refetch active orders AFTER creating new ones to include newly created orders
+      const freshActiveOrders = await storage.getOrders();
+      const activeOrdersForExchange = freshActiveOrders.filter(
+        order => order.exchange === exchangeId && order.status === 'active'
+      );
+      
+      for (const existingOrder of activeOrdersForExchange) {
+        // Check if this order still exists in the current whale orders from exchange
+        const stillExists = whaleOrders.some(whaleOrder => {
+          const type = whaleOrder.type === 'bid' ? 'long' : 'short';
+          const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
+          const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
+          const market = whaleOrder.market || 'spot';
+          
+          return existingOrder.type === type &&
+                 existingOrder.market === market &&
+                 Math.abs(existingOrder.price - roundedPrice) < 0.01 &&
+                 Math.abs(existingOrder.size - roundedSize) < 0.01;
+        });
+        
+        // If order doesn't exist in current order book, mark it as deleted
+        if (!stillExists) {
+          await storage.updateOrderStatus(existingOrder.id, 'deleted');
+          this.activeOrderIds.delete(existingOrder.id);
+          console.log(`[OrderDeleted] ${exchangeId} ${existingOrder.type} ${existingOrder.market} ${existingOrder.size} BTC @ $${existingOrder.price}`);
         }
       }
     } catch (error) {
