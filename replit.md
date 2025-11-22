@@ -23,11 +23,12 @@ Preferred communication style: Simple, everyday language.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total).
         - **Order Book Imbalance**: Real-time indicator of supply/demand pressure from active whale orders.
         - **Large Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders, grouped in $2k buckets, color-coded by volume intensity).
+        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance, and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Shows entry price and key price levels only (no stop loss or take profit).
 - **Routing**: Wouter for client-side routing.
 
 ### Backend
 - **Runtime**: Node.js with Express.js.
-- **Data Storage**: PostgreSQL with Drizzle ORM. Uses Neon serverless PostgreSQL with WebSocket connection pooling. Orders older than 7 days are automatically cleaned.
+- **Data Storage**: PostgreSQL with Drizzle ORM. Uses Render PostgreSQL with SSL/TLS connection (oregon-postgres.render.com). Orders older than 7 days are automatically cleaned.
 - **Real-time Communication**: WebSocket server (ws library) for broadcasting order updates.
 - **Multi-Exchange Integration**: Polls Binance, Kraken, Coinbase, and OKX for order book data at staggered intervals (10-16 seconds) using public APIs.
 - **Order Tracking**:
@@ -36,13 +37,14 @@ Preferred communication style: Simple, everyday language.
     - Verification of existing orders uses full order book data to prevent false deletions.
 - **API Endpoints**:
     - `GET /api/dashboard`: Consolidated primary endpoint for dashboard data (filtered orders, price, major whales) with in-memory caching.
+    - `GET /api/entry-points`: Smart entry recommendations based on 50+ BTC whale orders only. Returns recommendation (strong_buy/buy/neutral/sell/strong_sell), confidence, entry price, support/resistance levels, and whale analysis.
     - Other endpoints for specific data like `/api/orders`, `/api/filled-order-analysis`, etc.
 - **Performance Optimization**: Frontend uses a single dashboard endpoint, increased refetch intervals with exponential backoff. Backend utilizes in-memory caching and database composite indexes for improved response times.
 
 ## External Dependencies
 
 - **UI Component Libraries**: Radix UI, Tailwind CSS, Lucide React, date-fns.
-- **Database**: Drizzle ORM, Neon Database serverless driver.
+- **Database**: Drizzle ORM, postgres.js (Render PostgreSQL with SSL).
 - **Development Tools**: Vite, TypeScript.
 - **Form & Validation**: React Hook Form, Zod.
 - **WebSocket**: Native WebSocket API (client), ws library (server).
