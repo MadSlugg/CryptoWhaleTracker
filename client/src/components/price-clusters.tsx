@@ -21,8 +21,8 @@ interface PriceCluster {
 
 export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   const detectPatterns = (): PriceCluster[] => {
-    // Filter to active orders 5+ BTC (excludes filled orders automatically)
-    const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 5);
+    // Filter to active orders 100+ BTC (whale orders only)
+    const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
     
     // Use $500 clusters for more accurate price zones (was $1000)
     const priceRange = 500;
@@ -50,8 +50,8 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
       const count = allOrders.length;
       
-      // Only show important clusters: 2+ orders OR 50+ BTC
-      if (count >= 2 || totalSize >= 50) {
+      // Only show important clusters: 2+ orders OR 100+ BTC
+      if (count >= 2 || totalSize >= 100) {
         const longSize = cluster.longs.reduce((sum, o) => sum + o.size, 0);
         const shortSize = cluster.shorts.reduce((sum, o) => sum + o.size, 0);
         
