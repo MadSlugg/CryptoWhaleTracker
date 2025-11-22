@@ -936,7 +936,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (compositeScore >= 30) {
         // LONG SIGNAL (BUY)
-        recommendation = compositeScore >= 50 ? 'strong_buy' : 'buy';
+        recommendation = compositeScore >= 70 ? 'strong_buy' : 'buy';
         
         // Reduce confidence if insufficient data
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
@@ -958,7 +958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
       } else if (compositeScore <= -30) {
         // SHORT SIGNAL (SELL)
-        recommendation = compositeScore <= -50 ? 'strong_sell' : 'sell';
+        recommendation = compositeScore <= -70 ? 'strong_sell' : 'sell';
         
         // Reduce confidence if insufficient data
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
