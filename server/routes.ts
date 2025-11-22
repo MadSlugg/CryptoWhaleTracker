@@ -22,6 +22,7 @@ import {
 import { futuresMarketService } from "./futures-market";
 import { confidenceEngine } from "./confidence-engine";
 import { handleEntryPoints } from "./entry-points-new";
+import { liquiditySnapshotService } from "./liquidity-snapshot";
 
 // Circuit breaker for handling exchange failures
 interface CircuitBreakerState {
@@ -862,6 +863,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW: Liquidity snapshot endpoint - aggregated order book data by price levels
+  app.get("/api/liquidity-levels", async (req, res) => {
+    try {
+      const snapshot = liquiditySnapshotService.getLatestSnapshot();
+      if (!snapshot) {
+        return res.status(503).json({ error: 'Liquidity data not yet available' });
+      }
+      res.json(snapshot);
+    } catch (error) {
+      console.error('Error fetching liquidity levels:', error);
+      res.status(500).json({ error: 'Failed to fetch liquidity levels' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time updates
@@ -891,8 +906,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Start order generator
-  orderGenerator.start(wss);
+  // Start NEW liquidity snapshot service (replaces order tracking)
+  liquiditySnapshotService.start(wss);
+  
+  // Keep legacy order generator for now (can remove later)
+  // orderGenerator.start(wss);
   
   // Start whale correlation tracking service
   // whaleCorrelationService.start();

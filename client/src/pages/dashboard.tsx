@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Exchange } from "@shared/schema";
+import type { Exchange, LiquiditySnapshot } from "@shared/schema";
 import { PriceClusters } from "@/components/price-clusters";
 import { BuyEntryPoints, SellEntryPoints } from "@/components/buy-sell-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -21,17 +21,14 @@ export default function Dashboard() {
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
-  // Fetch consolidated dashboard data (simplified - no filters needed, exchange handled by entry points)
-  const { data: dashboardData, isLoading, refetch, error} = useQuery<{
-    priceSnapshot: number;
-    allActiveOrders: any[];
-  }>({
-    queryKey: ['/api/dashboard'],
+  // Fetch liquidity snapshot data (raw order book aggregated by price levels)
+  const { data: liquiditySnapshot, isLoading, refetch, error} = useQuery<LiquiditySnapshot>({
+    queryKey: ['/api/liquidity-levels'],
     queryFn: async () => {
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/liquidity-levels');
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch dashboard data' }));
-        throw new Error(errorData.error || 'Failed to fetch dashboard data');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to fetch liquidity data' }));
+        throw new Error(errorData.error || 'Failed to fetch liquidity data');
       }
       return response.json();
     },
@@ -52,9 +49,9 @@ export default function Dashboard() {
     }
   }, [error?.message, toast]);
 
-  // Extract data from consolidated response (with defaults)
-  const currentBtcPrice = dashboardData?.priceSnapshot || 93000;
-  const allActiveOrders = dashboardData?.allActiveOrders || [];
+  // Extract data from liquidity snapshot (with defaults)
+  const currentBtcPrice = liquiditySnapshot?.currentPrice || 93000;
+  const priceLevels = liquiditySnapshot?.levels || [];
 
   const handleRefresh = async () => {
     await refetch();
@@ -164,7 +161,7 @@ export default function Dashboard() {
 
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
-            orders={allActiveOrders}
+            levels={priceLevels}
             currentPrice={currentBtcPrice}
           />
         </div>

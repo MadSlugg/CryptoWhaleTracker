@@ -83,6 +83,26 @@ export const whaleCorrelationSchema = z.object({
 
 export type WhaleCorrelation = z.infer<typeof whaleCorrelationSchema>;
 
+// Liquidity Snapshot - aggregated order book data by price levels
+export const priceLevelSchema = z.object({
+  price: z.number().positive(),
+  buyLiquidity: z.number().nonnegative(), // Total BTC buy liquidity at this price
+  sellLiquidity: z.number().nonnegative(), // Total BTC sell liquidity at this price
+  exchanges: z.array(z.string()), // Which exchanges have liquidity here
+  type: z.enum(['support', 'resistance']), // Based on position relative to current price
+});
+
+export const liquiditySnapshotSchema = z.object({
+  timestamp: z.string(),
+  currentPrice: z.number().positive(),
+  levels: z.array(priceLevelSchema),
+  totalBuyLiquidity: z.number().nonnegative(),
+  totalSellLiquidity: z.number().nonnegative(),
+});
+
+export type PriceLevel = z.infer<typeof priceLevelSchema>;
+export type LiquiditySnapshot = z.infer<typeof liquiditySnapshotSchema>;
+
 export function calculateProfitLoss(
   entryPrice: number,
   exitPrice: number,

@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
 import { storage } from "./storage";
-import type { Exchange } from "@shared/schema";
+import type { Exchange, PriceLevel } from "@shared/schema";
 import { futuresMarketService } from "./futures-market";
 import { confidenceEngine } from "./confidence-engine";
+import { liquiditySnapshotService } from "./liquidity-snapshot";
 
 export async function handleEntryPoints(req: Request, res: Response) {
   try {
@@ -29,26 +30,33 @@ export async function handleEntryPoints(req: Request, res: Response) {
       futuresData = { totalLongOI: 0, totalShortOI: 0, longPercentage: 50, shortPercentage: 50 };
     }
 
-    const activeOrders = await storage.getFilteredOrders({
-      minSize: 100,
-      orderType: 'all',
-      exchange,
-      timeRange: '24h',
-      status: 'active',
-    });
+    // Get liquidity snapshot instead of database orders
+    const snapshot = liquiditySnapshotService.getLatestSnapshot();
+    if (!snapshot) {
+      return res.status(503).json({ 
+        error: 'Liquidity data not yet available',
+        recommendation: 'neutral',
+        confidence: 50
+      });
+    }
 
-    const allOrders = await storage.getFilteredOrders({
-      minSize: 0,
-      orderType: 'all',
-      exchange,
-      timeRange: '24h',
-      status: 'all',
-    });
-    const currentPrice = allOrders.length > 0 
-      ? allOrders.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0].price
-      : 83000;
+    const currentPrice = snapshot.currentPrice;
+    
+    // Filter price levels by exchange if specified
+    let filteredLevels = snapshot.levels;
+    if (exchange !== 'all') {
+      filteredLevels = snapshot.levels.filter(level => 
+        level.exchanges.includes(exchange)
+      );
+    }
 
-    const levels = confidenceEngine.calculateSupportResistanceLevels(activeOrders, currentPrice, 5);
+    // Convert PriceLevel[] to SupportResistanceLevel[] format
+    const levels = filteredLevels.map(level => ({
+      price: level.price,
+      supportBTC: level.buyLiquidity,      // Buy orders provide support
+      resistanceBTC: level.sellLiquidity,  // Sell orders provide resistance
+      netLiquidity: level.buyLiquidity - level.sellLiquidity
+    }));
 
     const confidenceScores = confidenceEngine.calculateConfidenceScores(levels, futuresData, currentPrice);
 

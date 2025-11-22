@@ -1,80 +1,21 @@
-import type { BitcoinOrder } from "@shared/schema";
+import type { PriceLevel } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Target, TrendingUp, TrendingDown } from "lucide-react";
 
 interface PriceClustersProps {
-  orders: BitcoinOrder[];
+  levels: PriceLevel[];
   currentPrice: number;
 }
 
-interface PriceCluster {
-  price: number;
-  count: number;
-  totalSize: number;
-  type: 'support' | 'resistance';
-  buyCount: number;
-  sellCount: number;
-  buySize: number;
-  sellSize: number;
-}
-
-export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
-  const detectPatterns = (): PriceCluster[] => {
-    // Filter to active large positions
-    const largeOrders = orders.filter(o => o.status === 'active' && o.size >= 100);
-    
-    // Use $100 clusters for precise price zones
-    const priceRange = 100;
-    const clusters = new Map<number, { buys: BitcoinOrder[], sells: BitcoinOrder[] }>();
-    
-    largeOrders.forEach(order => {
-      const clusterPrice = Math.round(order.price / priceRange) * priceRange;
-      
-      if (!clusters.has(clusterPrice)) {
-        clusters.set(clusterPrice, { buys: [], sells: [] });
-      }
-      
-      const cluster = clusters.get(clusterPrice)!;
-      if (order.type === 'long') {
-        cluster.buys.push(order);
-      } else {
-        cluster.sells.push(order);
-      }
-    });
-    
-    const significantClusters: PriceCluster[] = [];
-    
-    clusters.forEach((cluster, price) => {
-      const allOrders = [...cluster.buys, ...cluster.sells];
-      const totalSize = allOrders.reduce((sum, o) => sum + o.size, 0);
-      const count = allOrders.length;
-      
-      // Only show important clusters: 2+ orders OR 50+ BTC total
-      if (count >= 2 || totalSize >= 50) {
-        const buySize = cluster.buys.reduce((sum, o) => sum + o.size, 0);
-        const sellSize = cluster.sells.reduce((sum, o) => sum + o.size, 0);
-        
-        // Determine if support (below price) or resistance (above price)
-        const type: 'support' | 'resistance' = price < currentPrice ? 'support' : 'resistance';
-        
-        significantClusters.push({
-          price,
-          count,
-          totalSize,
-          type,
-          buyCount: cluster.buys.length,
-          sellCount: cluster.sells.length,
-          buySize,
-          sellSize,
-        });
-      }
-    });
-    
-    return significantClusters.sort((a, b) => b.price - a.price);
-  };
+export function PriceClusters({ levels, currentPrice }: PriceClustersProps) {
+  // Filter to significant levels: 50+ BTC total liquidity
+  const significantLevels = levels.filter(level => {
+    const totalLiquidity = level.buyLiquidity + level.sellLiquidity;
+    return totalLiquidity >= 50;
+  });
   
-  const patterns = detectPatterns();
+  const patterns = significantLevels.sort((a, b) => b.price - a.price);
   
   if (patterns.length === 0) {
     return (
@@ -97,7 +38,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
     );
   }
 
-  const maxVolume = Math.max(...patterns.map(p => p.totalSize));
+  const maxVolume = Math.max(...patterns.map(p => p.buyLiquidity + p.sellLiquidity));
 
   return (
     <Card>
@@ -112,10 +53,10 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-2" data-testid="heatmap-container">
-          {patterns.map((pattern, idx) => {
-            const isSupport = pattern.type === 'support';
-            const percentFromPrice = ((pattern.price - currentPrice) / currentPrice * 100).toFixed(1);
-            const strength = ((pattern.totalSize / maxVolume) * 100).toFixed(0);
+          {patterns.map((level, idx) => {
+            const isSupport = level.type === 'support';
+            const percentFromPrice = ((level.price - currentPrice) / currentPrice * 100).toFixed(1);
+            const totalLiquidity = level.buyLiquidity + level.sellLiquidity;
             
             return (
               <div 
@@ -146,7 +87,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
                     
                     <div>
                       <div className="font-mono font-bold text-base">
-                        ${Math.round(pattern.price).toLocaleString()}
+                        ${Math.round(level.price).toLocaleString()}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {isSupport ? '↓' : '↑'} {Math.abs(parseFloat(percentFromPrice))}% from current
@@ -154,11 +95,11 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
                     </div>
                   </div>
                   
-                  {/* BTC Strength */}
+                  {/* BTC Liquidity */}
                   <div className="text-right">
                     <div className="text-sm text-muted-foreground">Liquidity</div>
                     <div className="font-mono font-bold text-lg">
-                      {pattern.totalSize.toFixed(0)} BTC
+                      {totalLiquidity.toFixed(0)} BTC
                     </div>
                   </div>
                 </div>
