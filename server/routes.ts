@@ -94,7 +94,24 @@ class OrderGenerator {
     // Clean old orders every hour and sync cache (keep for 7 days)
     setInterval(async () => {
       const deletedIds = await storage.clearOldOrders(168); // 7 days
-      deletedIds.forEach(id => this.activeOrderIds.delete(id));
+      deletedIds.forEach(id => {
+        this.activeOrderIds.delete(id);
+        // MEMORY LEAK FIX: Clear orderLastSeen entries for deleted orders
+        this.orderLastSeen.delete(id);
+      });
+      
+      // MEMORY LEAK FIX: Clean up stale orderLastSeen entries that don't correspond to active orders
+      const staleEntries: string[] = [];
+      for (const orderId of Array.from(this.orderLastSeen.keys())) {
+        if (!this.activeOrderIds.has(orderId)) {
+          staleEntries.push(orderId);
+        }
+      }
+      staleEntries.forEach(id => this.orderLastSeen.delete(id));
+      
+      if (staleEntries.length > 0) {
+        console.log(`[MemoryCleanup] Removed ${staleEntries.length} stale orderLastSeen entries`);
+      }
     }, 60 * 60 * 1000);
 
     // Check for filled orders every 10 seconds
@@ -199,6 +216,9 @@ class OrderGenerator {
 
           // Remove from active orders cache
           this.activeOrderIds.delete(order.id);
+          
+          // MEMORY LEAK FIX: Clear orderLastSeen entry for filled orders
+          this.orderLastSeen.delete(order.id);
 
           // Broadcast the updated order (with fillPrice and filledAt) to WebSocket clients
           // Also trigger cache invalidation
