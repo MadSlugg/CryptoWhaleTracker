@@ -904,9 +904,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch filled order flow analysis (last 30m for most relevant signals)
-      // Focus on BIG whale orders only (50+ BTC)
+      // Focus on BIG whale orders only (100+ BTC)
       const filledOrders = await storage.getFilteredOrders({
-        minSize: 50,
+        minSize: 100,
         orderType: 'all',
         exchange,
         timeRange: '30m',
@@ -937,16 +937,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const flowDifference = isNaN(longPercentage) ? 0 : longPercentage - 50;
 
       // Fetch active orders for support/resistance analysis
-      // Focus on BIG whale orders only (50+ BTC) - these are the real whales
+      // Focus on BIG whale orders only (100+ BTC) - these are the real whales
       const activeOrders = await storage.getFilteredOrders({
-        minSize: 50,
+        minSize: 100,
         orderType: 'all',
         exchange,
         timeRange: '24h',
         status: 'active',
       });
 
-      // Find price clusters (support/resistance zones) - group within $5000 buckets using 50+ BTC orders only
+      // Find price clusters (support/resistance zones) - group within $5000 buckets using 100+ BTC orders only
       const priceClusters: Record<string, { price: number; longVolume: number; shortVolume: number; orderCount: number }> = {};
       
       activeOrders.forEach(order => {
