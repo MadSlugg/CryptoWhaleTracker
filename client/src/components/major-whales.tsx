@@ -19,29 +19,25 @@ interface GroupedWhale {
 }
 
 export function MajorWhales({ orders }: MajorWhalesProps) {
+  const [isFilledOpen, setIsFilledOpen] = useState(false);
+  
   // Filter for major whale orders (100+ BTC)
   const majorWhales = orders.filter(order => order.size >= 100);
+  
+  // Split into active and filled
+  const activeWhales = majorWhales.filter(order => order.status === 'active');
+  const filledWhales = majorWhales.filter(order => order.status === 'filled');
 
-  // Group by price
-  const priceGroups = new Map<number, BitcoinOrder[]>();
-  majorWhales.forEach(order => {
-    const existing = priceGroups.get(order.price) || [];
-    priceGroups.set(order.price, [...existing, order]);
-  });
+  // Group active whales by price
+  const activeGroups = groupOrdersByPrice(activeWhales).slice(0, 10);
+  
+  // Group filled whales by price
+  const filledGroups = groupOrdersByPrice(filledWhales).slice(0, 10);
 
-  // Convert to array and calculate totals
-  const groupedWhales: GroupedWhale[] = Array.from(priceGroups.entries())
-    .map(([price, orders]) => ({
-      price,
-      totalSize: orders.reduce((sum, o) => sum + o.size, 0),
-      orders: orders.sort((a, b) => b.size - a.size), // Sort orders within group by size
-      longCount: orders.filter(o => o.type === 'long').length,
-      shortCount: orders.filter(o => o.type === 'short').length,
-    }))
-    .sort((a, b) => b.totalSize - a.totalSize) // Sort groups by total size
-    .slice(0, 10); // Show top 10 price levels
+  const totalActive = activeGroups.reduce((sum, g) => sum + g.orders.length, 0);
+  const totalFilled = filledGroups.reduce((sum, g) => sum + g.orders.length, 0);
 
-  if (groupedWhales.length === 0) {
+  if (activeGroups.length === 0 && filledGroups.length === 0) {
     return (
       <Card className="border-2">
         <CardHeader>
@@ -61,30 +57,88 @@ export function MajorWhales({ orders }: MajorWhalesProps) {
     );
   }
 
-  const totalOrders = groupedWhales.reduce((sum, g) => sum + g.orders.length, 0);
-
   return (
-    <Card className="border-2 border-primary/20">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" data-testid="icon-activity" />
-            Major Whales (100+ BTC)
-          </div>
-          <Badge variant="secondary" data-testid="badge-major-whale-count">
-            {totalOrders} {totalOrders === 1 ? 'order' : 'orders'}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2">
-          {groupedWhales.map((group) => (
-            <WhaleGroup key={group.price} group={group} />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      {/* Active Major Whales */}
+      {activeGroups.length > 0 && (
+        <Card className="border-2 border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" data-testid="icon-activity" />
+                Major Whales (100+ BTC)
+              </div>
+              <Badge variant="secondary" data-testid="badge-major-whale-count">
+                {totalActive} active {totalActive === 1 ? 'order' : 'orders'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {activeGroups.map((group) => (
+                <WhaleGroup key={group.price} group={group} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filled Major Whales - Collapsible */}
+      {filledGroups.length > 0 && (
+        <Card className="border-2 border-muted">
+          <Collapsible open={isFilledOpen} onOpenChange={setIsFilledOpen}>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover-elevate" data-testid="button-filled-whales-toggle">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-muted-foreground" />
+                    Filled Major Whales (100+ BTC)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" data-testid="badge-filled-whale-count">
+                      {totalFilled} filled {totalFilled === 1 ? 'order' : 'orders'}
+                    </Badge>
+                    {isFilledOpen ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  {filledGroups.map((group) => (
+                    <WhaleGroup key={group.price} group={group} />
+                  ))}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
+        </Card>
+      )}
+    </div>
   );
+}
+
+function groupOrdersByPrice(orders: BitcoinOrder[]): GroupedWhale[] {
+  const priceGroups = new Map<number, BitcoinOrder[]>();
+  orders.forEach(order => {
+    const existing = priceGroups.get(order.price) || [];
+    priceGroups.set(order.price, [...existing, order]);
+  });
+
+  return Array.from(priceGroups.entries())
+    .map(([price, orders]) => ({
+      price,
+      totalSize: orders.reduce((sum, o) => sum + o.size, 0),
+      orders: orders.sort((a, b) => b.size - a.size),
+      longCount: orders.filter(o => o.type === 'long').length,
+      shortCount: orders.filter(o => o.type === 'short').length,
+    }))
+    .sort((a, b) => b.totalSize - a.totalSize);
 }
 
 function WhaleGroup({ group }: { group: GroupedWhale }) {
@@ -236,18 +290,20 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                       </Badge>
                     </div>
                   </div>
-                  {order.status === 'filled' && order.filledAt && (
-                    <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>Placed: {format(new Date(order.timestamp), 'MMM d, h:mm a')}</span>
-                      </div>
+                  
+                  {/* Timestamps for ALL orders */}
+                  <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>Placed: {format(new Date(order.timestamp), 'MMM d, h:mm a')}</span>
+                    </div>
+                    {order.status === 'filled' && order.filledAt && (
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         <span>Filled: {format(new Date(order.filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(order.filledAt), { addSuffix: true })})</span>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -271,18 +327,20 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                 {group.orders[0].status.toUpperCase()}
               </Badge>
             </div>
-            {group.orders[0].status === 'filled' && group.orders[0].filledAt && (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, h:mm a')}</span>
-                </div>
+            
+            {/* Timestamps for single order */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, h:mm a')}</span>
+              </div>
+              {group.orders[0].status === 'filled' && group.orders[0].filledAt && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span>Filled: {format(new Date(group.orders[0].filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(group.orders[0].filledAt), { addSuffix: true })})</span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
