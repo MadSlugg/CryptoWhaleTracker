@@ -48,9 +48,9 @@ class OrderGenerator {
   private activeOrdersByExchange: Map<string, Map<string, BitcoinOrder>> = new Map(); // exchange -> (orderId -> order)
   // NEW FIX: Track which orders are missing from exchange order books
   // Key: orderId, Value: number of consecutive polls where order was missing
-  // Orders only become "confirmed missing" after 2+ consecutive polls (prevents false positives from API hiccups)
+  // Orders only become "confirmed missing" after 3+ consecutive polls (prevents false positives from API hiccups)
   private ordersMissingCount: Map<string, number> = new Map();
-  private readonly MISSING_CONFIRMATION_POLLS = 2; // Require 2 consecutive polls to confirm missing
+  private readonly MISSING_CONFIRMATION_POLLS = 3; // Require 3 consecutive polls to confirm missing (more conservative)
   
   // Exchange polling configuration - staggered intervals to avoid rate limits
   private readonly exchangeConfigs: ExchangeConfig[] = [

@@ -41,38 +41,11 @@ export function useWebSocket() {
               }
             }
             
-            // Handle filled order alerts - Alert for ALL fills (100+, 500+, 1000+)
-            if (data.type === 'order_filled' && data.order) {
-              const order = data.order;
-              const orderSizeBTC = order.size;
-              const fillPrice = order.fillPrice || order.price;
-              
-              // Alert for 1000+ BTC filled orders with high priority
-              if (orderSizeBTC >= 1000) {
-                toast({
-                  title: "MEGA EXECUTION",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} FILLED at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()}`,
-                  variant: "destructive",
-                  duration: 10000,
-                });
-              }
-              // Alert for 500+ BTC filled orders
-              else if (orderSizeBTC >= 500) {
-                toast({
-                  title: "Large Fill Executed",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} FILLED at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()}`,
-                  duration: 7000,
-                });
-              }
-              // Alert for 100+ BTC filled orders (lower priority)
-              else if (orderSizeBTC >= 100) {
-                toast({
-                  title: "Whale Execution",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} filled`,
-                  duration: 5000,
-                });
-              }
-            }
+            // Handle filled order alerts - DISABLED
+            // Filled orders are already visible in the dashboard's "Filled Order Flow" section
+            // 600+ orders per 10 minutes would cause excessive alert spam
+            // Only alert for NEW MEGA orders (1000+ BTC), not fills
+            // if (data.type === 'order_filled' && data.order) { ... }
             
             if (data.type === 'initial_data' || data.type === 'new_order' || data.type === 'order_filled' || data.type === 'order_deleted') {
               // Invalidate all /api/orders queries regardless of filter parameters
