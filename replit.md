@@ -47,6 +47,7 @@ Preferred communication style: Simple, everyday language.
 - **Order Tracking**:
     - Extracts real whale orders ($450k+ notional value) from public order books (both spot and futures markets).
     - Each order has a `market` field indicating 'spot' or 'futures' origin.
+    - **Deduplication Logic**: Prevents duplicate orders by checking exchange, type, price (±0.01), size (±0.01), market, and status. Market field is normalized to 'spot' default before comparison to ensure consistent matching whether upstream data includes market field or not. Active orders or orders filled within last 5 minutes are checked for duplicates.
     - **Order Status Transitions**: Active orders become "Filled" when market price crosses their limit, or "Deleted" if they vanish from exchange order books.
     - Verification of existing orders uses full order book data to prevent false deletions.
     - **Design Philosophy**: Both spot and futures orders create valid support/resistance levels, so both are tracked and analyzed together.
