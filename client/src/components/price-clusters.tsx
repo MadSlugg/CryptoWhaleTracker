@@ -24,7 +24,8 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
     // Filter to active orders 5+ BTC (excludes filled orders automatically)
     const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 5);
     
-    const priceRange = 1000;
+    // Use $500 clusters for more accurate price zones (was $1000)
+    const priceRange = 500;
     const clusters = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
     
     whaleOrders.forEach(order => {
@@ -148,7 +149,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
       <CardContent>
         <div className="space-y-1" data-testid="heatmap-container">
           {patterns.map((pattern, idx) => {
-            const priceRange = 1000;
+            const priceRange = 500;
             const minPrice = pattern.price - priceRange / 2;
             const maxPrice = pattern.price + priceRange / 2;
             const isNearCurrent = Math.abs(pattern.price - currentPrice) < priceRange * 2;
