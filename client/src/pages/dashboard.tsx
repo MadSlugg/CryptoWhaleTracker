@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { OrderType, TimeRange, PositionStatus, Exchange } from "@shared/schema";
-import { FilterControls } from "@/components/filter-controls";
+import type { Exchange } from "@shared/schema";
 import { PriceClusters } from "@/components/price-clusters";
 import { LongEntryPoints, ShortEntryPoints } from "@/components/long-short-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -9,46 +8,37 @@ import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { SiBitcoin } from "react-icons/si";
 import { format } from "date-fns";
 
 export default function Dashboard() {
-  const [minSize, setMinSize] = useState<number>(100);
-  const [orderType, setOrderType] = useState<OrderType>('all');
   const [exchange, setExchange] = useState<Exchange>('all');
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h');
-  const [status, setStatus] = useState<PositionStatus>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { toast } = useToast();
 
   // Connect to WebSocket for real-time updates
   useWebSocket();
 
-  // Fetch consolidated dashboard data
-  const { data: dashboardData, isLoading, refetch, error } = useQuery<{
+  // Fetch consolidated dashboard data (simplified - no filters needed, exchange handled by entry points)
+  const { data: dashboardData, isLoading, refetch, error} = useQuery<{
     priceSnapshot: number;
     allActiveOrders: any[];
   }>({
-    queryKey: ['/api/dashboard', minSize, orderType, exchange, timeRange, status],
+    queryKey: ['/api/dashboard'],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (minSize > 0) params.append('minSize', minSize.toString());
-      if (orderType !== 'all') params.append('orderType', orderType);
-      if (exchange !== 'all') params.append('exchange', exchange);
-      if (status !== 'all') params.append('status', status);
-      params.append('timeRange', timeRange);
-      
-      const response = await fetch(`/api/dashboard?${params.toString()}`);
+      const response = await fetch('/api/dashboard');
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to fetch dashboard data' }));
         throw new Error(errorData.error || 'Failed to fetch dashboard data');
       }
       return response.json();
     },
-    refetchInterval: autoRefresh ? 20000 : false, // Increased from 10s to 20s
-    staleTime: 5000, // Data considered fresh for 5 seconds
+    refetchInterval: autoRefresh ? 20000 : false,
+    staleTime: 5000,
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
   // Show toast notification for errors (only once per error)
@@ -138,19 +128,33 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="space-y-6">
-          {/* Filters - Control what data you see */}
-          <FilterControls
-            minSize={minSize}
-            setMinSize={setMinSize}
-            orderType={orderType}
-            setOrderType={setOrderType}
-            exchange={exchange}
-            setExchange={setExchange}
-            timeRange={timeRange}
-            setTimeRange={setTimeRange}
-            status={status}
-            setStatus={setStatus}
-          />
+          {/* Exchange Filter */}
+          <Card className="p-4">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium">Exchange Filter:</label>
+              <Select value={exchange} onValueChange={(value) => setExchange(value as Exchange)}>
+                <SelectTrigger className="w-48" data-testid="select-exchange">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Exchanges</SelectItem>
+                  <SelectItem value="binance">Binance</SelectItem>
+                  <SelectItem value="bybit">Bybit</SelectItem>
+                  <SelectItem value="kraken">Kraken</SelectItem>
+                  <SelectItem value="bitfinex">Bitfinex</SelectItem>
+                  <SelectItem value="coinbase">Coinbase</SelectItem>
+                  <SelectItem value="okx">OKX</SelectItem>
+                  <SelectItem value="gemini">Gemini</SelectItem>
+                  <SelectItem value="bitstamp">Bitstamp</SelectItem>
+                  <SelectItem value="kucoin">KuCoin</SelectItem>
+                  <SelectItem value="htx">HTX</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">
+                Filter entry points by exchange
+              </span>
+            </div>
+          </Card>
 
           {/* Smart Entry Points - Separate BUY and SELL recommendations */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
