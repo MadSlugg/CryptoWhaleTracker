@@ -525,34 +525,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Derive filtered views from cached dataset (in-memory filtering is fast)
-      const filteredOrders = allOrders.filter(order => {
-        if (minSize > 0 && order.size < minSize) return false;
-        if (orderType !== 'all' && order.type !== orderType) return false;
-        if (status !== 'all' && order.status !== status) return false;
-        return true;
-      });
-      
       // Calculate price snapshot from most recent order in base dataset
       const sortedOrders = [...allOrders].sort(
         (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
       const priceSnapshot = sortedOrders[0]?.price || 93000;
       
-      // Get major whales (100+ BTC, both active and filled) from base dataset
-      // Component will split them into active/filled sections on frontend
-      const majorWhales = allOrders
-        .filter(order => order.size >= 100)
-        .sort((a, b) => b.size - a.size);
-      
       // Get all active orders for Price Clusters (unaffected by user filters)
       // This ensures accurate support/resistance zones
       const allActiveOrders = allOrders.filter(order => order.status === 'active');
       
       const result = {
-        filteredOrders,
         priceSnapshot,
-        majorWhales,
         allActiveOrders,
       };
       
