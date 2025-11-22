@@ -21,13 +21,13 @@ interface PriceCluster {
 
 export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
   const detectPatterns = (): PriceCluster[] => {
-    // Filter to active orders only (consistent with Order Book Imbalance)
-    const activeOrders = orders.filter(o => o.status === 'active');
+    // Filter to active orders 5+ BTC (excludes filled orders automatically)
+    const whaleOrders = orders.filter(o => o.status === 'active' && o.size >= 5);
     
     const priceRange = 1000;
     const clusters = new Map<number, { longs: BitcoinOrder[], shorts: BitcoinOrder[] }>();
     
-    activeOrders.forEach(order => {
+    whaleOrders.forEach(order => {
       const clusterPrice = Math.round(order.price / priceRange) * priceRange;
       
       if (!clusters.has(clusterPrice)) {
@@ -142,7 +142,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
           Price Clusters
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
-          Multiple large orders concentrated at similar price levels. Indicates strong support or resistance zones.
+          Active orders (5+ BTC) concentrated at price levels. Shows support/resistance zones. Filled orders are automatically removed.
         </p>
       </CardHeader>
       <CardContent>
