@@ -462,9 +462,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       const priceSnapshot = sortedOrders[0]?.price || 93000;
       
-      // Get major whales (100+ BTC) from base dataset
+      // Get major whales (100+ BTC, active only) from base dataset
+      // Remove from display once filled to track only current whale positions
       const majorWhales = allOrders
-        .filter(order => order.size >= 100)
+        .filter(order => order.size >= 100 && order.status === 'active')
         .sort((a, b) => b.size - a.size)
         .slice(0, 10);
       
