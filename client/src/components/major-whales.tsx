@@ -153,16 +153,9 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
 
               {/* Combined Size */}
               <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <span className={`font-mono font-bold ${isMegaWhale ? 'text-2xl text-orange-600 dark:text-orange-400' : 'text-lg'}`} data-testid={`text-total-size-${group.price}`}>
-                    {group.totalSize.toFixed(2)} BTC
-                  </span>
-                  {isMegaWhale && (
-                    <Badge variant="destructive" className="text-xs animate-pulse bg-orange-600 hover:bg-orange-700">
-                      MEGA ENTRY
-                    </Badge>
-                  )}
-                </div>
+                <span className={`font-mono font-bold ${isMegaWhale ? 'text-2xl text-orange-600 dark:text-orange-400' : 'text-lg'}`} data-testid={`text-total-size-${group.price}`}>
+                  {group.totalSize.toFixed(2)} BTC
+                </span>
                 {!isSingleOrder && (
                   <span className="text-xs text-muted-foreground">
                     {group.orders.length} orders
@@ -173,7 +166,7 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
               {/* Price */}
               <div className="flex flex-col items-end ml-auto">
                 <span className="font-mono text-sm" data-testid={`text-price-${group.price}`}>
-                  ${group.price.toLocaleString()}
+                  ${Math.round(group.price).toLocaleString()}
                 </span>
                 {!isSingleOrder && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">

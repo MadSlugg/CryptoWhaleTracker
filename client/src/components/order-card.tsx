@@ -73,13 +73,13 @@ export function OrderCard({ order }: OrderCardProps) {
                 <div className="flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
                   <span className="font-mono" data-testid={`text-price-${order.id}`}>
-                    ${order.price.toLocaleString()}
+                    ${Math.round(order.price).toLocaleString()}
                   </span>
                   {isFilled && order.fillPrice && (
                     <>
                       <ArrowRight className="h-3 w-3" />
                       <span className="font-mono" data-testid={`text-fill-price-${order.id}`}>
-                        ${order.fillPrice.toLocaleString()}
+                        ${Math.round(order.fillPrice).toLocaleString()}
                       </span>
                     </>
                   )}

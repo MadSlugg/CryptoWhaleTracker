@@ -68,12 +68,12 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
         .attr("fill", "hsl(var(--foreground))")
         .attr("font-size", "12px")
         .attr("font-family", "var(--font-mono)")
-        .text(`$${currentPrice.toLocaleString()}`);
+        .text(`$${Math.round(currentPrice).toLocaleString()}`);
 
       // Add axes with detailed price labels
       const xAxis = d3.axisBottom(xScale)
         .ticks(6)
-        .tickFormat(d => `$${(d as number).toLocaleString()}`);
+        .tickFormat(d => `$${Math.round(d as number).toLocaleString()}`);
 
       const yAxis = d3.axisLeft(yScale)
         .ticks(5)
@@ -265,7 +265,7 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
       .attr("fill", "hsl(var(--foreground))")
       .attr("font-size", "12px")
       .attr("font-family", "var(--font-mono)")
-      .text(`$${currentPrice.toLocaleString()}`);
+      .text(`$${Math.round(currentPrice).toLocaleString()}`);
 
     // Add grid lines for better readability
     const xGrid = d3.axisBottom(xScale)
@@ -294,7 +294,7 @@ export function DepthChart({ orders, currentPrice, title = "Order Book Depth" }:
     // Add axes with more detailed price labels
     const xAxis = d3.axisBottom(xScale)
       .ticks(8)
-      .tickFormat(d => `$${(d as number).toLocaleString()}`);
+      .tickFormat(d => `$${Math.round(d as number).toLocaleString()}`);
 
     const yAxis = d3.axisLeft(yScale)
       .ticks(5)

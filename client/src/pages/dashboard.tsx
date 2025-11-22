@@ -111,7 +111,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 border">
                 <SiBitcoin className="h-5 w-5 text-orange-500" data-testid="icon-bitcoin" />
                 <span className="text-lg font-mono font-bold" data-testid="text-btc-price">
-                  ${currentBtcPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ${Math.round(currentBtcPrice).toLocaleString()}
                 </span>
               </div>
             </div>

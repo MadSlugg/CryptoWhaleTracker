@@ -224,7 +224,7 @@ export function EntrySignals({ orders, currentPrice }: EntrySignalsProps) {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-mono font-bold" data-testid={`text-price-${idx}`}>
-                          ${signal.price.toLocaleString()}
+                          ${Math.round(signal.price).toLocaleString()}
                         </span>
                         <Badge 
                           variant={signal.type === 'long' ? 'default' : 'destructive'}

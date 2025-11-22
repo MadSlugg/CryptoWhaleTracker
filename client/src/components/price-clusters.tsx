@@ -164,7 +164,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-28 flex-shrink-0">
                     <div className="font-mono text-xs font-semibold">
-                      ${pattern.price.toLocaleString()}
+                      ${Math.round(pattern.price).toLocaleString()}
                     </div>
                     {isNearCurrent && (
                       <div className="text-[10px] text-muted-foreground">

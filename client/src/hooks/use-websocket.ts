@@ -32,8 +32,8 @@ export function useWebSocket() {
               // Alert for 1000+ BTC new orders
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "MEGA WHALE ALERT - ACTIVE",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
+                  title: "MEGA ENTRY ALERT - ACTIVE",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
                   variant: "destructive",
                   duration: 10000,
                 });
@@ -42,7 +42,7 @@ export function useWebSocket() {
               else if (orderSizeBTC >= 100) {
                 toast({
                   title: "Large Whale Alert - ACTIVE",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${order.price.toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
                   duration: 7000,
                 });
               }
@@ -57,8 +57,8 @@ export function useWebSocket() {
               // Alert for 1000+ BTC filled orders
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "MEGA WHALE - FILLED",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${fillPrice.toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
+                  title: "MEGA ENTRY - FILLED",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
                   variant: "destructive",
                   duration: 10000,
                 });
@@ -67,7 +67,7 @@ export function useWebSocket() {
               else if (orderSizeBTC >= 100) {
                 toast({
                   title: "Large Whale - FILLED",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${fillPrice.toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
                   duration: 7000,
                 });
               }

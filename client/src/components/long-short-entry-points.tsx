@@ -146,7 +146,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
                 <span className="text-sm text-muted-foreground">Entry Price</span>
                 <span className="font-mono font-bold text-lg" data-testid="text-entry-price">
-                  ${data.entryPrice.toLocaleString()}
+                  ${Math.round(data.entryPrice).toLocaleString()}
                 </span>
               </div>
 
@@ -173,14 +173,14 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
               <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
                 <span className="text-muted-foreground">Current Price</span>
                 <span className="font-mono font-semibold" data-testid="text-current-price">
-                  ${data.currentPrice.toLocaleString()}
+                  ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
               {data.support && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
                   <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                    ${data.support.toLocaleString()}
+                    ${Math.round(data.support).toLocaleString()}
                   </span>
                 </div>
               )}
@@ -188,7 +188,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
                   <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                    ${data.resistance.toLocaleString()}
+                    ${Math.round(data.resistance).toLocaleString()}
                   </span>
                 </div>
               )}
@@ -333,7 +333,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
                 <span className="text-sm text-muted-foreground">Entry Price</span>
                 <span className="font-mono font-bold text-lg" data-testid="text-entry-price">
-                  ${data.entryPrice.toLocaleString()}
+                  ${Math.round(data.entryPrice).toLocaleString()}
                 </span>
               </div>
 
@@ -360,14 +360,14 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
               <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
                 <span className="text-muted-foreground">Current Price</span>
                 <span className="font-mono font-semibold" data-testid="text-current-price">
-                  ${data.currentPrice.toLocaleString()}
+                  ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
               {data.support && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
                   <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                    ${data.support.toLocaleString()}
+                    ${Math.round(data.support).toLocaleString()}
                   </span>
                 </div>
               )}
@@ -375,7 +375,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
                   <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                    ${data.resistance.toLocaleString()}
+                    ${Math.round(data.resistance).toLocaleString()}
                   </span>
                 </div>
               )}
