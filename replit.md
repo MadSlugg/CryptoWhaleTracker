@@ -17,12 +17,14 @@ Preferred communication style: Simple, everyday language.
     - **Market Type Tracking**: Each order labeled as SPOT or FUTURES. 7 exchanges track both spot and futures (Binance, Bybit, OKX, KuCoin, HTX, Kraken, Bitfinex), 3 track spot only (Coinbase, Gemini, Bitstamp).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
-    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Major Whales Box (top 10 orders >100 BTC with SPOT/FUTURES badges, independent of filters except time range), Filled Order Flow (price direction prediction), Price Clusters (support/resistance heatmap), Depth Chart, Active/Filled Orders (5 most recent each).
+    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Major Whales Box (top 10 orders >100 BTC with SPOT/FUTURES badges, independent of filters except time range), Long/Short Entry Points (side-by-side directional recommendations), Filled Order Flow (price direction prediction), Price Clusters (support/resistance heatmap), Depth Chart, Active/Filled Orders (5 most recent each).
     - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA ENTRY).
     - **Whale Analytics**:
         - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals from both spot and futures markets.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total). Both spot and futures orders create valid support/resistance levels.
-        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance (internally), and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence, neutral shows for <50% confidence or weak signals. Entry prices align with recommendations: buy signals use whale support levels, sell signals use resistance levels, neutral uses mid-range or current price.
+        - **Long Entry Points**: Shows STRONG_BUY and BUY signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong buy signals detected. Entry prices align with whale support levels.
+        - **Short Entry Points**: Shows STRONG_SELL and SELL signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong sell signals detected. Entry prices align with whale resistance levels.
+        - **Recommendation Logic**: Analyzes filled order flow, support/resistance levels to generate directional signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence.
 - **Routing**: Wouter for client-side routing.
 
 ### Backend
