@@ -952,7 +952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : Math.floor((currentPrice * 0.95) / 5000) * 5000; // If no support, dip 5% below current and round to $5k
 
         if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
-        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${imbalanceScore.toFixed(1)}%)`);
+        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
         if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
         
       } else if (compositeScore <= -30) {
@@ -974,7 +974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : Math.floor((currentPrice * 1.05) / 5000) * 5000; // If no resistance, rise 5% above current and round to $5k
 
         if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
-        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${Math.abs(imbalanceScore).toFixed(1)}%)`);
+        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
         if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
         
       } else {
