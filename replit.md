@@ -17,13 +17,8 @@ Preferred communication style: Simple, everyday language.
     - **Market Type Tracking**: Each order labeled as SPOT or FUTURES. 7 exchanges track both spot and futures (Binance, Bybit, OKX, KuCoin, HTX, Kraken, Bitfinex), 3 track spot only (Coinbase, Gemini, Bitstamp).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
-    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Major Whales (split into Active and Filled sections - top 10 orders >100 BTC with SPOT/FUTURES badges and timestamps, independent of filters except time range), Long/Short Entry Points (side-by-side directional recommendations), Filled Order Flow (price direction prediction), Price Clusters (support/resistance heatmap), Depth Chart, Active/Filled Orders (5 most recent each).
-    - **Major Whales Component**:
-        - **Active Major Whales**: Always visible scrollable section (max-h-[600px]) showing top 10 price levels with 100+ BTC orders currently on the books. Sorted by total BTC size (largest first). Displays placement timestamps for each order.
-        - **Filled Major Whales**: Collapsible section (defaults to collapsed) showing top 10 price levels with recently filled 100+ BTC orders. Sorted by filled time (most recent first). Displays both placement and execution timestamps with relative time (e.g., "Filled 2 minutes ago").
-        - **MEGA ENTRY Orders**: 1000+ BTC orders displayed with orange border, larger text, and orange color for high visibility.
-        - Orders grouped by price level. Active whales sorted by BTC size, filled whales sorted by filled time. Expandable to show individual order details.
-    - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA ENTRY).
+    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Long/Short Entry Points (side-by-side directional recommendations with confidence scores), Price Clusters (support/resistance heatmap from active whale orders).
+    - **Confidence-Based Entry Points**: Combines spot liquidity strength with futures market alignment to generate actionable buy/sell signals with clear confidence percentages (15-95%). Uses strict thresholds: STRONG signals require 80%+ confidence, regular signals require 50%+, below 50% shows NO SIGNAL state.
     - **Whale Analytics**:
         - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals from both spot and futures markets.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total). Both spot and futures orders create valid support/resistance levels.
@@ -57,8 +52,8 @@ Preferred communication style: Simple, everyday language.
     - Verification of existing orders uses full order book data to prevent false deletions.
     - **Design Philosophy**: Both spot and futures orders create valid support/resistance levels, so both are tracked and analyzed together.
 - **API Endpoints**:
-    - `GET /api/dashboard`: Consolidated primary endpoint for dashboard data (filtered orders, price, major whales) with in-memory caching.
-    - `GET /api/entry-points`: Smart entry recommendations based on 50+ BTC whale orders only. Returns recommendation (strong_buy/buy/neutral/sell/strong_sell), confidence, entry price, support/resistance levels, and whale analysis.
+    - `GET /api/dashboard`: Consolidated primary endpoint for dashboard data (BTC price snapshot, active orders for analysis) with in-memory caching.
+    - `GET /api/entry-points`: Confidence-based entry recommendations combining spot liquidity strength (1000+BTC=80% base, 500+BTC=65%, etc.) with futures market alignment bonuses/penalties (±10-15%). Returns recommendation (strong_buy/buy/neutral/sell/strong_sell), confidence, entry price, support/resistance levels, futures positioning data, and detailed whale analysis reasoning.
     - Other endpoints for specific data like `/api/orders`, `/api/filled-order-analysis`, etc.
 - **Performance Optimization**: Frontend uses a single dashboard endpoint, increased refetch intervals with exponential backoff. Backend utilizes in-memory caching and database composite indexes for improved response times.
 
