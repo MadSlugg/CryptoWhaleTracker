@@ -1,7 +1,7 @@
 # Bitcoin Whale Tracker
 
 ## Overview
-A real-time Bitcoin trading dashboard designed to monitor and display large cryptocurrency orders ("whale activity") from multiple exchanges. It tracks real-time long and short positions, providing a data-dense, utility-focused interface for professional traders. The project aims to offer critical insights into market movements driven by large players, enhancing strategic trading decisions.
+A real-time Bitcoin trading dashboard designed to monitor and display large cryptocurrency orders ("whale activity") from multiple exchanges. It tracks real-time buy and sell positions, providing a data-dense, utility-focused interface for professional traders. The project aims to offer critical insights into market movements driven by large players, enhancing strategic trading decisions.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -17,13 +17,13 @@ Preferred communication style: Simple, everyday language.
     - **Market Type Tracking**: Each order labeled as SPOT or FUTURES. 7 exchanges track both spot and futures (Binance, Bybit, OKX, KuCoin, HTX, Kraken, Bitfinex), 3 track spot only (Coinbase, Gemini, Bitstamp).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
-    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Long/Short Entry Points (side-by-side directional recommendations with confidence scores), Price Clusters (support/resistance heatmap from active whale orders).
+    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Buy/Sell Entry Points (side-by-side directional recommendations with confidence scores), Price Clusters (support/resistance heatmap from active whale orders).
     - **Confidence-Based Entry Points**: Combines spot liquidity strength with futures market alignment to generate actionable buy/sell signals with clear confidence percentages (15-95%). Uses strict thresholds: STRONG signals require 80%+ confidence, regular signals require 50%+, below 50% shows NO SIGNAL state.
     - **Whale Analytics**:
         - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals from both spot and futures markets.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total). Both spot and futures orders create valid support/resistance levels.
-        - **Long Entry Points**: Shows STRONG_BUY and BUY signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong buy signals detected. Entry prices align with whale support levels.
-        - **Short Entry Points**: Shows STRONG_SELL and SELL signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong sell signals detected. Entry prices align with whale resistance levels.
+        - **Buy Entry Points**: Shows STRONG_BUY and BUY signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong buy signals detected. Entry prices align with whale support levels.
+        - **Sell Entry Points**: Shows STRONG_SELL and SELL signals based exclusively on big whale orders (50+ BTC). Displays "NO SIGNAL" state when no strong sell signals detected. Entry prices align with whale resistance levels.
         - **Recommendation Logic**: Analyzes filled order flow, support/resistance levels to generate directional signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence.
 - **Routing**: Wouter for client-side routing.
 

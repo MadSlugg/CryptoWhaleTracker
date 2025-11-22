@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Exchange } from "@shared/schema";
 import { PriceClusters } from "@/components/price-clusters";
-import { LongEntryPoints, ShortEntryPoints } from "@/components/long-short-entry-points";
+import { BuyEntryPoints, SellEntryPoints } from "@/components/buy-sell-entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Calendar } from "lucide-react";
@@ -158,8 +158,8 @@ export default function Dashboard() {
 
           {/* Smart Entry Points - Separate BUY and SELL recommendations */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            <LongEntryPoints exchange={exchange} />
-            <ShortEntryPoints exchange={exchange} />
+            <BuyEntryPoints exchange={exchange} />
+            <SellEntryPoints exchange={exchange} />
           </div>
 
           {/* Price Clusters - Pattern detection and accumulation zones */}

@@ -29,7 +29,7 @@ interface EntryPointData {
   resistance: number | null;
 }
 
-export function LongEntryPoints({ exchange }: EntryPointsProps) {
+export function BuyEntryPoints({ exchange }: EntryPointsProps) {
   const { data, isLoading } = useQuery<EntryPointData>({
     queryKey: ['/api/entry-points', exchange],
     queryFn: async () => {
@@ -54,7 +54,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                Long Entry Points
+                Buy Entry Points
               </CardTitle>
               <CardDescription>Buy signals from 100+ BTC whale orders</CardDescription>
             </div>
@@ -73,13 +73,13 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
   
   if (!isBuySignal) {
     return (
-      <Card className="border-2 border-muted" data-testid="card-long-entry-points">
+      <Card className="border-2 border-muted" data-testid="card-buy-entry-points">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" data-testid="icon-trending-up" />
-                Long Entry Points
+                Buy Entry Points
               </CardTitle>
               <CardDescription>
                 Buy signals from 100+ BTC whale orders
@@ -95,7 +95,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm" data-testid="text-no-long-signal">No strong buy signals detected. Wait for whale accumulation.</p>
+            <p className="text-sm" data-testid="text-no-buy-signal">No strong buy signals detected. Wait for whale accumulation.</p>
           </div>
         </CardContent>
       </Card>
@@ -117,13 +117,13 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
       };
 
   return (
-    <Card className={`border-2 ${config.borderColor}`} data-testid="card-long-entry-points">
+    <Card className={`border-2 ${config.borderColor}`} data-testid="card-buy-entry-points">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-400" data-testid="icon-trending-up" />
-              Long Entry Points
+              Buy Entry Points
             </CardTitle>
             <CardDescription>
               Buy signals from 100+ BTC whale orders
@@ -216,7 +216,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
   );
 }
 
-export function ShortEntryPoints({ exchange }: EntryPointsProps) {
+export function SellEntryPoints({ exchange }: EntryPointsProps) {
   const { data, isLoading } = useQuery<EntryPointData>({
     queryKey: ['/api/entry-points', exchange],
     queryFn: async () => {
@@ -241,7 +241,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
-                Short Entry Points
+                Sell Entry Points
               </CardTitle>
               <CardDescription>Sell signals from 100+ BTC whale orders</CardDescription>
             </div>
@@ -260,13 +260,13 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
   
   if (!isSellSignal) {
     return (
-      <Card className="border-2 border-muted" data-testid="card-short-entry-points">
+      <Card className="border-2 border-muted" data-testid="card-sell-entry-points">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
               <CardTitle className="text-xl flex items-center gap-2">
                 <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" data-testid="icon-trending-down" />
-                Short Entry Points
+                Sell Entry Points
               </CardTitle>
               <CardDescription>
                 Sell signals from 100+ BTC whale orders
@@ -282,7 +282,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm" data-testid="text-no-short-signal">No strong sell signals detected. Wait for whale distribution.</p>
+            <p className="text-sm" data-testid="text-no-sell-signal">No strong sell signals detected. Wait for whale distribution.</p>
           </div>
         </CardContent>
       </Card>
@@ -304,13 +304,13 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
       };
 
   return (
-    <Card className={`border-2 ${config.borderColor}`} data-testid="card-short-entry-points">
+    <Card className={`border-2 ${config.borderColor}`} data-testid="card-sell-entry-points">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" data-testid="icon-trending-down" />
-              Short Entry Points
+              Sell Entry Points
             </CardTitle>
             <CardDescription>
               Sell signals from 100+ BTC whale orders
