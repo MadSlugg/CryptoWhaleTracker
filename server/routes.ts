@@ -1011,17 +1011,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       reasoning = [];
 
-      if (compositeScore >= 30) {
+      if (compositeScore >= 50) {
         // BULLISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 50) baseConfidence *= 0.85; // Reduce confidence if low whale volume
-        if (activeOrders.length < 3) baseConfidence *= 0.9; // Reduce confidence if few big orders
+        if (totalFilledVolume < 100) baseConfidence *= 0.7; // Reduce confidence if low whale volume
+        if (activeOrders.length < 5) baseConfidence *= 0.8; // Reduce confidence if few big orders
         baseConfidence *= persistenceFactor; // Boost for orders that have been stable/open longer
         confidence = Math.floor(baseConfidence);
 
         // Determine recommendation based on final confidence level
-        // Strong buy requires 80%+ confidence, regular buy requires 50%+
+        // Strong buy requires 80%+ confidence, regular buy requires 65%+
         if (confidence >= 80) {
           recommendation = 'strong_buy';
           // Entry: Use nearest support for strong buy
@@ -1033,7 +1033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
           if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
           
-        } else if (confidence >= 50) {
+        } else if (confidence >= 65) {
           recommendation = 'buy';
           // Entry: Use nearest support for buy
           entryPrice = nearestSupport 
@@ -1041,7 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : Math.floor((currentPrice * 0.95) / 5000) * 5000;
           
           if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
-          if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
+          if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 100+ BTC orders (${totalLongLiquidity.toFixed(0)} BTC)`);
           if (nearestSupport) reasoning.push(`Major whale bid level at $${nearestSupport.price.toLocaleString()}`);
           
         } else {
@@ -1061,17 +1061,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
         }
         
-      } else if (compositeScore <= -30) {
+      } else if (compositeScore <= -50) {
         // BEARISH SIGNAL - Calculate confidence for this direction
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 50) baseConfidence *= 0.85;
-        if (activeOrders.length < 3) baseConfidence *= 0.9;
+        if (totalFilledVolume < 100) baseConfidence *= 0.7;
+        if (activeOrders.length < 5) baseConfidence *= 0.8;
         baseConfidence *= persistenceFactor;
         confidence = Math.floor(baseConfidence);
 
         // Determine recommendation based on final confidence level
-        // Strong sell requires 80%+ confidence, regular sell requires 50%+
+        // Strong sell requires 80%+ confidence, regular sell requires 65%+
         if (confidence >= 80) {
           recommendation = 'strong_sell';
           // Entry: Use nearest resistance for strong sell
@@ -1083,7 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
           if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
           
-        } else if (confidence >= 50) {
+        } else if (confidence >= 65) {
           recommendation = 'sell';
           // Entry: Use nearest resistance for sell
           entryPrice = nearestResistance 
@@ -1091,7 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : Math.floor((currentPrice * 1.05) / 5000) * 5000;
           
           if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
-          if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
+          if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 100+ BTC orders (${totalShortLiquidity.toFixed(0)} BTC)`);
           if (nearestResistance) reasoning.push(`Major whale ask level at $${nearestResistance.price.toLocaleString()}`);
           
         } else {
