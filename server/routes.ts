@@ -335,21 +335,30 @@ class OrderGenerator {
           market, // Use normalized market value
         };
         
-        const createdOrder = await storage.createOrder(order);
-        this.activeOrderIds.add(createdOrder.id);
-        
-        // Broadcast to WebSocket clients
-        if (this.wss) {
-          const message = JSON.stringify({
-            type: 'new_order',
-            order: createdOrder,
-          });
+        try {
+          const createdOrder = await storage.createOrder(order);
+          this.activeOrderIds.add(createdOrder.id);
           
-          this.wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-              client.send(message);
-            }
-          });
+          // Broadcast to WebSocket clients
+          if (this.wss) {
+            const message = JSON.stringify({
+              type: 'new_order',
+              order: createdOrder,
+            });
+            
+            this.wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+              }
+            });
+          }
+        } catch (error: any) {
+          // Database-level unique constraint prevents race condition duplicates
+          if (error?.code === '23505') {
+            console.log(`[DuplicateBlocked] ${exchangeId} ${type} ${market} ${roundedSize} BTC @ $${roundedPrice} - DB constraint`);
+          } else {
+            throw error; // Re-throw if it's not a duplicate error
+          }
         }
       }
       
