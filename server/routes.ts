@@ -273,6 +273,7 @@ class OrderGenerator {
         const type = whaleOrder.type === 'bid' ? 'long' : 'short';
         const roundedSize = Math.round(whaleOrder.quantity * 100) / 100;
         const roundedPrice = Math.round(whaleOrder.price * 100) / 100;
+        const market = whaleOrder.market || 'spot'; // Normalize market value (default to spot)
         
         // Check for duplicates (active or recently filled in last 5 minutes)
         const existingOrders = await storage.getOrders();
@@ -285,6 +286,7 @@ class OrderGenerator {
           
           return existing.exchange === exchangeId &&
                  existing.type === type &&
+                 existing.market === market && // Use normalized market value
                  Math.abs(existing.price - roundedPrice) < 0.01 &&
                  Math.abs(existing.size - roundedSize) < 0.01 &&
                  (isActive || isRecentlyFilled);
@@ -299,7 +301,7 @@ class OrderGenerator {
           exchange: exchangeId,
           timestamp: new Date().toISOString(),
           status: 'active',
-          market: whaleOrder.market || 'spot', // Default to spot if not specified
+          market, // Use normalized market value
         };
         
         const createdOrder = await storage.createOrder(order);
