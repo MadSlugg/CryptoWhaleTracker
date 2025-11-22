@@ -239,21 +239,6 @@ export function BuyEntryPoints({ exchange }: EntryPointsProps) {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Analysis</h3>
-            <div className="space-y-2">
-              {data.reasoning.map((reason, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-sm"
-                  data-testid={`text-reasoning-${index}`}
-                >
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>{reason}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -463,16 +448,26 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                 </span>
               </div>
               {data.firstResistance && (
-                <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                  <span className="text-red-700 dark:text-red-300 font-medium">1st Resistance</span>
+                <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-700 dark:text-red-300 font-medium">1st Resistance</span>
+                    <Badge className={`${getResistanceStrengthBadge(data.firstResistance.strength)} text-xs px-2 py-0.5`}>
+                      {data.firstResistance.strength}
+                    </Badge>
+                  </div>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-first-resistance">
                     ${Math.round(data.firstResistance.price).toLocaleString()} ({Math.round(data.firstResistance.btc).toLocaleString()} BTC)
                   </span>
                 </div>
               )}
               {data.secondResistance && (
-                <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                  <span className="text-red-700 dark:text-red-300 font-medium">2nd Resistance</span>
+                <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-700 dark:text-red-300 font-medium">2nd Resistance</span>
+                    <Badge className={`${getResistanceStrengthBadge(data.secondResistance.strength)} text-xs px-2 py-0.5`}>
+                      {data.secondResistance.strength}
+                    </Badge>
+                  </div>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-second-resistance">
                     ${Math.round(data.secondResistance.price).toLocaleString()} ({Math.round(data.secondResistance.btc).toLocaleString()} BTC)
                   </span>
@@ -481,21 +476,6 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Market Analysis</h3>
-            <div className="space-y-2">
-              {data.reasoning.map((reason, index) => (
-                <div 
-                  key={index} 
-                  className="flex items-start gap-2 p-2 rounded-md bg-muted/30 text-sm"
-                  data-testid={`text-reasoning-${index}`}
-                >
-                  <span className="text-primary mt-0.5">•</span>
-                  <span>{reason}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
