@@ -176,7 +176,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
                   ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
-              {data.support && (
+              {data.support && Math.round(data.support) !== Math.round(data.entryPrice) && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
                   <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
@@ -184,7 +184,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
                   </span>
                 </div>
               )}
-              {data.resistance && (
+              {data.resistance && Math.round(data.resistance) !== Math.round(data.entryPrice) && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
                   <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
@@ -363,7 +363,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
                   ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
-              {data.support && (
+              {data.support && Math.round(data.support) !== Math.round(data.entryPrice) && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
                   <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
                   <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
@@ -371,7 +371,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
                   </span>
                 </div>
               )}
-              {data.resistance && (
+              {data.resistance && Math.round(data.resistance) !== Math.round(data.entryPrice) && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
                   <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
                   <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
