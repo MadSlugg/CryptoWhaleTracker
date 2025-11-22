@@ -102,10 +102,10 @@ export class BinanceService {
   
   /**
    * Parse order book and extract whale orders above notional threshold
-   * @param minNotionalUSD Minimum USD value to be considered a whale order (default: $450k)
+   * @param minNotionalUSD Minimum USD value to be considered a whale order (default: $840k for 10+ BTC)
    * @param referencePrice Current BTC price for validating order book entries (default: 90000)
    */
-  async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const orderBook = await this.getOrderBook(100);
       const whaleOrders: OrderBookEntry[] = [];
@@ -117,7 +117,7 @@ export class BinanceService {
       };
       
       const isValidTotal = (total: number): boolean => {
-        return total >= 450000 && total <= 100000000; // $450k to $100M
+        return total >= 840000 && total <= 100000000; // $840k to $100M (10+ BTC)
       };
       
       const isValidCalculation = (price: number, quantity: number, total: number): boolean => {

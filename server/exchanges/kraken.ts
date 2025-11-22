@@ -7,7 +7,7 @@ export class KrakenService implements ExchangeService {
   private readonly SPOT_SYMBOL = 'XXBTZUSD';
   private readonly FUTURES_SYMBOL = 'PI_XBTUSD';
 
-  async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       // Fetch both spot and futures order books in parallel
       const [spotOrders, futuresOrders] = await Promise.all([

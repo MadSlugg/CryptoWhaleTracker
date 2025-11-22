@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX**: Shadcn/ui components (Radix UI based) with Tailwind CSS, "new-york" style. Focus on information density, real-time data clarity, high-contrast indicators, minimal animations. Uses Inter for text and JetBrains Mono for numerical data.
 - **State Management**: React Query for server state, WebSockets for real-time updates, local React state for UI filters.
 - **Key Features**:
-    - Real-time whale order feed from 10 exchanges: Binance, Bybit, Kraken, Bitfinex, Coinbase, OKX, Gemini, Bitstamp, KuCoin, and HTX (orders >= $450k).
+    - Real-time whale order feed from 10 exchanges: Binance, Bybit, Kraken, Bitfinex, Coinbase, OKX, Gemini, Bitstamp, KuCoin, and HTX (orders >= $840k / 10+ BTC).
     - **Market Type Tracking**: Each order labeled as SPOT or FUTURES. 7 exchanges track both spot and futures (Binance, Bybit, OKX, KuCoin, HTX, Kraken, Bitfinex), 3 track spot only (Coinbase, Gemini, Bitstamp).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
@@ -45,7 +45,7 @@ Preferred communication style: Simple, everyday language.
     - Circuit breaker pattern for resilience: opens after 3 consecutive failures, 2-minute cooldown before retry
     - Shared validation utilities (price range, total sanity, calculation accuracy) across all exchanges
 - **Order Tracking**:
-    - Extracts real whale orders ($450k+ notional value) from public order books (both spot and futures markets).
+    - Extracts real whale orders ($840k+ notional value / 10+ BTC) from public order books (both spot and futures markets).
     - Each order has a `market` field indicating 'spot' or 'futures' origin.
     - **Deduplication Logic**: Prevents duplicate orders by checking exchange, type, price (±0.01), size (±0.01), market, and status. Market field is normalized to 'spot' default before comparison to ensure consistent matching whether upstream data includes market field or not. Active orders or orders filled within last 5 minutes are checked for duplicates.
     - **Order Status Transitions**: Active orders become "Filled" when market price crosses their limit, or "Deleted" if they vanish from exchange order books.

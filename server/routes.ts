@@ -349,7 +349,7 @@ class OrderGenerator {
                                    : 90000;
       
       // Fetch whale orders from exchange
-      const whaleOrders = await config.service.getWhaleOrders(450000, validReferencePrice);
+      const whaleOrders = await config.service.getWhaleOrders(840000, validReferencePrice);
       
       // Record success
       this.recordSuccess(exchangeId);
@@ -735,8 +735,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timeRange = tr as typeof timeRange;
       }
 
-      // Get minimum size filter (default 5 BTC to match whale threshold)
-      let minSize = 5;
+      // Get minimum size filter (default 10 BTC to match whale threshold)
+      let minSize = 10;
       if (req.query.minSize) {
         const parsed = parseFloat(req.query.minSize as string);
         if (isNaN(parsed) || parsed < 0) {

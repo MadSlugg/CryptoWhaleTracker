@@ -5,7 +5,7 @@ export class BitstampService implements ExchangeService {
   private readonly API_BASE = 'https://www.bitstamp.net';
   private readonly SYMBOL = 'btcusd';
 
-  async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const response = await fetch(
         `${this.API_BASE}/api/v2/order_book/${this.SYMBOL}/`

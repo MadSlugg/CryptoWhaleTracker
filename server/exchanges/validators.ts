@@ -8,9 +8,9 @@ export function isValidPrice(price: number, referencePrice: number): boolean {
 }
 
 // Validate that total value makes sense (prevents parsing errors)
-// For whale orders, total should be between $450k and $100M (reasonable upper bound)
+// For whale orders, total should be between $840k and $100M (10+ BTC at $84k)
 export function isValidTotal(total: number): boolean {
-  return total >= 450000 && total <= 100000000; // $450k to $100M
+  return total >= 840000 && total <= 100000000; // $840k to $100M
 }
 
 // Validate that total approximately equals price * quantity

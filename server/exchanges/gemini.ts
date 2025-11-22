@@ -5,7 +5,7 @@ export class GeminiService implements ExchangeService {
   private readonly API_BASE = 'https://api.gemini.com';
   private readonly SYMBOL = 'btcusd';
 
-  async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
+  async getWhaleOrders(minNotionalUSD: number = 840000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
       const response = await fetch(
         `${this.API_BASE}/v1/book/${this.SYMBOL}?limit_bids=0&limit_asks=0`
