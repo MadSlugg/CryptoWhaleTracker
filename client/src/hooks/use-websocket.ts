@@ -24,51 +24,52 @@ export function useWebSocket() {
           try {
             const data = JSON.parse(event.data);
             
-            // Handle new order alerts
+            // Handle new order alerts - ONLY for MEGA ENTRY (1000+ BTC)
+            // Regular 100+ BTC orders appear frequently and would spam the user
             if (data.type === 'new_order' && data.order) {
               const order = data.order;
               const orderSizeBTC = order.size;
               
-              // Alert for 1000+ BTC new orders
+              // Alert ONLY for 1000+ BTC new orders (MEGA ENTRY)
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "MEGA ENTRY ALERT - ACTIVE",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
+                  title: "MEGA ENTRY ALERT",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   variant: "destructive",
                   duration: 10000,
                 });
               }
-              // Alert for 100+ BTC new orders
-              else if (orderSizeBTC >= 100) {
-                toast({
-                  title: "Large Whale Alert - ACTIVE",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(order.price).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: ACTIVE`,
-                  duration: 7000,
-                });
-              }
             }
             
-            // Handle filled order alerts
+            // Handle filled order alerts - Alert for ALL fills (100+, 500+, 1000+)
             if (data.type === 'order_filled' && data.order) {
               const order = data.order;
               const orderSizeBTC = order.size;
               const fillPrice = order.fillPrice || order.price;
               
-              // Alert for 1000+ BTC filled orders
+              // Alert for 1000+ BTC filled orders with high priority
               if (orderSizeBTC >= 1000) {
                 toast({
-                  title: "MEGA ENTRY - FILLED",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
+                  title: "MEGA EXECUTION",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} FILLED at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()}`,
                   variant: "destructive",
                   duration: 10000,
                 });
               }
-              // Alert for 100+ BTC filled orders
+              // Alert for 500+ BTC filled orders
+              else if (orderSizeBTC >= 500) {
+                toast({
+                  title: "Large Fill Executed",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} FILLED at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()}`,
+                  duration: 7000,
+                });
+              }
+              // Alert for 100+ BTC filled orders (lower priority)
               else if (orderSizeBTC >= 100) {
                 toast({
-                  title: "Large Whale - FILLED",
-                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} at $${Math.round(fillPrice).toLocaleString()} on ${order.exchange.toUpperCase()} | Status: FILLED`,
-                  duration: 7000,
+                  title: "Whale Execution",
+                  description: `${orderSizeBTC.toFixed(2)} BTC ${order.type.toUpperCase()} filled`,
+                  duration: 5000,
                 });
               }
             }
