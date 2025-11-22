@@ -16,13 +16,12 @@ Preferred communication style: Simple, everyday language.
     - Real-time whale order feed from 10 exchanges: Binance, Bybit, Kraken, Bitfinex, Coinbase, OKX, Gemini, Bitstamp, KuCoin, and HTX (orders >= $450k).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
-    - **Dashboard Layout**: Header (BTC price, long/short counts), Filter Controls, Major Whales Box (top 10 orders >100 BTC, independent of filters except time range), Large Price Level Heatmap (50+ BTC orders), Summary Stats (volume-weighted long/short ratio), Filled Order Flow (price direction prediction), Price Clusters (liquidation heatmap), Order Book Imbalance, Depth Chart, Active/Filled Orders (5 most recent each).
+    - **Dashboard Layout**: Header (BTC price, long/short counts), Filter Controls, Major Whales Box (top 10 orders >100 BTC, independent of filters except time range), Summary Stats (volume-weighted long/short ratio), Filled Order Flow (price direction prediction), Price Clusters (liquidation heatmap), Order Book Imbalance, Depth Chart, Active/Filled Orders (5 most recent each).
     - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA WHALE).
     - **Whale Analytics**:
         - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals.
         - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total).
         - **Order Book Imbalance**: Real-time indicator of supply/demand pressure from active whale orders.
-        - **Large Price Level Heatmap**: Visual map of whale concentration across price levels (50+ BTC orders, grouped in $2k buckets, color-coded by volume intensity).
         - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance, and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence, neutral shows for <50% confidence or weak signals. Entry prices align with recommendations: buy signals use whale support levels, sell signals use resistance levels, neutral uses mid-range or current price.
 - **Routing**: Wouter for client-side routing.
 

@@ -6,7 +6,6 @@ import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
-import { PriceHeatmap } from "@/components/price-heatmap";
 import { OrderBookImbalance } from "@/components/order-book-imbalance";
 import { SummaryStats } from "@/components/summary-stats";
 import { FilledOrderFlow } from "@/components/filled-order-flow";
@@ -166,12 +165,6 @@ export default function Dashboard() {
 
           {/* Smart Entry Points - AI-powered BUY/SELL recommendations */}
           <EntryPoints exchange={exchange} />
-
-          {/* Large Price Level Heatmap - Visual map of whale concentration (50+ BTC) */}
-          <PriceHeatmap 
-            orders={filteredOrders} 
-            currentPrice={currentBtcPrice}
-          />
 
           {/* Summary Stats - Long vs Short ratio based on active orders only */}
           <SummaryStats 
