@@ -5,6 +5,7 @@ export interface OrderBookEntry {
   quantity: number;
   type: 'bid' | 'ask';
   total: number;
+  market: 'spot' | 'futures';
 }
 
 export interface ExchangeService {

@@ -6,8 +6,6 @@ import { FilterControls } from "@/components/filter-controls";
 import { DepthChart } from "@/components/depth-chart";
 import { MajorWhales } from "@/components/major-whales";
 import { PriceClusters } from "@/components/price-clusters";
-import { OrderBookImbalance } from "@/components/order-book-imbalance";
-import { SummaryStats } from "@/components/summary-stats";
 import { FilledOrderFlow } from "@/components/filled-order-flow";
 import { EntryPoints } from "@/components/entry-points";
 import { useWebSocket } from "@/hooks/use-websocket";
@@ -166,14 +164,6 @@ export default function Dashboard() {
           {/* Smart Entry Points - AI-powered BUY/SELL recommendations */}
           <EntryPoints exchange={exchange} />
 
-          {/* Summary Stats - Long vs Short ratio based on active orders only */}
-          <SummaryStats 
-            longCount={filteredOrders.filter(o => o.status === 'active' && o.type === 'long').length}
-            shortCount={filteredOrders.filter(o => o.status === 'active' && o.type === 'short').length}
-            longVolume={filteredOrders.filter(o => o.status === 'active' && o.type === 'long').reduce((sum, o) => sum + o.size, 0)}
-            shortVolume={filteredOrders.filter(o => o.status === 'active' && o.type === 'short').reduce((sum, o) => sum + o.size, 0)}
-          />
-
           {/* Filled Order Flow - Predicts price direction based on whale execution patterns (Last 30 Minutes) */}
           <FilledOrderFlow
             minSize={minSize}
@@ -183,12 +173,6 @@ export default function Dashboard() {
           {/* Price Clusters - Pattern detection and accumulation zones */}
           <PriceClusters 
             orders={filteredOrders}
-            currentPrice={currentBtcPrice}
-          />
-
-          {/* Order Book Imbalance - Supply/Demand pressure */}
-          <OrderBookImbalance 
-            orders={filteredOrders} 
             currentPrice={currentBtcPrice}
           />
 

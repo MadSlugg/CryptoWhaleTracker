@@ -105,6 +105,7 @@
                                  status: order.status || 'active',
                                  filledAt: order.filledAt ? new Date(order.filledAt) : null,
                                  fillPrice: order.fillPrice || null,
+                                 market: order.market || 'spot',
                                })
                                .returning();
 
@@ -330,6 +331,7 @@
                                status: dbOrder.status as 'active' | 'filled',
                                filledAt: dbOrder.filledAt?.toISOString(),
                                fillPrice: dbOrder.fillPrice || undefined,
+                               market: (dbOrder.market as 'spot' | 'futures') || 'spot',
                              };
                            }
 

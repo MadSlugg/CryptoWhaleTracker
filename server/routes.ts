@@ -299,6 +299,7 @@ class OrderGenerator {
           exchange: exchangeId,
           timestamp: new Date().toISOString(),
           status: 'active',
+          market: whaleOrder.market || 'spot', // Default to spot if not specified
         };
         
         const createdOrder = await storage.createOrder(order);

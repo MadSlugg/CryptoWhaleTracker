@@ -7,56 +7,92 @@ export class BybitService implements ExchangeService {
 
   async getWhaleOrders(minNotionalUSD: number = 450000, referencePrice: number = 90000): Promise<OrderBookEntry[]> {
     try {
-      const response = await fetch(
-        `${this.API_BASE}/v5/market/orderbook?category=spot&symbol=${this.SYMBOL}`
-      );
+      // Fetch both spot and futures order books in parallel
+      const [spotOrders, futuresOrders] = await Promise.all([
+        this.fetchSpotOrders(minNotionalUSD, referencePrice),
+        this.fetchFuturesOrders(minNotionalUSD, referencePrice)
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`Bybit API error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.retCode !== 0) {
-        throw new Error(`Bybit API error: ${result.retMsg}`);
-      }
-
-      const data = result.result;
-      const whaleOrders: OrderBookEntry[] = [];
-
-      // Process bids (buy orders) - [price, quantity]
-      for (const [priceStr, quantityStr] of data.b) {
-        const price = parseFloat(priceStr);
-        const quantity = parseFloat(quantityStr);
-        const total = price * quantity;
-
-        if (total >= minNotionalUSD && 
-            isValidPrice(price, referencePrice) && 
-            isValidTotal(total) && 
-            isValidCalculation(price, quantity, total)) {
-          whaleOrders.push({ price, quantity, type: 'bid', total });
-        }
-      }
-
-      // Process asks (sell orders) - [price, quantity]
-      for (const [priceStr, quantityStr] of data.a) {
-        const price = parseFloat(priceStr);
-        const quantity = parseFloat(quantityStr);
-        const total = price * quantity;
-
-        if (total >= minNotionalUSD && 
-            isValidPrice(price, referencePrice) && 
-            isValidTotal(total) && 
-            isValidCalculation(price, quantity, total)) {
-          whaleOrders.push({ price, quantity, type: 'ask', total });
-        }
-      }
-
-      return whaleOrders;
+      return [...spotOrders, ...futuresOrders];
     } catch (error) {
       console.error('Error fetching Bybit whale orders:', error);
       throw error; // Propagate error for circuit breaker
     }
+  }
+
+  private async fetchSpotOrders(minNotionalUSD: number, referencePrice: number): Promise<OrderBookEntry[]> {
+    const response = await fetch(
+      `${this.API_BASE}/v5/market/orderbook?category=spot&symbol=${this.SYMBOL}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Bybit Spot API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.retCode !== 0) {
+      throw new Error(`Bybit Spot API error: ${result.retMsg}`);
+    }
+
+    return this.processOrderBook(result.result, minNotionalUSD, referencePrice, 'spot');
+  }
+
+  private async fetchFuturesOrders(minNotionalUSD: number, referencePrice: number): Promise<OrderBookEntry[]> {
+    const response = await fetch(
+      `${this.API_BASE}/v5/market/orderbook?category=linear&symbol=${this.SYMBOL}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Bybit Futures API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.retCode !== 0) {
+      throw new Error(`Bybit Futures API error: ${result.retMsg}`);
+    }
+
+    return this.processOrderBook(result.result, minNotionalUSD, referencePrice, 'futures');
+  }
+
+  private processOrderBook(
+    data: any,
+    minNotionalUSD: number,
+    referencePrice: number,
+    market: 'spot' | 'futures'
+  ): OrderBookEntry[] {
+    const whaleOrders: OrderBookEntry[] = [];
+
+    // Process bids (buy orders) - [price, quantity]
+    for (const [priceStr, quantityStr] of data.b) {
+      const price = parseFloat(priceStr);
+      const quantity = parseFloat(quantityStr);
+      const total = price * quantity;
+
+      if (total >= minNotionalUSD && 
+          isValidPrice(price, referencePrice) && 
+          isValidTotal(total) && 
+          isValidCalculation(price, quantity, total)) {
+        whaleOrders.push({ price, quantity, type: 'bid', total, market });
+      }
+    }
+
+    // Process asks (sell orders) - [price, quantity]
+    for (const [priceStr, quantityStr] of data.a) {
+      const price = parseFloat(priceStr);
+      const quantity = parseFloat(quantityStr);
+      const total = price * quantity;
+
+      if (total >= minNotionalUSD && 
+          isValidPrice(price, referencePrice) && 
+          isValidTotal(total) && 
+          isValidCalculation(price, quantity, total)) {
+        whaleOrders.push({ price, quantity, type: 'ask', total, market });
+      }
+    }
+
+    return whaleOrders;
   }
 }
 

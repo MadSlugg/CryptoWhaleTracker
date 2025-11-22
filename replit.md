@@ -14,15 +14,15 @@ Preferred communication style: Simple, everyday language.
 - **State Management**: React Query for server state, WebSockets for real-time updates, local React state for UI filters.
 - **Key Features**:
     - Real-time whale order feed from 10 exchanges: Binance, Bybit, Kraken, Bitfinex, Coinbase, OKX, Gemini, Bitstamp, KuCoin, and HTX (orders >= $450k).
+    - **Market Type Tracking**: Each order labeled as SPOT or FUTURES. 7 exchanges track both spot and futures (Binance, Bybit, OKX, KuCoin, HTX, Kraken, Bitfinex), 3 track spot only (Coinbase, Gemini, Bitstamp).
     - Filterable dashboard by size, order type, exchange, time range, and status.
     - Real Bitcoin prices (updated every 5 seconds).
-    - **Dashboard Layout**: Header (BTC price, long/short counts), Filter Controls, Major Whales Box (top 10 orders >100 BTC, independent of filters except time range), Summary Stats (volume-weighted long/short ratio), Filled Order Flow (price direction prediction), Price Clusters (liquidation heatmap), Order Book Imbalance, Depth Chart, Active/Filled Orders (5 most recent each).
-    - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA WHALE).
+    - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Major Whales Box (top 10 orders >100 BTC with SPOT/FUTURES badges, independent of filters except time range), Filled Order Flow (price direction prediction), Price Clusters (support/resistance heatmap), Depth Chart, Active/Filled Orders (5 most recent each).
+    - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA ENTRY).
     - **Whale Analytics**:
-        - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals.
-        - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total).
-        - **Order Book Imbalance**: Real-time indicator of supply/demand pressure from active whale orders.
-        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance, and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence, neutral shows for <50% confidence or weak signals. Entry prices align with recommendations: buy signals use whale support levels, sell signals use resistance levels, neutral uses mid-range or current price.
+        - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals from both spot and futures markets.
+        - **Price Clusters**: Identifies strong support/resistance zones from active orders concentrated at price levels (2+ orders or 50+ BTC total). Both spot and futures orders create valid support/resistance levels.
+        - **Smart Entry Points**: Simplified recommendations based exclusively on big whale orders (50+ BTC). Analyzes filled order flow, order book imbalance (internally), and support/resistance levels to generate BUY/SELL/NEUTRAL signals with confidence levels. Confidence thresholds: strong_buy/strong_sell require 80%+ confidence, buy/sell require 50%+ confidence, neutral shows for <50% confidence or weak signals. Entry prices align with recommendations: buy signals use whale support levels, sell signals use resistance levels, neutral uses mid-range or current price.
 - **Routing**: Wouter for client-side routing.
 
 ### Backend
@@ -32,13 +32,17 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Exchange Integration**: 
     - Modular architecture with unified ExchangeService interface in `server/exchanges/` folder
     - Polls 10 exchanges for order book data at staggered intervals (10-28 seconds) using public APIs
-    - Exchanges: Binance (10s), Bybit (12s), Kraken (14s), Bitfinex (16s), Coinbase (18s), OKX (20s), Gemini (22s), Bitstamp (24s), KuCoin (26s), HTX (28s)
+    - **Exchanges with BOTH Spot + Futures**: Binance (10s), Bybit (12s), Kraken (14s), Bitfinex (16s), OKX (20s), KuCoin (26s), HTX (28s)
+    - **Exchanges with Spot Only**: Coinbase (18s), Gemini (22s), Bitstamp (24s)
+    - Each exchange fetches both spot and futures order books in parallel (when available) and marks orders with `market` field ('spot' or 'futures')
     - Circuit breaker pattern for resilience: opens after 3 consecutive failures, 2-minute cooldown before retry
     - Shared validation utilities (price range, total sanity, calculation accuracy) across all exchanges
 - **Order Tracking**:
-    - Extracts real whale orders ($450k+ notional value) from public order books.
+    - Extracts real whale orders ($450k+ notional value) from public order books (both spot and futures markets).
+    - Each order has a `market` field indicating 'spot' or 'futures' origin.
     - **Order Status Transitions**: Active orders become "Filled" when market price crosses their limit, or "Deleted" if they vanish from exchange order books.
     - Verification of existing orders uses full order book data to prevent false deletions.
+    - **Design Philosophy**: Both spot and futures orders create valid support/resistance levels, so both are tracked and analyzed together.
 - **API Endpoints**:
     - `GET /api/dashboard`: Consolidated primary endpoint for dashboard data (filtered orders, price, major whales) with in-memory caching.
     - `GET /api/entry-points`: Smart entry recommendations based on 50+ BTC whale orders only. Returns recommendation (strong_buy/buy/neutral/sell/strong_sell), confidence, entry price, support/resistance levels, and whale analysis.

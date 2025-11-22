@@ -159,7 +159,7 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                   </span>
                   {isMegaWhale && (
                     <Badge variant="destructive" className="text-xs animate-pulse bg-orange-600 hover:bg-orange-700">
-                      MEGA WHALE
+                      MEGA ENTRY
                     </Badge>
                   )}
                 </div>
@@ -220,6 +220,12 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                       )}
                       {order.type.toUpperCase()}
                     </Badge>
+                    <Badge
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      {order.market?.toUpperCase() || 'SPOT'}
+                    </Badge>
                     <span className="font-mono font-semibold">
                       {order.size.toFixed(2)} BTC
                     </span>
@@ -247,6 +253,9 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
             <div className="flex items-center gap-1 justify-end">
               <Badge variant="outline" className="text-xs">
                 {group.orders[0].exchange.toUpperCase()}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {group.orders[0].market?.toUpperCase() || 'SPOT'}
               </Badge>
               <Badge 
                 variant={group.orders[0].status === 'filled' ? 'secondary' : 'default'} 

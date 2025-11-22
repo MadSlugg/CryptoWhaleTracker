@@ -28,7 +28,7 @@ export class CoinbaseService implements ExchangeService {
             isValidPrice(price, referencePrice) && 
             isValidTotal(total) && 
             isValidCalculation(price, quantity, total)) {
-          whaleOrders.push({ price, quantity, type: 'bid', total });
+          whaleOrders.push({ price, quantity, type: 'bid', total, market: 'spot' });
         }
       }
 
@@ -42,7 +42,7 @@ export class CoinbaseService implements ExchangeService {
             isValidPrice(price, referencePrice) && 
             isValidTotal(total) && 
             isValidCalculation(price, quantity, total)) {
-          whaleOrders.push({ price, quantity, type: 'ask', total });
+          whaleOrders.push({ price, quantity, type: 'ask', total, market: 'spot' });
         }
       }
 
