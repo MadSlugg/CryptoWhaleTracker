@@ -82,7 +82,7 @@ export function LongEntryPoints({ exchange }: EntryPointsProps) {
                 Long Entry Points
               </CardTitle>
               <CardDescription>
-                Buy signals from 50+ BTC whale orders
+                Buy signals from 100+ BTC whale orders
               </CardDescription>
             </div>
             <Badge 
@@ -243,7 +243,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
                 <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
                 Short Entry Points
               </CardTitle>
-              <CardDescription>Sell signals from 50+ BTC whale orders</CardDescription>
+              <CardDescription>Sell signals from 100+ BTC whale orders</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -269,7 +269,7 @@ export function ShortEntryPoints({ exchange }: EntryPointsProps) {
                 Short Entry Points
               </CardTitle>
               <CardDescription>
-                Sell signals from 50+ BTC whale orders
+                Sell signals from 100+ BTC whale orders
               </CardDescription>
             </div>
             <Badge 
