@@ -27,6 +27,10 @@ interface EntryPointData {
   };
   support: number | null;
   resistance: number | null;
+  firstSupport: { price: number; btc: number } | null;
+  secondSupport: { price: number; btc: number } | null;
+  firstResistance: { price: number; btc: number } | null;
+  secondResistance: { price: number; btc: number } | null;
 }
 
 export function BuyEntryPoints({ exchange }: EntryPointsProps) {
@@ -296,11 +300,19 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                     ${Math.round(data.currentPrice).toLocaleString()}
                   </span>
                 </div>
-                {data.resistance && (
+                {data.firstResistance && (
                   <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                    <span className="text-red-700 dark:text-red-300 font-medium">Nearest Resistance</span>
-                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                      ${Math.round(data.resistance).toLocaleString()}
+                    <span className="text-red-700 dark:text-red-300 font-medium">1st Resistance</span>
+                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-first-resistance">
+                      ${Math.round(data.firstResistance.price).toLocaleString()} ({Math.round(data.firstResistance.btc).toLocaleString()} BTC)
+                    </span>
+                  </div>
+                )}
+                {data.secondResistance && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                    <span className="text-red-700 dark:text-red-300 font-medium">2nd Resistance</span>
+                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-second-resistance">
+                      ${Math.round(data.secondResistance.price).toLocaleString()} ({Math.round(data.secondResistance.btc).toLocaleString()} BTC)
                     </span>
                   </div>
                 )}
@@ -410,11 +422,19 @@ export function SellEntryPoints({ exchange }: EntryPointsProps) {
                   ${Math.round(data.currentPrice).toLocaleString()}
                 </span>
               </div>
-              {data.resistance && Math.round(data.resistance) !== Math.round(data.entryPrice) && (
+              {data.firstResistance && (
                 <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                  <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
-                  <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                    ${Math.round(data.resistance).toLocaleString()}
+                  <span className="text-red-700 dark:text-red-300 font-medium">1st Resistance</span>
+                  <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-first-resistance">
+                    ${Math.round(data.firstResistance.price).toLocaleString()} ({Math.round(data.firstResistance.btc).toLocaleString()} BTC)
+                  </span>
+                </div>
+              )}
+              {data.secondResistance && (
+                <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                  <span className="text-red-700 dark:text-red-300 font-medium">2nd Resistance</span>
+                  <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-second-resistance">
+                    ${Math.round(data.secondResistance.price).toLocaleString()} ({Math.round(data.secondResistance.btc).toLocaleString()} BTC)
                   </span>
                 </div>
               )}
