@@ -143,7 +143,7 @@ export function PriceClusters({ orders, currentPrice }: PriceClustersProps) {
           Price Clusters
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-2">
-          Active orders (5+ BTC) concentrated at price levels. Shows support/resistance zones. Filled orders are automatically removed.
+          Whale orders (100+ BTC) concentrated at price levels. Shows support/resistance zones from active market makers.
         </p>
       </CardHeader>
       <CardContent>
