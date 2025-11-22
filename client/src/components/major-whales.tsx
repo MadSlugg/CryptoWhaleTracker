@@ -1,8 +1,8 @@
 import type { BitcoinOrder } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp } from "lucide-react";
-import { format } from "date-fns";
+import { TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 
@@ -198,42 +198,56 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
               {group.orders.map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm"
+                  className="space-y-1"
                   data-testid={`order-detail-${order.id}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={order.type === 'long' ? 'default' : 'destructive'}
-                      className="text-xs"
-                    >
-                      {order.type === 'long' ? (
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 mr-1" />
-                      )}
-                      {order.type.toUpperCase()}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      {order.market?.toUpperCase() || 'SPOT'}
-                    </Badge>
-                    <span className="font-mono font-semibold">
-                      {order.size.toFixed(2)} BTC
-                    </span>
+                  <div className="flex items-center justify-between p-2 rounded bg-muted/50 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={order.type === 'long' ? 'default' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {order.type === 'long' ? (
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                        )}
+                        {order.type.toUpperCase()}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-xs"
+                      >
+                        {order.market?.toUpperCase() || 'SPOT'}
+                      </Badge>
+                      <span className="font-mono font-semibold">
+                        {order.size.toFixed(2)} BTC
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-xs">
+                        {order.exchange.toUpperCase()}
+                      </Badge>
+                      <Badge 
+                        variant={order.status === 'filled' ? 'secondary' : 'default'} 
+                        className="text-xs"
+                      >
+                        {order.status.toUpperCase()}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="outline" className="text-xs">
-                      {order.exchange.toUpperCase()}
-                    </Badge>
-                    <Badge 
-                      variant={order.status === 'filled' ? 'secondary' : 'default'} 
-                      className="text-xs"
-                    >
-                      {order.status.toUpperCase()}
-                    </Badge>
-                  </div>
+                  {order.status === 'filled' && order.filledAt && (
+                    <div className="flex items-center gap-3 px-2 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Placed: {format(new Date(order.timestamp), 'MMM d, h:mm a')}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Filled: {format(new Date(order.filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(order.filledAt), { addSuffix: true })})</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -242,7 +256,7 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
 
         {/* Single Order - Show exchange and status inline */}
         {isSingleOrder && (
-          <div className="border-t px-3 py-2">
+          <div className="border-t px-3 py-2 space-y-1">
             <div className="flex items-center gap-1 justify-end">
               <Badge variant="outline" className="text-xs">
                 {group.orders[0].exchange.toUpperCase()}
@@ -257,6 +271,18 @@ function WhaleGroup({ group }: { group: GroupedWhale }) {
                 {group.orders[0].status.toUpperCase()}
               </Badge>
             </div>
+            {group.orders[0].status === 'filled' && group.orders[0].filledAt && (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground justify-end">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>Placed: {format(new Date(group.orders[0].timestamp), 'MMM d, h:mm a')}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>Filled: {format(new Date(group.orders[0].filledAt), 'MMM d, h:mm a')} ({formatDistanceToNow(new Date(group.orders[0].filledAt), { addSuffix: true })})</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
