@@ -116,60 +116,36 @@ export function OrderBookImbalance({ orders, currentPrice }: OrderBookImbalanceP
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Pressure Indicator */}
-          <div className="flex flex-col items-center gap-3 p-4 rounded-lg border bg-card">
-            <div className="flex items-center gap-3">
-              <Badge 
-                className={imbalance.pressureColor}
-                data-testid="badge-pressure-level"
-              >
-                {imbalance.pressureLevel}
-              </Badge>
-              
-              {imbalance.imbalanceRatio > 5 ? (
-                <TrendingUp className="h-6 w-6 text-green-600" data-testid="icon-pressure-up" />
-              ) : imbalance.imbalanceRatio < -5 ? (
-                <TrendingDown className="h-6 w-6 text-red-600" data-testid="icon-pressure-down" />
-              ) : (
-                <Scale className="h-6 w-6 text-muted-foreground" data-testid="icon-pressure-balanced" />
-              )}
+          {/* Visual balance bar only - no recommendations */}
+          <div className="w-full space-y-2">
+            <div className="h-4 w-full bg-muted rounded-full overflow-hidden flex">
+              <div 
+                className="bg-green-600 transition-all duration-500"
+                style={{ 
+                  width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.bidVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
+                }}
+                data-testid="bar-bid-pressure"
+              />
+              <div 
+                className="bg-red-600 transition-all duration-500"
+                style={{ 
+                  width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.askVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
+                }}
+                data-testid="bar-ask-pressure"
+              />
             </div>
-
-            <p className="text-sm text-center text-muted-foreground">
-              {imbalance.pressureDescription}
-            </p>
-
-            {/* Imbalance ratio display */}
-            <div className="text-center">
-              <div className="text-3xl font-bold font-mono" data-testid="text-imbalance-ratio">
-                {imbalance.imbalanceRatio > 0 ? '+' : ''}{imbalance.imbalanceRatio.toFixed(1)}%
-              </div>
-              <div className="text-xs text-muted-foreground">Imbalance Ratio</div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span className="text-green-600 dark:text-green-400 font-semibold">Buy Pressure</span>
+              <span className="text-red-600 dark:text-red-400 font-semibold">Sell Pressure</span>
             </div>
+          </div>
 
-            {/* Visual balance bar */}
-            <div className="w-full space-y-1">
-              <div className="h-4 w-full bg-muted rounded-full overflow-hidden flex">
-                <div 
-                  className="bg-green-600 transition-all duration-500"
-                  style={{ 
-                    width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.bidVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
-                  }}
-                  data-testid="bar-bid-pressure"
-                />
-                <div 
-                  className="bg-red-600 transition-all duration-500"
-                  style={{ 
-                    width: `${imbalance.totalVolumeBTC > 0 ? (imbalance.askVolumeBTC / imbalance.totalVolumeBTC * 100) : 50}%` 
-                  }}
-                  data-testid="bar-ask-pressure"
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span className="text-green-600 dark:text-green-400 font-semibold">Buy Pressure</span>
-                <span className="text-red-600 dark:text-red-400 font-semibold">Sell Pressure</span>
-              </div>
+          {/* Imbalance ratio display */}
+          <div className="text-center p-3 rounded-lg border bg-muted/50">
+            <div className="text-3xl font-bold font-mono" data-testid="text-imbalance-ratio">
+              {imbalance.imbalanceRatio > 0 ? '+' : ''}{imbalance.imbalanceRatio.toFixed(1)}%
             </div>
+            <div className="text-xs text-muted-foreground">Imbalance Ratio</div>
           </div>
 
           {/* Detailed Metrics */}
