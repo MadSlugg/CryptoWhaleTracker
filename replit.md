@@ -19,10 +19,10 @@ Preferred communication style: Simple, everyday language.
     - Real Bitcoin prices (updated every 5 seconds).
     - **Dashboard Layout**: Header (BTC price, date, refresh controls), Filter Controls, Major Whales (split into Active and Filled sections - top 10 orders >100 BTC with SPOT/FUTURES badges and timestamps, independent of filters except time range), Long/Short Entry Points (side-by-side directional recommendations), Filled Order Flow (price direction prediction), Price Clusters (support/resistance heatmap), Depth Chart, Active/Filled Orders (5 most recent each).
     - **Major Whales Component**:
-        - **Active Major Whales**: Always visible section showing top 10 price levels with 100+ BTC orders currently on the books. Displays placement timestamps for each order.
-        - **Filled Major Whales**: Collapsible section showing top 10 price levels with recently filled 100+ BTC orders. Displays both placement and execution timestamps with relative time (e.g., "Filled 2 minutes ago").
+        - **Active Major Whales**: Always visible scrollable section (max-h-[600px]) showing top 10 price levels with 100+ BTC orders currently on the books. Sorted by total BTC size (largest first). Displays placement timestamps for each order.
+        - **Filled Major Whales**: Collapsible section (defaults to collapsed) showing top 10 price levels with recently filled 100+ BTC orders. Sorted by filled time (most recent first). Displays both placement and execution timestamps with relative time (e.g., "Filled 2 minutes ago").
         - **MEGA ENTRY Orders**: 1000+ BTC orders displayed with orange border, larger text, and orange color for high visibility.
-        - Orders grouped by price level and sorted by total BTC size. Expandable to show individual order details.
+        - Orders grouped by price level. Active whales sorted by BTC size, filled whales sorted by filled time. Expandable to show individual order details.
     - **Major Whale Alerts**: Real-time toast notifications for 100+ BTC and 1000+ BTC orders (MEGA ENTRY).
     - **Whale Analytics**:
         - **Filled Order Flow**: Time-decay weighted analysis of whale executions in the last 30 minutes, showing accumulation/distribution signals from both spot and futures markets.
