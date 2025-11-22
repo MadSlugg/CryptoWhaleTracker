@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, AlertCircle, Target, Shield, TrendingUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown, AlertCircle, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Exchange } from "@shared/schema";
 
@@ -13,13 +13,7 @@ interface EntryPointData {
   recommendation: 'strong_buy' | 'buy' | 'neutral' | 'sell' | 'strong_sell';
   confidence: number;
   currentPrice: number;
-  entry: {
-    price: number;
-    type: 'LONG' | 'SHORT' | 'WAIT';
-  };
-  stopLoss: number;
-  takeProfit: number;
-  riskReward: number;
+  entryPrice: number;
   reasoning: string[];
   signals: {
     filledOrderFlow: {
@@ -31,10 +25,8 @@ interface EntryPointData {
       signal: 'buy_pressure' | 'sell_pressure' | 'balanced';
     };
   };
-  keyLevels: {
-    nearestSupport: number | null;
-    nearestResistance: number | null;
-  };
+  support: number | null;
+  resistance: number | null;
 }
 
 export function EntryPoints({ exchange }: EntryPointsProps) {
@@ -64,7 +56,7 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
                 <Target className="h-5 w-5" />
                 Smart Entry Points
               </CardTitle>
-              <CardDescription>AI-powered entry recommendations based on whale activity</CardDescription>
+              <CardDescription>Based on big whale orders (50+ BTC)</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -135,7 +127,7 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
               Smart Entry Points
             </CardTitle>
             <CardDescription>
-              AI-powered recommendations analyzing whale flow, order book pressure, and key price levels
+              Based on big whale orders (50+ BTC) across all exchanges
             </CardDescription>
           </div>
           <Badge 
@@ -149,53 +141,15 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-          {/* Left Column - Entry Details */}
+          {/* Left Column - Entry & Confidence */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Strategy</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Entry Details</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                  <span className="text-sm text-muted-foreground">Position Type</span>
-                  <Badge 
-                    variant={data.entry.type === 'LONG' ? 'default' : data.entry.type === 'SHORT' ? 'destructive' : 'secondary'}
-                    className="font-mono font-bold"
-                    data-testid="badge-entry-type"
-                  >
-                    {data.entry.type}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
                   <span className="text-sm text-muted-foreground">Entry Price</span>
-                  <span className="font-mono font-bold" data-testid="text-entry-price">
-                    ${data.entry.price.toLocaleString()}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Shield className="h-3.5 w-3.5" />
-                    Stop Loss
-                  </span>
-                  <span className="font-mono font-semibold text-destructive" data-testid="text-stop-loss">
-                    ${data.stopLoss.toLocaleString()}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
-                  <span className="text-sm text-muted-foreground flex items-center gap-1">
-                    <TrendingUpDown className="h-3.5 w-3.5" />
-                    Take Profit
-                  </span>
-                  <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400" data-testid="text-take-profit">
-                    ${data.takeProfit.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <span className="text-sm font-semibold">Risk/Reward Ratio</span>
-                  <span className="font-mono font-bold text-primary" data-testid="text-risk-reward">
-                    1:{data.riskReward.toFixed(2)}
+                  <span className="font-mono font-bold text-lg" data-testid="text-entry-price">
+                    ${data.entryPrice.toLocaleString()}
                   </span>
                 </div>
 
@@ -215,12 +169,40 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
                 </div>
               </div>
             </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Key Price Levels</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
+                  <span className="text-muted-foreground">Current Price</span>
+                  <span className="font-mono font-semibold" data-testid="text-current-price">
+                    ${data.currentPrice.toLocaleString()}
+                  </span>
+                </div>
+                {data.support && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
+                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
+                      ${data.support.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {data.resistance && (
+                  <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
+                    <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
+                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
+                      ${data.resistance.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Right Column - Analysis */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Analysis</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Whale Analysis</h3>
               <div className="space-y-2">
                 {data.reasoning.map((reason, index) => (
                   <div 
@@ -232,34 +214,6 @@ export function EntryPoints({ exchange }: EntryPointsProps) {
                     <span>{reason}</span>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Key Price Levels</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-sm">
-                  <span className="text-muted-foreground">Current Price</span>
-                  <span className="font-mono font-semibold" data-testid="text-current-price">
-                    ${data.currentPrice.toLocaleString()}
-                  </span>
-                </div>
-                {data.keyLevels.nearestSupport && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-emerald-500/10 text-sm border border-emerald-500/20">
-                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">Support</span>
-                    <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-300" data-testid="text-support">
-                      ${data.keyLevels.nearestSupport.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {data.keyLevels.nearestResistance && (
-                  <div className="flex items-center justify-between p-2 rounded-md bg-red-500/10 text-sm border border-red-500/20">
-                    <span className="text-red-700 dark:text-red-300 font-medium">Resistance</span>
-                    <span className="font-mono font-semibold text-red-700 dark:text-red-300" data-testid="text-resistance">
-                      ${data.keyLevels.nearestResistance.toLocaleString()}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           </div>

@@ -754,8 +754,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch filled order flow analysis (last 30m for most relevant signals)
+      // Focus on BIG whale orders only (50+ BTC)
       const filledOrders = await storage.getFilteredOrders({
-        minSize: 5,
+        minSize: 50,
         orderType: 'all',
         exchange,
         timeRange: '30m',
@@ -786,8 +787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const flowDifference = isNaN(longPercentage) ? 0 : longPercentage - 50;
 
       // Fetch active orders for support/resistance analysis
+      // Focus on BIG whale orders only (50+ BTC)
       const activeOrders = await storage.getFilteredOrders({
-        minSize: 10,
+        minSize: 50,
         orderType: 'all',
         exchange,
         timeRange: '24h',
@@ -903,19 +905,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           recommendation: 'neutral',
           confidence: 30,
           currentPrice,
-          entry: { price: currentPrice, type: 'WAIT' },
-          stopLoss: Math.floor(currentPrice * 0.98),
-          takeProfit: Math.floor(currentPrice * 1.02),
-          riskReward: 1.0,
-          reasoning: ['Insufficient data for analysis', 'Wait for more whale activity'],
+          entryPrice: currentPrice,
+          reasoning: ['Insufficient big whale activity (50+ BTC)', 'Wait for large whale orders'],
           signals: {
             filledOrderFlow: { score: 0, signal: 'neutral' },
             orderBookImbalance: { score: 0, signal: 'balanced' },
           },
-          keyLevels: {
-            nearestSupport: nearestSupport ? nearestSupport.price : null,
-            nearestResistance: nearestResistance ? nearestResistance.price : null,
-          },
+          support: nearestSupport ? nearestSupport.price : null,
+          resistance: nearestResistance ? nearestResistance.price : null,
         });
       }
 
@@ -928,38 +925,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Reduce confidence if insufficient data
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 10) baseConfidence *= 0.8; // Reduce confidence if low volume
-        if (activeOrders.length < 5) baseConfidence *= 0.9; // Reduce confidence if few orders
+        if (totalFilledVolume < 50) baseConfidence *= 0.85; // Reduce confidence if low whale volume
+        if (activeOrders.length < 3) baseConfidence *= 0.9; // Reduce confidence if few big orders
         confidence = Math.floor(baseConfidence);
         
         // Entry: Buy at current price or near support
         entryPrice = nearestSupport && nearestSupport.price < currentPrice
           ? nearestSupport.price 
           : Math.floor(currentPrice * 0.995);
-        
-        // LONG position: Stop loss MUST be BELOW entry
-        const defaultStop = Math.floor(entryPrice * 0.98);
-        if (nearestSupport && nearestSupport.price < entryPrice) {
-          stopLoss = Math.min(defaultStop, Math.floor(nearestSupport.price * 0.98));
-        } else {
-          stopLoss = defaultStop;
-        }
-        
-        // LONG position: Take profit MUST be ABOVE entry
-        const defaultTarget = Math.floor(entryPrice * 1.04);
-        if (nearestResistance && nearestResistance.price > entryPrice) {
-          takeProfit = Math.max(defaultTarget, Math.floor(nearestResistance.price * 0.99));
-        } else {
-          takeProfit = defaultTarget;
-        }
-        
-        // Validate: ensure stop < entry < target for LONG
-        if (stopLoss >= entryPrice) stopLoss = Math.floor(entryPrice * 0.98);
-        if (takeProfit <= entryPrice) takeProfit = Math.floor(entryPrice * 1.04);
 
-        if (flowScore > 20) reasoning.push(`Whales accumulating (+${flowScore.toFixed(1)}% buying)`);
-        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure (${imbalanceScore.toFixed(1)}% imbalance)`);
-        if (nearestSupport) reasoning.push(`Strong support at $${nearestSupport.price.toLocaleString()}`);
+        if (flowScore > 20) reasoning.push(`Big whales accumulating (+${flowScore.toFixed(1)}% buying)`);
+        if (imbalanceScore > 15) reasoning.push(`Strong buy pressure from 50+ BTC orders (${imbalanceScore.toFixed(1)}%)`);
+        if (nearestSupport) reasoning.push(`Major support at $${nearestSupport.price.toLocaleString()}`);
         
       } else if (compositeScore <= -30) {
         // SHORT SIGNAL (SELL)
@@ -968,44 +945,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Reduce confidence if insufficient data
         let baseConfidence = Math.min(95, 50 + Math.abs(compositeScore));
         if (isNaN(baseConfidence)) baseConfidence = 50;
-        if (totalFilledVolume < 10) baseConfidence *= 0.8;
-        if (activeOrders.length < 5) baseConfidence *= 0.9;
+        if (totalFilledVolume < 50) baseConfidence *= 0.85;
+        if (activeOrders.length < 3) baseConfidence *= 0.9;
         confidence = Math.floor(baseConfidence);
         
         // Entry: Sell at current price or near resistance
         entryPrice = nearestResistance && nearestResistance.price > currentPrice
           ? nearestResistance.price 
           : Math.floor(currentPrice * 1.005);
-        
-        // SHORT position: Calculate stop and target with defaults
-        let tempStop = Math.floor(entryPrice * 1.02);
-        let tempTarget = Math.floor(entryPrice * 0.96);
-        
-        // Adjust based on support/resistance if available
-        if (nearestResistance && nearestResistance.price > entryPrice) {
-          tempStop = Math.max(tempStop, Math.floor(nearestResistance.price * 1.02));
-        }
-        if (nearestSupport && nearestSupport.price < entryPrice) {
-          tempTarget = Math.min(tempTarget, Math.floor(nearestSupport.price * 1.01));
-        }
-        
-        // STRICT validation for SHORT: target < entry < stop
-        if (tempTarget >= entryPrice) tempTarget = Math.floor(entryPrice * 0.96);
-        if (tempStop <= entryPrice) tempStop = Math.floor(entryPrice * 1.02);
-        
-        // Final verification
-        if (tempTarget >= entryPrice || tempStop <= entryPrice || tempTarget >= tempStop) {
-          // Fallback to safe defaults if any validation fails
-          tempStop = Math.floor(entryPrice * 1.02);
-          tempTarget = Math.floor(entryPrice * 0.96);
-        }
-        
-        stopLoss = tempStop;
-        takeProfit = tempTarget;
 
-        if (flowScore < -20) reasoning.push(`Whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
-        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure (${Math.abs(imbalanceScore).toFixed(1)}% imbalance)`);
-        if (nearestResistance) reasoning.push(`Strong resistance at $${nearestResistance.price.toLocaleString()}`);
+        if (flowScore < -20) reasoning.push(`Big whales distributing (${Math.abs(flowScore).toFixed(1)}% selling)`);
+        if (imbalanceScore < -15) reasoning.push(`Strong sell pressure from 50+ BTC orders (${Math.abs(imbalanceScore).toFixed(1)}%)`);
+        if (nearestResistance) reasoning.push(`Major resistance at $${nearestResistance.price.toLocaleString()}`);
         
       } else {
         // NEUTRAL - NO CLEAR ENTRY
@@ -1015,38 +966,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confidence = Math.max(30, Math.floor(neutralConfidence));
         
         entryPrice = currentPrice;
-        stopLoss = Math.floor(currentPrice * 0.98);
-        takeProfit = Math.floor(currentPrice * 1.02);
         
-        reasoning.push('Mixed signals - whales not showing clear direction');
-        if (totalFilledVolume < 10) reasoning.push('Low filled order volume - wait for more whale activity');
-        if (activeOrders.length < 5) reasoning.push('Insufficient active orders for reliable support/resistance');
+        reasoning.push('Mixed signals from big whale orders');
+        if (totalFilledVolume < 50) reasoning.push('Low whale activity (50+ BTC) - wait for bigger orders');
+        if (activeOrders.length < 3) reasoning.push('Insufficient large orders for reliable levels');
       }
 
-      // Calculate risk/reward with comprehensive guards
-      const risk = Math.abs(entryPrice - stopLoss);
-      const reward = Math.abs(takeProfit - entryPrice);
-      
-      let riskReward = 1.0; // Default for WAIT/neutral
-      if (risk > 0 && reward > 0) {
-        riskReward = reward / risk;
-      } else if (risk === 0 || reward === 0) {
-        // WAIT state or invalid configuration - default to 1:1
-        riskReward = 1.0;
-      }
-      
-      // Response with actionable recommendations
+      // Response with simplified recommendations based on big whale orders (50+ BTC)
       res.json({
         recommendation,
         confidence: isNaN(confidence) ? 50 : confidence,
         currentPrice,
-        entry: {
-          price: entryPrice,
-          type: recommendation.includes('buy') ? 'LONG' : recommendation.includes('sell') ? 'SHORT' : 'WAIT',
-        },
-        stopLoss,
-        takeProfit,
-        riskReward: isNaN(riskReward) ? 1.0 : riskReward,
+        entryPrice,
         reasoning,
         signals: {
           filledOrderFlow: {
@@ -1058,10 +989,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             signal: imbalanceScore > 15 ? 'buy_pressure' : imbalanceScore < -15 ? 'sell_pressure' : 'balanced',
           },
         },
-        keyLevels: {
-          nearestSupport: nearestSupport ? nearestSupport.price : null,
-          nearestResistance: nearestResistance ? nearestResistance.price : null,
-        },
+        support: nearestSupport ? nearestSupport.price : null,
+        resistance: nearestResistance ? nearestResistance.price : null,
       });
     } catch (error) {
       console.error('Error generating entry points:', error);
